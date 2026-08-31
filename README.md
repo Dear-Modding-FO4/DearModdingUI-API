@@ -1,6 +1,6 @@
 # DearModdingUI API
 
-DearModdingUI is a standalone F4SE plugin that hosts a shared Dear ImGui menu for Fallout 4 mods. This repository contains the seven client-facing headers for its versioned C ABI, header-only C++ client, ImGui compatibility fingerprint, and shared visual helpers.
+DearModdingUI is a standalone F4SE plugin that hosts a shared Dear ImGui menu for Fallout 4 mods. This repository contains the client-facing headers for its versioned C ABI, header-only C++ client, ImGui forwarding API, compatibility fingerprint, and shared visual helpers.
 
 ## Using commonlibf4
 
@@ -19,7 +19,7 @@ includes("path/to/dearmoddingui-api")
 add_deps("dearmoddingui-api", { public = true })
 ```
 
-The C++ client and fingerprint builder require the Dear ImGui headers and Windows. The C ABI in `API.h` is independent of commonlibf4 and the host binary.
+The legacy C++ client and fingerprint builder require the Dear ImGui headers and Windows. `ImGuiForward.h` requires Windows but no Dear ImGui installation; it forwards its ImGui-compatible calls to the loaded host DLL. The C ABI in `API.h` is independent of commonlibf4 and the host binary.
 
 See the [ABI and lifecycle documentation](https://github.com/Dear-Modding-FO4/DearModdingUI/blob/main/include/DearModdingUI/README.md) for discovery, registration, compatibility, callback, and example details.
 
@@ -27,5 +27,4 @@ See the [ABI and lifecycle documentation](https://github.com/Dear-Modding-FO4/De
 
 DearModdingUI API is licensed under GPL-3.0. Including these headers makes the consuming plugin a derivative work and requires the plugin to comply with GPL-3.0, including its source-distribution requirements when conveyed.
 
-`ImGuiFingerprint.h` derives compatibility information from MIT-licensed Dear ImGui declarations. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
-
+`ImGuiFingerprint.h` derives compatibility information from MIT-licensed Dear ImGui declarations. `ImGuiForward.h` derives API declarations from MIT-licensed cimgui. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
