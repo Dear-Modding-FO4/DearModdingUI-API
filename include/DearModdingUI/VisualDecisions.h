@@ -1,6 +1,6 @@
 #pragma once
 
-#include <DearModdingUI/ThemeDefaults.h>
+#include <DearModdingUI/FontMetrics.h>
 
 #include <array>
 #include <cstddef>
