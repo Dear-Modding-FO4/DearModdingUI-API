@@ -5,7 +5,7 @@
 #include <string>
 #include <string_view>
 
-namespace Addictol::DearModdingUI
+namespace DearModdingUI
 {
 	enum class IconKind : uint32_t
 	{

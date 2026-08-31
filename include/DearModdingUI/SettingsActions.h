@@ -5,7 +5,7 @@
 #include <array>
 #include <cstdint>
 
-namespace Addictol::DearModdingUI
+namespace DearModdingUI
 {
 	enum class SettingsAction : uint32_t
 	{

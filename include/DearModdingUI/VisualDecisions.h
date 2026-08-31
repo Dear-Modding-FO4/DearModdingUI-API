@@ -8,7 +8,7 @@
 #include <string>
 #include <string_view>
 
-namespace Addictol::DearModdingUI
+namespace DearModdingUI
 {
 	[[nodiscard]] inline float ResolveUiScale(
 		[[maybe_unused]] float a_dpiScale,

@@ -9,7 +9,7 @@
 #include <cstdint>
 #include <string_view>
 
-namespace Addictol::DearModdingUI::Theme
+namespace DearModdingUI::Theme
 {
 	inline constexpr float kDefaultScreenHeight{ 1080.0f };
 	inline constexpr float kDefaultFontRatio{ 7.0f / 360.0f };
