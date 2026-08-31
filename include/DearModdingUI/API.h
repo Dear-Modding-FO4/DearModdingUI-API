@@ -268,6 +268,7 @@ typedef struct DMUI_ClientDescriptor
 	const char* id;
 	const char* displayName;
 	uint32_t version;
+	// Null selects layout-independent forwarding instead of a shared ImGui context.
 	const DMUI_ImGuiFingerprint* expectedImGui;
 	DMUI_HostReadyCallback onHostReady;
 	DMUI_HostUnavailableCallback onHostUnavailable;
@@ -331,6 +332,21 @@ typedef struct DMUI_Vec4
 	float z;
 	float w;
 } DMUI_Vec4;
+
+typedef struct DMUI_StyleMetrics
+{
+	uint32_t structSize;
+	DMUI_Vec2 itemSpacing;
+	DMUI_Vec2 framePadding;
+	DMUI_Vec2 itemInnerSpacing;
+	DMUI_Vec2 cellPadding;
+	DMUI_Vec2 windowPadding;
+	float indentSpacing;
+	float scrollbarSize;
+} DMUI_StyleMetrics;
+
+#define DMUI_STYLE_METRICS_1_0_SIZE \
+	((uint32_t)(offsetof(DMUI_StyleMetrics, scrollbarSize) + sizeof(float)))
 
 typedef struct DMUI_ThemeColors
 {
@@ -511,5 +527,8 @@ typedef struct DMUI_HostAPI
 #pragma pack(pop)
 #endif
 
+DMUI_EXPORT DMUI_Result DMUI_CALL DMUI_GetStyleMetrics(
+	DMUI_StyleMetrics* metrics) DMUI_NOEXCEPT;
+DMUI_EXPORT uint32_t DMUI_CALL DMUI_GetImGuiVersionNum(void) DMUI_NOEXCEPT;
 DMUI_EXPORT const DMUI_HostAPI* DMUI_CALL DMUI_GetHostAPI(
 	uint32_t requestedVersion) DMUI_NOEXCEPT;

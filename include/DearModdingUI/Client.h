@@ -1,8 +1,12 @@
 #pragma once
 
-// Include imgui.h and imgui_internal.h before this header.
+// Include Dear ImGui first for lockstep mode; forwarding mode needs no ImGui sources.
 
+#if defined(IMGUI_VERSION) && defined(IMGUI_VERSION_NUM)
 #include <DearModdingUI/ImGuiFingerprint.h>
+#else
+#include <DearModdingUI/ImGuiForward.h>
+#endif
 
 #if !defined(NOMINMAX)
 #define NOMINMAX
@@ -55,15 +59,32 @@ namespace dmui
 		uint64_t budget{};
 	};
 
+	struct ForwardingClientTag
+	{};
+
+	inline constexpr ForwardingClientTag kForwardingClient{};
+
 	// IMPORTANT: Client instances must outlive the game session because DMUI v1 cannot unregister callbacks.
 	class Client
 	{
 	public:
+#if defined(IMGUI_VERSION) && defined(IMGUI_VERSION_NUM)
 		Client(std::string_view a_id, std::string_view a_displayName, Version a_version) :
 			id_(a_id),
 			displayName_(a_displayName),
 			version_(a_version),
 			fingerprint_(DMUI_MakeImGuiFingerprint())
+		{}
+#endif
+
+		Client(
+			std::string_view a_id,
+			std::string_view a_displayName,
+			Version a_version,
+			ForwardingClientTag) :
+			id_(a_id),
+			displayName_(a_displayName),
+			version_(a_version)
 		{}
 
 		~Client() = default;
@@ -108,7 +129,7 @@ namespace dmui
 			descriptor.id = id_.c_str();
 			descriptor.displayName = displayName_.c_str();
 			descriptor.version = version_.Pack();
-			descriptor.expectedImGui = &fingerprint_;
+			descriptor.expectedImGui = fingerprint_ ? &*fingerprint_ : nullptr;
 			descriptor.onHostReady = &OnHostReady;
 			descriptor.onHostUnavailable = &OnHostUnavailable;
 			descriptor.userData = this;
@@ -722,15 +743,24 @@ namespace dmui
 			return false;
 		}
 
-		static void DMUI_CALL OnHostReady(const DMUI_HostReadyInfo* a_info, void*) noexcept
+		static void DMUI_CALL OnHostReady(
+			const DMUI_HostReadyInfo* a_info,
+			void* a_userData) noexcept
 		{
 			if (!a_info || a_info->structSize < sizeof(DMUI_HostReadyInfo))
+				return;
+#if defined(IMGUI_VERSION) && defined(IMGUI_VERSION_NUM)
+			const auto* self = static_cast<const Client*>(a_userData);
+			if (!self || !self->fingerprint_)
 				return;
 			ImGui::SetCurrentContext(static_cast<ImGuiContext*>(a_info->imguiContext));
 			ImGui::SetAllocatorFunctions(
 				a_info->imguiAlloc,
 				a_info->imguiFree,
 				a_info->imguiAllocatorUserData);
+#else
+			(void)a_userData;
+#endif
 		}
 
 		static void DMUI_CALL OnHostUnavailable(
@@ -756,7 +786,7 @@ namespace dmui
 		std::string id_;
 		std::string displayName_;
 		Version version_;
-		DMUI_ImGuiFingerprint fingerprint_;
+		std::optional<DMUI_ImGuiFingerprint> fingerprint_;
 		const DMUI_HostAPI* api_{};
 		DMUI_ClientHandle clientHandle_{ DMUI_INVALID_CLIENT_HANDLE };
 		std::atomic<DMUI_Result> lastResult_{ DMUI_RESULT_OK };

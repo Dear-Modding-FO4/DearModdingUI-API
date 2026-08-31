@@ -19,7 +19,7 @@ includes("path/to/dearmoddingui-api")
 add_deps("dearmoddingui-api", { public = true })
 ```
 
-The legacy C++ client and fingerprint builder require the Dear ImGui headers and Windows. `ImGuiForward.h` requires Windows but no Dear ImGui installation; it forwards its ImGui-compatible calls to the loaded host DLL. The C ABI in `API.h` is independent of commonlibf4 and the host binary.
+The C++ client supports lockstep Dear ImGui and layout-independent forwarding modes on Windows. The fingerprint builder requires Dear ImGui headers; forwarding mode compiles without Dear ImGui and calls the loaded host DLL through `ImGuiForward.h`. The C ABI in `API.h` is independent of commonlibf4 and the host binary.
 
 See the [ABI and lifecycle documentation](https://github.com/Dear-Modding-FO4/DearModdingUI/blob/main/include/DearModdingUI/README.md) for discovery, registration, compatibility, callback, and example details.
 
