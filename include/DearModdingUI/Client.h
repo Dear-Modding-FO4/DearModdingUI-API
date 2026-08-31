@@ -388,6 +388,18 @@ namespace dmui
 			return lastResult_ == DMUI_RESULT_OK;
 		}
 
+		[[nodiscard]] bool DrawBulletText(const char* a_text) noexcept
+		{
+			if (!IsConnected())
+				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			if (api_->structSize < DMUI_HOST_API_DRAW_BULLET_TEXT_SIZE ||
+				!api_->drawBulletText)
+				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
+
+			lastResult_ = api_->drawBulletText(clientHandle_, a_text);
+			return lastResult_ == DMUI_RESULT_OK;
+		}
+
 		[[nodiscard]] std::optional<bool> DrawSearchInput(
 			const char* a_id,
 			const char* a_hint,

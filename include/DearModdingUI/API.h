@@ -340,6 +340,9 @@ typedef DMUI_Result (DMUI_CALL *DMUI_DrawSectionHeaderFn)(
 	DMUI_ClientHandle client,
 	const char* text,
 	uint32_t glyph) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_DrawBulletTextFn)(
+	DMUI_ClientHandle client,
+	const char* text) DMUI_NOEXCEPT;
 // buffer must be NUL-terminated within capacity bytes, and capacity zero is invalid.
 // On success, buffer stays NUL-terminated and output longer than capacity is truncated to fit.
 // changed is set when the edited text differs from the input, including a truncated edit.
@@ -411,6 +414,7 @@ typedef struct DMUI_HostAPI
 	DMUI_SettingsActionButtonExtentFn settingsActionButtonExtent;
 	DMUI_RegisterFrameObserverFn registerFrameObserver;
 	DMUI_QueryVideoMemoryFn queryVideoMemory;
+	DMUI_DrawBulletTextFn drawBulletText;
 } DMUI_HostAPI;
 
 #define DMUI_HOST_API_SELECT_PAGE_SIZE \
@@ -443,6 +447,8 @@ typedef struct DMUI_HostAPI
 	((uint32_t)(offsetof(DMUI_HostAPI, registerFrameObserver) + sizeof(DMUI_RegisterFrameObserverFn)))
 #define DMUI_HOST_API_QUERY_VIDEO_MEMORY_SIZE \
 	((uint32_t)(offsetof(DMUI_HostAPI, queryVideoMemory) + sizeof(DMUI_QueryVideoMemoryFn)))
+#define DMUI_HOST_API_DRAW_BULLET_TEXT_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, drawBulletText) + sizeof(DMUI_DrawBulletTextFn)))
 
 #if defined(_MSC_VER)
 #pragma pack(pop)
