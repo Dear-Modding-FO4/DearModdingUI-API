@@ -2086,7 +2086,10 @@ namespace dmui
 					action.id,
 					{
 						actionX,
-						start.y + (rowHeight - buttonExtent) * 0.5f
+						start.y + DearModdingUI::RowContentOffsetY(
+							rowHeight,
+							{ buttonExtent },
+							DearModdingUI::RowContentMetric::kBox)
 					},
 					{ widths[index], buttonExtent },
 					static_cast<DMUI_SettingsAction>(action.action),

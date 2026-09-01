@@ -126,40 +126,165 @@ namespace DearModdingUI
 		return framePaddingX + fontSize * 0.3f;
 	}
 
-	[[nodiscard]] constexpr float CenterOffsetY(
-		float a_rowHeight,
-		float a_contentHeight) noexcept
+	enum class RowContentMetric : uint32_t
 	{
-		const auto rowHeight = a_rowHeight > 0.0f ? a_rowHeight : 0.0f;
-		const auto contentHeight =
-			a_contentHeight > 0.0f ? a_contentHeight : 0.0f;
-		return (std::max)(
+		kBox,
+		kOptical
+	};
+
+	struct RowContentMetrics
+	{
+		float height{ 0.0f };
+		float opticalMinY{ 0.0f };
+		float opticalMaxY{ 0.0f };
+		float opticalScale{ 0.0f };
+	};
+
+	enum class RowContentRectKind : uint32_t
+	{
+		kSelectable,
+		kTable
+	};
+
+	struct RowContentRect
+	{
+		float minX{ 0.0f };
+		float minY{ 0.0f };
+		float maxX{ 0.0f };
+		float maxY{ 0.0f };
+
+		[[nodiscard]] constexpr float GetWidth() const noexcept
+		{
+			return (std::max)(maxX - minX, 0.0f);
+		}
+
+		[[nodiscard]] constexpr float GetHeight() const noexcept
+		{
+			return (std::max)(maxY - minY, 0.0f);
+		}
+
+		constexpr bool operator==(const RowContentRect&) const noexcept = default;
+	};
+
+	struct SelectableRowContentRectProvider
+	{
+		inline static constexpr auto kind = RowContentRectKind::kSelectable;
+
+		[[nodiscard]] static constexpr RowContentRect Resolve(
+			const RowContentRect& a_containerRect,
+			[[maybe_unused]] float a_rowCellPaddingY) noexcept
+		{
+			return a_containerRect;
+		}
+	};
+
+	struct TableRowContentRectProvider
+	{
+		inline static constexpr auto kind = RowContentRectKind::kTable;
+
+		[[nodiscard]] static constexpr RowContentRect Resolve(
+			const RowContentRect& a_containerRect,
+			float a_rowCellPaddingY) noexcept
+		{
+			const auto padding = (std::max)(a_rowCellPaddingY, 0.0f);
+			auto result = a_containerRect;
+			result.minY = (std::min)(
+				a_containerRect.minY + padding,
+				a_containerRect.maxY);
+			result.maxY = (std::max)(
+				a_containerRect.maxY - padding,
+				result.minY);
+			return result;
+		}
+	};
+
+	template<class F>
+	constexpr decltype(auto) VisitRowContentRectProvider(
+		RowContentRectKind a_kind,
+		F&& a_fn)
+	{
+		if (a_kind == RowContentRectKind::kSelectable)
+			return a_fn.template operator()<SelectableRowContentRectProvider>();
+		return a_fn.template operator()<TableRowContentRectProvider>();
+	}
+
+	[[nodiscard]] constexpr RowContentRect ResolveRowContentRect(
+		RowContentRectKind a_kind,
+		const RowContentRect& a_containerRect,
+		float a_rowCellPaddingY = 0.0f) noexcept
+	{
+		return VisitRowContentRectProvider(
+			a_kind,
+			[&]<class Provider>() {
+				return Provider::Resolve(
+					a_containerRect,
+					a_rowCellPaddingY);
+			});
+	}
+
+	[[nodiscard]] constexpr float RowContentOffsetY(
+		float a_rowHeight,
+		const RowContentMetrics& a_content,
+		RowContentMetric a_metric) noexcept
+	{
+		const auto rowHeight = (std::max)(a_rowHeight, 0.0f);
+		const auto contentHeight = (std::max)(a_content.height, 0.0f);
+		const auto boxOffset = (std::max)(
 			(rowHeight - contentHeight) * 0.5f,
+			0.0f);
+		if (a_metric != RowContentMetric::kOptical ||
+			a_rowHeight <= 0.0f ||
+			a_content.height <= 0.0f ||
+			a_content.opticalMaxY <= a_content.opticalMinY ||
+			a_content.opticalScale <= 0.0f)
+			return boxOffset;
+		return (std::max)(
+			rowHeight * 0.5f -
+				(a_content.opticalMinY + a_content.opticalMaxY) *
+					a_content.opticalScale * 0.5f,
 			0.0f);
 	}
 
-	[[nodiscard]] constexpr float OpticalTextOffsetY(
-		float a_rowHeight,
-		float a_fontSize,
-		float a_referenceMinY,
-		float a_referenceMaxY,
-		float a_scale) noexcept
+	struct RowContentLayout
 	{
-		const auto boxOffset = CenterOffsetY(a_rowHeight, a_fontSize);
-		if (a_rowHeight <= 0.0f ||
-			a_fontSize <= 0.0f ||
-			a_referenceMaxY <= a_referenceMinY ||
-			a_scale <= 0.0f)
-			return boxOffset;
-		const auto origin = ResolveCenteredGlyphOrigin(
-			0.0f,
-			a_rowHeight * 0.5f,
-			0.0f,
-			a_referenceMinY,
-			0.0f,
-			a_referenceMaxY,
-			a_scale);
-		return origin.y;
+		float leadingMinX{ 0.0f };
+		float iconMinX{ 0.0f };
+		float textMinX{ 0.0f };
+		float clipMaxX{ 0.0f };
+
+		constexpr bool operator==(const RowContentLayout&) const noexcept = default;
+	};
+
+	[[nodiscard]] constexpr RowContentLayout ResolveRowContentLayout(
+		float a_rowMinX,
+		float a_rowMaxX,
+		float a_framePaddingX,
+		float a_slotSize,
+		float a_leadingSpacing,
+		float a_iconSpacing,
+		bool a_hasLeadingSlot,
+		bool a_hasIconSlot,
+		float a_trailingWidth) noexcept
+	{
+		const auto rowMaxX = (std::max)(a_rowMaxX, a_rowMinX);
+		const auto framePaddingX = (std::max)(a_framePaddingX, 0.0f);
+		const auto slotSize = (std::max)(a_slotSize, 0.0f);
+		const auto leadingSpacing = (std::max)(a_leadingSpacing, 0.0f);
+		const auto iconSpacing = (std::max)(a_iconSpacing, 0.0f);
+		const auto trailingWidth = (std::max)(a_trailingWidth, 0.0f);
+		auto cursor = a_rowMinX + framePaddingX;
+		const auto leadingMinX = cursor;
+		if (a_hasLeadingSlot)
+			cursor += slotSize + leadingSpacing;
+		const auto iconMinX = cursor;
+		if (a_hasIconSlot)
+			cursor += slotSize + iconSpacing;
+		return {
+			leadingMinX,
+			iconMinX,
+			cursor,
+			(std::max)(rowMaxX - trailingWidth, a_rowMinX)
+		};
 	}
 
 	[[nodiscard]] constexpr float FooterRowAdjustmentY(
