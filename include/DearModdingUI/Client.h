@@ -8,10 +8,12 @@
 #include <DearModdingUI/ImGuiForward.h>
 #endif
 
+#include <DearModdingUI/SettingsActions.h>
 #include <DearModdingUI/Win32Discovery.h>
 
 #include <algorithm>
 #include <atomic>
+#include <cmath>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
@@ -24,6 +26,7 @@
 #include <string_view>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace dmui
@@ -49,6 +52,432 @@ namespace dmui
 	{};
 
 	inline constexpr ForwardingClientTag kForwardingClient{};
+
+	using SettingValue = std::variant<bool, double, int64_t, uint64_t, std::string>;
+
+	template <class T>
+	concept SettingValueAlternative =
+		std::same_as<std::remove_cvref_t<T>, bool> ||
+		std::same_as<std::remove_cvref_t<T>, double> ||
+		std::same_as<std::remove_cvref_t<T>, int64_t> ||
+		std::same_as<std::remove_cvref_t<T>, uint64_t> ||
+		std::same_as<std::remove_cvref_t<T>, std::string>;
+
+	template <class T>
+	concept NumericSettingValue =
+		std::same_as<std::remove_cvref_t<T>, double> ||
+		std::same_as<std::remove_cvref_t<T>, int64_t> ||
+		std::same_as<std::remove_cvref_t<T>, uint64_t>;
+
+	enum class SettingApplyTiming : uint8_t
+	{
+		kImmediate,
+		kNextLaunch
+	};
+
+	template <NumericSettingValue T>
+	struct NumericSettingRange
+	{
+		std::optional<T> minimum;
+		std::optional<T> maximum;
+	};
+
+	struct CheckboxSettingControl
+	{};
+
+	template <NumericSettingValue T>
+	struct NumericSettingControl
+	{
+		std::optional<NumericSettingRange<T>> range;
+		std::string format;
+		float dragSpeed{};
+	};
+
+	using DoubleSettingControl = NumericSettingControl<double>;
+	using SignedSettingControl = NumericSettingControl<int64_t>;
+	using UnsignedSettingControl = NumericSettingControl<uint64_t>;
+
+	struct TextSettingControl
+	{
+		size_t bufferCapacity{ 512 };
+	};
+
+	struct ChoiceSettingOption
+	{
+		std::string value;
+		std::string label;
+	};
+
+	struct ChoiceSettingControl
+	{
+		std::vector<ChoiceSettingOption> options;
+	};
+
+	struct ReadOnlySettingControl
+	{
+		// Custom drawing is restricted to read-only visualization and must not mutate setting state.
+		std::function<void()> draw;
+	};
+
+	struct UnsupportedSettingControl
+	{
+		uint32_t kind{};
+	};
+
+	using SettingControl = std::variant<
+		CheckboxSettingControl,
+		DoubleSettingControl,
+		SignedSettingControl,
+		UnsignedSettingControl,
+		TextSettingControl,
+		ChoiceSettingControl,
+		ReadOnlySettingControl,
+		UnsupportedSettingControl>;
+
+	enum class SettingControlKind : uint8_t
+	{
+		kCheckbox,
+		kDouble,
+		kSigned,
+		kUnsigned,
+		kText,
+		kChoice,
+		kReadOnly,
+		kUnsupported
+	};
+
+	struct SettingControlPresentation
+	{
+		SettingControlKind kind{ SettingControlKind::kUnsupported };
+		bool supported{};
+		bool editable{};
+		bool resetVisible{};
+
+		constexpr bool operator==(
+			const SettingControlPresentation&) const noexcept = default;
+	};
+
+	[[nodiscard]] inline SettingControlPresentation ResolveSettingControlPresentation(
+		const SettingControl& a_control) noexcept
+	{
+		if (a_control.valueless_by_exception())
+			return {};
+		switch (a_control.index())
+		{
+		case 0:
+			return { SettingControlKind::kCheckbox, true, true, true };
+		case 1:
+			return { SettingControlKind::kDouble, true, true, true };
+		case 2:
+			return { SettingControlKind::kSigned, true, true, true };
+		case 3:
+			return { SettingControlKind::kUnsigned, true, true, true };
+		case 4:
+			return { SettingControlKind::kText, true, true, true };
+		case 5:
+			return { SettingControlKind::kChoice, true, true, true };
+		case 6:
+			return { SettingControlKind::kReadOnly, true, false, false };
+		default:
+			return {};
+		}
+	}
+
+	[[nodiscard]] inline bool SettingValueMatchesControl(
+		const SettingControl& a_control,
+		const SettingValue& a_value) noexcept
+	{
+		switch (ResolveSettingControlPresentation(a_control).kind)
+		{
+		case SettingControlKind::kCheckbox:
+			return std::holds_alternative<bool>(a_value);
+		case SettingControlKind::kDouble:
+			return std::holds_alternative<double>(a_value);
+		case SettingControlKind::kSigned:
+			return std::holds_alternative<int64_t>(a_value);
+		case SettingControlKind::kUnsigned:
+			return std::holds_alternative<uint64_t>(a_value);
+		case SettingControlKind::kText:
+		case SettingControlKind::kChoice:
+			return std::holds_alternative<std::string>(a_value);
+		default:
+			return false;
+		}
+	}
+
+	enum class NumericSettingWidget : uint8_t
+	{
+		kInput,
+		kDrag,
+		kSlider
+	};
+
+	template <NumericSettingValue T>
+	[[nodiscard]] constexpr NumericSettingWidget ResolveNumericSettingWidget(
+		const NumericSettingControl<T>& a_control) noexcept
+	{
+		if (!a_control.range)
+			return NumericSettingWidget::kInput;
+		if (a_control.range->minimum && a_control.range->maximum)
+			return NumericSettingWidget::kSlider;
+		return NumericSettingWidget::kDrag;
+	}
+
+	template <NumericSettingValue T>
+	[[nodiscard]] inline T ClampSettingNumber(
+		T a_value,
+		T a_default,
+		const std::optional<NumericSettingRange<T>>& a_range) noexcept
+	{
+		if constexpr (std::same_as<T, double>)
+		{
+			if (!std::isfinite(a_value))
+				a_value = std::isfinite(a_default) ? a_default : 0.0;
+		}
+		if (!a_range)
+			return a_value;
+
+		auto minimum = a_range->minimum;
+		auto maximum = a_range->maximum;
+		if constexpr (std::same_as<T, double>)
+		{
+			if (minimum && !std::isfinite(*minimum))
+				minimum.reset();
+			if (maximum && !std::isfinite(*maximum))
+				maximum.reset();
+		}
+		if (minimum && maximum && *maximum < *minimum)
+			std::swap(minimum, maximum);
+		if (minimum)
+			a_value = (std::max)(a_value, *minimum);
+		if (maximum)
+			a_value = (std::min)(a_value, *maximum);
+		return a_value;
+	}
+
+	struct SettingBinding
+	{
+		// get runs on the render thread only for visible rows and must be cheap, pure, and non-blocking.
+		std::function<SettingValue()> get;
+		// set runs there too and returns the effective value; callbacks may throw, but must not reenter drawing, register, select pages, or perform blocking I/O.
+		std::function<SettingValue(SettingValue)> set;
+	};
+
+	template <class Get>
+	using SettingGetterValue =
+		std::remove_cvref_t<std::invoke_result_t<std::decay_t<Get>&>>;
+
+	template <class Get, class Set>
+	concept SettingBindingCallbacks =
+		std::invocable<std::decay_t<Get>&> &&
+		SettingValueAlternative<SettingGetterValue<Get>> &&
+		std::invocable<std::decay_t<Set>&, SettingGetterValue<Get>> &&
+		std::same_as<
+			std::remove_cvref_t<
+				std::invoke_result_t<
+					std::decay_t<Set>&,
+					SettingGetterValue<Get>>>,
+			SettingGetterValue<Get>>;
+
+	template <class Get, class Set>
+		requires SettingBindingCallbacks<Get, Set>
+	[[nodiscard]] inline SettingBinding BindSetting(
+		Get&& a_get,
+		Set&& a_set)
+	{
+		using T = SettingGetterValue<Get>;
+		return {
+			[get = std::decay_t<Get>{ std::forward<Get>(a_get) }]() mutable {
+				return SettingValue{ std::invoke(get) };
+			},
+			[set = std::decay_t<Set>{ std::forward<Set>(a_set) }](
+				SettingValue a_value) mutable {
+				return SettingValue{
+					std::invoke(set, std::get<T>(std::move(a_value)))
+				};
+			}
+		};
+	}
+
+	struct SettingDescriptor
+	{
+		std::string id;
+		std::string label;
+		std::string description;
+		SettingControl control{ UnsupportedSettingControl{} };
+		SettingValue defaultValue{ false };
+		SettingBinding binding;
+		SettingApplyTiming applyTiming{ SettingApplyTiming::kNextLaunch };
+		std::function<bool()> isVisible;
+		std::function<bool()> isEnabled;
+		std::function<std::string()> resolveLabel;
+		std::function<bool()> isDirty;
+		std::function<bool()> isModified;
+		bool showReset{ true };
+	};
+
+	struct SettingFilter
+	{
+		std::string search;
+		bool modifiedOnly{};
+	};
+
+	struct SettingFilterOptions
+	{
+		bool showSearch{ true };
+		bool showModifiedOnly{ true };
+		std::string searchHint{ "Search settings..." };
+	};
+
+	struct SettingGroup
+	{
+		std::string id;
+		std::string label;
+		char32_t glyph{};
+		std::vector<SettingDescriptor> settings;
+		bool expanded{ true };
+	};
+
+	struct SettingsPageActionCallbacks
+	{
+		// Discrete action callbacks run only on button presses, so persistence I/O is allowed here.
+		bool showReset{};
+		std::function<void()> reset;
+		std::function<void()> revert;
+		std::function<void()> apply;
+	};
+
+	struct SettingsPageNote
+	{
+		std::string text;
+		bool muted{};
+	};
+
+	[[nodiscard]] inline bool MatchesSettingFilter(
+		const SettingDescriptor& a_setting,
+		std::string_view a_label,
+		bool a_modified,
+		const SettingFilter& a_filter) noexcept
+	{
+		if (a_filter.modifiedOnly && !a_modified)
+			return false;
+		if (a_filter.search.empty())
+			return true;
+
+		const auto contains = [&](std::string_view a_text) noexcept {
+			if (a_filter.search.size() > a_text.size())
+				return false;
+			const auto fold = [](unsigned char a_character) noexcept {
+				return a_character >= 'A' && a_character <= 'Z' ?
+					static_cast<unsigned char>(a_character - 'A' + 'a') :
+					a_character;
+			};
+			for (size_t offset = 0;
+				 offset + a_filter.search.size() <= a_text.size();
+				 ++offset)
+			{
+				auto matches = true;
+				for (size_t index = 0; index < a_filter.search.size(); ++index)
+				{
+					if (fold(static_cast<unsigned char>(a_text[offset + index])) !=
+						fold(static_cast<unsigned char>(a_filter.search[index])))
+					{
+						matches = false;
+						break;
+					}
+				}
+				if (matches)
+					return true;
+			}
+			return false;
+		};
+
+		return contains(a_setting.id) ||
+			contains(a_label) ||
+			contains(a_setting.description);
+	}
+
+	[[nodiscard]] inline bool IsSettingDefault(
+		const SettingDescriptor& a_setting,
+		const SettingValue& a_value) noexcept
+	{
+		return SettingValueMatchesControl(a_setting.control, a_setting.defaultValue) &&
+			SettingValueMatchesControl(a_setting.control, a_value) &&
+			a_value == a_setting.defaultValue;
+	}
+
+	[[nodiscard]] inline std::optional<SettingValue> ResetSettingToDefault(
+		const SettingDescriptor& a_setting)
+	{
+		const auto presentation =
+			ResolveSettingControlPresentation(a_setting.control);
+		if (!presentation.editable ||
+			!a_setting.binding.set ||
+			!SettingValueMatchesControl(
+				a_setting.control,
+				a_setting.defaultValue))
+			return std::nullopt;
+
+		auto effective = a_setting.binding.set(a_setting.defaultValue);
+		if (!SettingValueMatchesControl(a_setting.control, effective))
+			throw std::bad_variant_access{};
+		return effective;
+	}
+
+	[[nodiscard]] inline size_t SettingsPendingCount(
+		const std::vector<SettingGroup>& a_groups)
+	{
+		size_t pending{};
+		for (const auto& group : a_groups)
+		{
+			for (const auto& setting : group.settings)
+			{
+				if (setting.isDirty && setting.isDirty())
+					++pending;
+			}
+		}
+		return pending;
+	}
+
+	class Client;
+
+	struct SettingsPage
+	{
+		std::vector<SettingGroup> groups;
+		SettingsPageActionCallbacks actions;
+		SettingFilterOptions filterOptions;
+		std::vector<SettingsPageNote> notes;
+		std::function<void()> prepare;
+		SettingFilter filter;
+
+		[[nodiscard]] size_t PendingCount() const
+		{
+			return SettingsPendingCount(groups);
+		}
+
+		[[nodiscard]] bool IsDirty() const
+		{
+			return PendingCount() != 0;
+		}
+
+		void ResetToDefaults() const
+		{
+			for (const auto& group : groups)
+			{
+				for (const auto& setting : group.settings)
+					(void)ResetSettingToDefault(setting);
+			}
+		}
+
+		void ResetView() noexcept
+		{
+			filter = {};
+			for (auto& group : groups)
+				group.expanded = true;
+		}
+
+		void Draw(Client& a_client);
+	};
 
 	// IMPORTANT: Client instances must outlive the game session because DMUI v1 cannot unregister callbacks.
 	class Client
@@ -177,6 +606,42 @@ namespace dmui
 
 				registration.handle = handle;
 				return handle;
+			}
+			catch (const std::bad_alloc&)
+			{
+				Fail(DMUI_RESULT_RESOURCE_EXHAUSTED);
+				return std::nullopt;
+			}
+			catch (...)
+			{
+				Fail(DMUI_RESULT_CALLBACK_FAILED);
+				return std::nullopt;
+			}
+		}
+
+		template <class Page>
+			requires std::same_as<std::remove_cvref_t<Page>, SettingsPage>
+		[[nodiscard]] std::optional<DMUI_PageHandle> AddSettingsPage(
+			const char* a_id,
+			const char* a_displayName,
+			const char* a_category,
+			Page&& a_page,
+			const char* a_summary = nullptr,
+			int32_t a_sortKey = 0) noexcept
+		{
+			try
+			{
+				SettingsPage page{ std::forward<Page>(a_page) };
+				return AddPage(
+					a_id,
+					a_displayName,
+					a_category,
+					[this, page = std::move(page)]() mutable {
+						page.Draw(*this);
+					},
+					a_summary,
+					a_sortKey,
+					DMUI_PAGE_KIND_SETTINGS);
 			}
 			catch (const std::bad_alloc&)
 			{
@@ -982,6 +1447,522 @@ namespace dmui
 		std::deque<FrameObserverRegistration> frameObservers_;
 		std::deque<HotkeyActionRegistration> hotkeyActions_;
 	};
+
+	namespace setting_detail
+	{
+		template <NumericSettingValue T>
+		[[nodiscard]] constexpr ImGuiDataType NumericDataType() noexcept
+		{
+			if constexpr (std::same_as<T, double>)
+				return ImGuiDataType_Double;
+			else if constexpr (std::same_as<T, int64_t>)
+				return ImGuiDataType_S64;
+			else
+				return ImGuiDataType_U64;
+		}
+
+		template <NumericSettingValue T>
+		[[nodiscard]] constexpr const char* DefaultNumericFormat() noexcept
+		{
+			if constexpr (std::same_as<T, double>)
+				return "%.3f";
+			else if constexpr (std::same_as<T, int64_t>)
+				return "%lld";
+			else
+				return "%llu";
+		}
+
+		template <NumericSettingValue T>
+		[[nodiscard]] constexpr float DefaultDragSpeed() noexcept
+		{
+			return std::same_as<T, double> ? 0.01f : 1.0f;
+		}
+
+		template <NumericSettingValue T>
+		[[nodiscard]] T DrawNumericSetting(
+			const NumericSettingControl<T>& a_control,
+			T a_value,
+			T a_default,
+			bool& a_changed) noexcept
+		{
+			auto edited = a_value;
+			const auto type = NumericDataType<T>();
+			const auto* format = a_control.format.empty() ?
+				DefaultNumericFormat<T>() :
+				a_control.format.c_str();
+			switch (ResolveNumericSettingWidget(a_control))
+			{
+			case NumericSettingWidget::kInput:
+				a_changed = ImGui::InputScalar(
+					"##Value",
+					type,
+					&edited,
+					nullptr,
+					nullptr,
+					format);
+				break;
+			case NumericSettingWidget::kDrag:
+			{
+				const auto* minimum =
+					a_control.range && a_control.range->minimum ?
+					&*a_control.range->minimum :
+					nullptr;
+				const auto* maximum =
+					a_control.range && a_control.range->maximum ?
+					&*a_control.range->maximum :
+					nullptr;
+				a_changed = ImGui::DragScalar(
+					"##Value",
+					type,
+					&edited,
+					a_control.dragSpeed > 0.0f ?
+						a_control.dragSpeed :
+						DefaultDragSpeed<T>(),
+					minimum,
+					maximum,
+					format,
+					ImGuiSliderFlags_AlwaysClamp);
+				break;
+			}
+			case NumericSettingWidget::kSlider:
+			{
+				auto minimum = *a_control.range->minimum;
+				auto maximum = *a_control.range->maximum;
+				if (maximum < minimum)
+					std::swap(minimum, maximum);
+				a_changed = ImGui::SliderScalar(
+					"##Value",
+					type,
+					&edited,
+					&minimum,
+					&maximum,
+					format,
+					ImGuiSliderFlags_AlwaysClamp);
+				break;
+			}
+			}
+			return a_changed ?
+				ClampSettingNumber(edited, a_default, a_control.range) :
+				a_value;
+		}
+
+		[[nodiscard]] inline SettingValue AcceptSettingValue(
+			const SettingDescriptor& a_setting,
+			SettingValue a_value)
+		{
+			auto effective = a_setting.binding.set(std::move(a_value));
+			if (!SettingValueMatchesControl(a_setting.control, effective))
+				throw std::bad_variant_access{};
+			return effective;
+		}
+
+		[[nodiscard]] inline SettingValue DrawBoundSetting(
+			const SettingDescriptor& a_setting,
+			SettingValue a_value)
+		{
+			auto changed = false;
+			SettingValue edited = a_value;
+			switch (ResolveSettingControlPresentation(a_setting.control).kind)
+			{
+			case SettingControlKind::kCheckbox:
+			{
+				auto value = std::get<bool>(a_value);
+				changed = ImGui::Checkbox("##Value", &value);
+				edited = value;
+				break;
+			}
+			case SettingControlKind::kDouble:
+				edited = DrawNumericSetting(
+					std::get<DoubleSettingControl>(a_setting.control),
+					std::get<double>(a_value),
+					std::get<double>(a_setting.defaultValue),
+					changed);
+				break;
+			case SettingControlKind::kSigned:
+				edited = DrawNumericSetting(
+					std::get<SignedSettingControl>(a_setting.control),
+					std::get<int64_t>(a_value),
+					std::get<int64_t>(a_setting.defaultValue),
+					changed);
+				break;
+			case SettingControlKind::kUnsigned:
+				edited = DrawNumericSetting(
+					std::get<UnsignedSettingControl>(a_setting.control),
+					std::get<uint64_t>(a_value),
+					std::get<uint64_t>(a_setting.defaultValue),
+					changed);
+				break;
+			case SettingControlKind::kText:
+			{
+				const auto& control =
+					std::get<TextSettingControl>(a_setting.control);
+				const auto& value = std::get<std::string>(a_value);
+				const auto capacity = (std::max)(
+					(std::max)(control.bufferCapacity, size_t{ 2 }),
+					value.size() + 1);
+				std::vector<char> buffer(capacity);
+				std::copy(value.begin(), value.end(), buffer.begin());
+				changed = ImGui::InputText(
+					"##Value",
+					buffer.data(),
+					buffer.size());
+				if (changed)
+					edited = std::string{ buffer.data() };
+				break;
+			}
+			case SettingControlKind::kChoice:
+			{
+				const auto& control =
+					std::get<ChoiceSettingControl>(a_setting.control);
+				const auto& value = std::get<std::string>(a_value);
+				if (ImGui::BeginCombo("##Value", value.c_str()))
+				{
+					for (const auto& option : control.options)
+					{
+						const auto selected = option.value == value;
+						const auto visibleLabel = option.label.empty() ?
+							option.value :
+							option.label;
+						const auto itemLabel =
+							visibleLabel + "###" + option.value;
+						if (ImGui::Selectable(itemLabel.c_str(), selected))
+						{
+							edited = option.value;
+							changed = option.value != value;
+						}
+						if (selected)
+							ImGui::SetItemDefaultFocus();
+					}
+					ImGui::EndCombo();
+				}
+				break;
+			}
+			default:
+				break;
+			}
+			return changed ?
+				AcceptSettingValue(a_setting, std::move(edited)) :
+				a_value;
+		}
+
+		[[nodiscard]] inline std::string ResolveSettingLabel(
+			const SettingDescriptor& a_setting)
+		{
+			if (a_setting.resolveLabel)
+			{
+				auto label = a_setting.resolveLabel();
+				if (!label.empty())
+					return label;
+			}
+			return a_setting.label.empty() ? a_setting.id : a_setting.label;
+		}
+
+		[[nodiscard]] inline std::string ResolveSettingDescription(
+			const SettingDescriptor& a_setting)
+		{
+			auto description = a_setting.description;
+			if (a_setting.applyTiming != SettingApplyTiming::kImmediate)
+				return description;
+			if (!description.empty())
+				description.push_back('\n');
+			description += "Applies now.";
+			return description;
+		}
+
+		struct EvaluatedSetting
+		{
+			const SettingDescriptor* setting;
+			std::string label;
+		};
+
+		[[nodiscard]] inline std::vector<EvaluatedSetting> MatchingSettings(
+			const SettingGroup& a_group,
+			const SettingFilter& a_filter)
+		{
+			std::vector<EvaluatedSetting> matches;
+			matches.reserve(a_group.settings.size());
+			for (const auto& setting : a_group.settings)
+			{
+				if (setting.isVisible && !setting.isVisible())
+					continue;
+				auto label = ResolveSettingLabel(setting);
+				const auto modified = a_filter.modifiedOnly &&
+					setting.isModified &&
+					setting.isModified();
+				if (!MatchesSettingFilter(
+						setting,
+						label,
+						modified,
+						a_filter))
+					continue;
+				matches.push_back({ &setting, std::move(label) });
+			}
+			return matches;
+		}
+
+		[[nodiscard]] inline bool EndFallbackRow(Client& a_client)
+		{
+			ImGui::BeginDisabled();
+			ImGui::TextUnformatted("Unsupported setting control.");
+			ImGui::EndDisabled();
+			return a_client.EndSettingsRow(false, false).has_value();
+		}
+
+		[[nodiscard]] inline bool DrawSettingRow(
+			Client& a_client,
+			const EvaluatedSetting& a_evaluated)
+		{
+			const auto& setting = *a_evaluated.setting;
+			const auto description = ResolveSettingDescription(setting);
+			const auto row = a_client.BeginSettingsRow(
+				setting.id.c_str(),
+				a_evaluated.label.c_str(),
+				description.c_str());
+			if (!row)
+				return false;
+			if (!*row)
+				return true;
+
+			const auto presentation =
+				ResolveSettingControlPresentation(setting.control);
+			if (!presentation.supported)
+				return EndFallbackRow(a_client);
+
+			const auto enabled =
+				!setting.isEnabled || setting.isEnabled();
+			if (presentation.kind == SettingControlKind::kReadOnly)
+			{
+				const auto& control =
+					std::get<ReadOnlySettingControl>(setting.control);
+				if (!control.draw)
+					return EndFallbackRow(a_client);
+				ImGui::BeginDisabled(!enabled);
+				control.draw();
+				ImGui::EndDisabled();
+				return a_client.EndSettingsRow(false, false).has_value();
+			}
+
+			if (!setting.binding.get ||
+				!setting.binding.set ||
+				!SettingValueMatchesControl(
+					setting.control,
+					setting.defaultValue))
+				return EndFallbackRow(a_client);
+
+			auto value = setting.binding.get();
+			if (!SettingValueMatchesControl(setting.control, value))
+				throw std::bad_variant_access{};
+			ImGui::BeginDisabled(!enabled);
+			value = DrawBoundSetting(setting, std::move(value));
+			ImGui::EndDisabled();
+
+			const auto resetVisible =
+				setting.showReset && presentation.resetVisible;
+			const auto resetEnabled =
+				resetVisible && enabled && !IsSettingDefault(setting, value);
+			const auto reset =
+				a_client.EndSettingsRow(resetVisible, resetEnabled);
+			if (!reset)
+				return false;
+			if (*reset)
+				(void)ResetSettingToDefault(setting);
+			return true;
+		}
+
+		[[nodiscard]] inline bool DrawSettingGroup(
+			Client& a_client,
+			SettingGroup& a_group,
+			const SettingFilter& a_filter)
+		{
+			auto matches = MatchingSettings(a_group, a_filter);
+			if (matches.empty())
+				return true;
+
+			const auto key = a_group.id.empty() ? a_group.label : a_group.id;
+			const auto label = a_group.label.empty() ? key : a_group.label;
+			const auto glyph = a_group.glyph ?
+				a_group.glyph :
+				DearModdingUI::ResolveIconGlyph(
+					DearModdingUI::IconKind::kCategory,
+					label);
+			if (!a_client.DrawCollapsingSectionHeader(
+					key.c_str(),
+					label.c_str(),
+					glyph,
+					a_group.expanded,
+					matches.size()))
+				return false;
+			if (!a_group.expanded)
+				return true;
+
+			const auto tableId = "##dmui.settings.table." + key;
+			const auto table = a_client.BeginSettingsTable(tableId.c_str());
+			if (!table)
+				return false;
+			if (!*table)
+				return true;
+			for (const auto& setting : matches)
+			{
+				if (!DrawSettingRow(a_client, setting))
+					return false;
+			}
+			if (!a_client.EndSettingsTable())
+				return false;
+			ImGui::Spacing();
+			return true;
+		}
+
+		[[nodiscard]] inline bool DrawPageActions(SettingsPage& a_page)
+		{
+			struct Action
+			{
+				DearModdingUI::SettingsAction action;
+				std::string label;
+				std::string tooltip;
+			};
+
+			std::vector<Action> actions;
+			actions.reserve(3);
+			if (a_page.actions.showReset || a_page.actions.reset)
+			{
+				actions.push_back({
+					DearModdingUI::SettingsAction::kReset,
+					"Reset all###dmui.settings.reset",
+					"Load every setting's default into the draft."
+				});
+			}
+			if (a_page.actions.revert)
+			{
+				actions.push_back({
+					DearModdingUI::SettingsAction::kRevert,
+					"Revert###dmui.settings.revert",
+					"Discard pending edits and restore committed values."
+				});
+			}
+			if (a_page.actions.apply)
+			{
+				actions.push_back({
+					DearModdingUI::SettingsAction::kApply,
+					{},
+					{}
+				});
+			}
+			if (actions.empty())
+				return true;
+
+			const auto pending = a_page.PendingCount();
+			for (auto& action : actions)
+			{
+				if (action.action != DearModdingUI::SettingsAction::kApply)
+					continue;
+				action.label =
+					"Apply (" + std::to_string(pending) +
+						")###dmui.settings.apply";
+				action.tooltip =
+					"Apply " + std::to_string(pending) + " pending " +
+					(pending == 1 ? "change." : "changes.");
+			}
+
+			const auto dirty = pending != 0;
+			std::optional<DearModdingUI::SettingsAction> pressed;
+			for (size_t index = 0; index < actions.size(); ++index)
+			{
+				if (index != 0)
+					ImGui::SameLine();
+				const auto& action = actions[index];
+				const auto enabled = DearModdingUI::SettingsActionEnabled(
+					action.action,
+					dirty);
+				ImGui::BeginDisabled(!enabled);
+				const auto selected = ImGui::Button(action.label.c_str());
+				ImGui::EndDisabled();
+				if (ImGui::IsItemHovered(
+						ImGuiHoveredFlags_AllowWhenDisabled |
+						ImGuiHoveredFlags_DelayNormal))
+					ImGui::SetTooltip("%s", action.tooltip.c_str());
+				if (selected && enabled)
+					pressed = action.action;
+			}
+			ImGui::Spacing();
+
+			if (!pressed)
+				return true;
+			switch (*pressed)
+			{
+			case DearModdingUI::SettingsAction::kReset:
+				if (a_page.actions.reset)
+					a_page.actions.reset();
+				else
+					a_page.ResetToDefaults();
+				break;
+			case DearModdingUI::SettingsAction::kRevert:
+				a_page.actions.revert();
+				break;
+			case DearModdingUI::SettingsAction::kApply:
+				a_page.actions.apply();
+				break;
+			}
+			return true;
+		}
+
+		[[nodiscard]] inline bool DrawPageFilter(
+			Client& a_client,
+			SettingsPage& a_page) noexcept
+		{
+			auto drewFilter = false;
+			if (a_page.filterOptions.showSearch)
+			{
+				const auto search = a_client.DrawSearchInput(
+					"dmui.settings.search",
+					a_page.filterOptions.searchHint.c_str(),
+					a_page.filter.search);
+				if (!search)
+					return false;
+				drewFilter = true;
+			}
+			if (a_page.filterOptions.showModifiedOnly)
+			{
+				(void)ImGui::Checkbox(
+					"Modified only###dmui.settings.modified",
+					&a_page.filter.modifiedOnly);
+				drewFilter = true;
+			}
+			if (drewFilter)
+				ImGui::Spacing();
+			return true;
+		}
+
+		inline void DrawPageNotes(const SettingsPage& a_page) noexcept
+		{
+			for (const auto& note : a_page.notes)
+			{
+				if (note.muted)
+					ImGui::TextDisabled("%s", note.text.c_str());
+				else
+					ImGui::TextWrapped("%s", note.text.c_str());
+			}
+			if (!a_page.notes.empty())
+				ImGui::Spacing();
+		}
+	}
+
+	inline void SettingsPage::Draw(Client& a_client)
+	{
+		if (prepare)
+			prepare();
+		if (!setting_detail::DrawPageActions(*this) ||
+			!setting_detail::DrawPageFilter(a_client, *this))
+			return;
+		setting_detail::DrawPageNotes(*this);
+		for (auto& group : groups)
+		{
+			if (!setting_detail::DrawSettingGroup(
+					a_client,
+					group,
+					filter))
+				return;
+		}
+	}
 
 	class FontGuard
 	{
