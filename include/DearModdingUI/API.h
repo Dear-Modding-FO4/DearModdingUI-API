@@ -76,6 +76,7 @@ typedef uint32_t DMUI_Result;
 #define DMUI_RESULT_MALFORMED_ACTION_ID 24u
 #define DMUI_RESULT_UNKNOWN_CHORD 25u
 #define DMUI_RESULT_WRONG_THREAD 26u
+#define DMUI_RESULT_UNBALANCED_BRACKET 27u
 
 static inline const char* DMUI_ResultToString(DMUI_Result result) DMUI_NOEXCEPT
 {
@@ -135,6 +136,8 @@ static inline const char* DMUI_ResultToString(DMUI_Result result) DMUI_NOEXCEPT
 		return "UNKNOWN_CHORD";
 	case DMUI_RESULT_WRONG_THREAD:
 		return "WRONG_THREAD";
+	case DMUI_RESULT_UNBALANCED_BRACKET:
+		return "UNBALANCED_BRACKET";
 	default:
 		return "UNKNOWN";
 	}
@@ -397,6 +400,16 @@ typedef struct DMUI_StyleMetrics
 #define DMUI_STYLE_METRICS_1_0_SIZE \
 	((uint32_t)(offsetof(DMUI_StyleMetrics, scrollbarSize) + sizeof(float)))
 
+typedef struct DMUI_SettingsRowOptions
+{
+	uint32_t structSize;
+	uint32_t resetVisible;
+	uint32_t resetEnabled;
+} DMUI_SettingsRowOptions;
+
+#define DMUI_SETTINGS_ROW_OPTIONS_1_0_SIZE \
+	((uint32_t)(offsetof(DMUI_SettingsRowOptions, resetEnabled) + sizeof(uint32_t)))
+
 typedef struct DMUI_ThemeColors
 {
 	uint32_t structSize;
@@ -527,6 +540,23 @@ typedef DMUI_Result (DMUI_CALL *DMUI_QueryHotkeyBindingFn)(
 typedef DMUI_Result (DMUI_CALL *DMUI_UnregisterHotkeyActionFn)(
 	DMUI_ClientHandle client,
 	DMUI_HotkeyActionHandle action) DMUI_NOEXCEPT;
+// Settings-table brackets are render-thread-only, non-nestable, and valid only in page callbacks.
+typedef DMUI_Result (DMUI_CALL *DMUI_BeginSettingsTableFn)(
+	DMUI_ClientHandle client,
+	const char* id,
+	uint32_t* visible) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_BeginSettingsRowFn)(
+	DMUI_ClientHandle client,
+	const char* id,
+	const char* label,
+	const char* description,
+	uint32_t* visible) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_EndSettingsRowFn)(
+	DMUI_ClientHandle client,
+	const DMUI_SettingsRowOptions* options,
+	uint32_t* resetPressed) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_EndSettingsTableFn)(
+	DMUI_ClientHandle client) DMUI_NOEXCEPT;
 
 typedef struct DMUI_HostAPI
 {
@@ -558,6 +588,10 @@ typedef struct DMUI_HostAPI
 	DMUI_RegisterHotkeyActionFn registerHotkeyAction;
 	DMUI_QueryHotkeyBindingFn queryHotkeyBinding;
 	DMUI_UnregisterHotkeyActionFn unregisterHotkeyAction;
+	DMUI_BeginSettingsTableFn beginSettingsTable;
+	DMUI_BeginSettingsRowFn beginSettingsRow;
+	DMUI_EndSettingsRowFn endSettingsRow;
+	DMUI_EndSettingsTableFn endSettingsTable;
 } DMUI_HostAPI;
 
 #define DMUI_HOST_API_SELECT_PAGE_SIZE \
@@ -598,6 +632,14 @@ typedef struct DMUI_HostAPI
 	((uint32_t)(offsetof(DMUI_HostAPI, queryHotkeyBinding) + sizeof(DMUI_QueryHotkeyBindingFn)))
 #define DMUI_HOST_API_UNREGISTER_HOTKEY_ACTION_SIZE \
 	((uint32_t)(offsetof(DMUI_HostAPI, unregisterHotkeyAction) + sizeof(DMUI_UnregisterHotkeyActionFn)))
+#define DMUI_HOST_API_BEGIN_SETTINGS_TABLE_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, beginSettingsTable) + sizeof(DMUI_BeginSettingsTableFn)))
+#define DMUI_HOST_API_BEGIN_SETTINGS_ROW_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, beginSettingsRow) + sizeof(DMUI_BeginSettingsRowFn)))
+#define DMUI_HOST_API_END_SETTINGS_ROW_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, endSettingsRow) + sizeof(DMUI_EndSettingsRowFn)))
+#define DMUI_HOST_API_END_SETTINGS_TABLE_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, endSettingsTable) + sizeof(DMUI_EndSettingsTableFn)))
 
 #if defined(_MSC_VER)
 #pragma pack(pop)

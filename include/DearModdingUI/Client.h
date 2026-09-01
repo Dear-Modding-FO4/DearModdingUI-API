@@ -676,6 +676,99 @@ namespace dmui
 			return extent;
 		}
 
+		[[nodiscard]] std::optional<bool> BeginSettingsTable(const char* a_id) noexcept
+		{
+			if (!IsConnected())
+			{
+				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+				return std::nullopt;
+			}
+			if (api_->structSize < DMUI_HOST_API_BEGIN_SETTINGS_TABLE_SIZE ||
+				!api_->beginSettingsTable)
+			{
+				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
+				return std::nullopt;
+			}
+
+			uint32_t visible{};
+			lastResult_ = api_->beginSettingsTable(clientHandle_, a_id, &visible);
+			if (lastResult_ != DMUI_RESULT_OK)
+				return std::nullopt;
+			return visible != 0;
+		}
+
+		[[nodiscard]] std::optional<bool> BeginSettingsRow(
+			const char* a_id,
+			const char* a_label,
+			const char* a_description) noexcept
+		{
+			if (!IsConnected())
+			{
+				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+				return std::nullopt;
+			}
+			if (api_->structSize < DMUI_HOST_API_BEGIN_SETTINGS_ROW_SIZE ||
+				!api_->beginSettingsRow)
+			{
+				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
+				return std::nullopt;
+			}
+
+			uint32_t visible{};
+			lastResult_ = api_->beginSettingsRow(
+				clientHandle_,
+				a_id,
+				a_label,
+				a_description,
+				&visible);
+			if (lastResult_ != DMUI_RESULT_OK)
+				return std::nullopt;
+			return visible != 0;
+		}
+
+		[[nodiscard]] std::optional<bool> EndSettingsRow(
+			bool a_resetVisible,
+			bool a_resetEnabled) noexcept
+		{
+			if (!IsConnected())
+			{
+				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+				return std::nullopt;
+			}
+			if (api_->structSize < DMUI_HOST_API_END_SETTINGS_ROW_SIZE ||
+				!api_->endSettingsRow)
+			{
+				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
+				return std::nullopt;
+			}
+
+			const DMUI_SettingsRowOptions options{
+				sizeof(DMUI_SettingsRowOptions),
+				a_resetVisible ? 1u : 0u,
+				a_resetEnabled ? 1u : 0u
+			};
+			uint32_t resetPressed{};
+			lastResult_ = api_->endSettingsRow(
+				clientHandle_,
+				&options,
+				&resetPressed);
+			if (lastResult_ != DMUI_RESULT_OK)
+				return std::nullopt;
+			return resetPressed != 0;
+		}
+
+		[[nodiscard]] bool EndSettingsTable() noexcept
+		{
+			if (!IsConnected())
+				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			if (api_->structSize < DMUI_HOST_API_END_SETTINGS_TABLE_SIZE ||
+				!api_->endSettingsTable)
+				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
+
+			lastResult_ = api_->endSettingsTable(clientHandle_);
+			return lastResult_ == DMUI_RESULT_OK;
+		}
+
 		[[nodiscard]] bool SelectPage(DMUI_PageHandle a_page) noexcept
 		{
 			if (!IsConnected())
