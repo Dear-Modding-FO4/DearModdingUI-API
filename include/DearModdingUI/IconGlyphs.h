@@ -29,6 +29,7 @@ namespace DearModdingUI
 		inline constexpr char32_t kFloppyDisk{ 0xE248 };
 		inline constexpr char32_t kGear{ 0xE270 };
 		inline constexpr char32_t kGameController{ 0xE26E };
+		inline constexpr char32_t kMagnifyingGlass{ 0xE30C };
 		inline constexpr char32_t kMonitor{ 0xE32E };
 		inline constexpr char32_t kPalette{ 0xE6C8 };
 		inline constexpr char32_t kShieldCheck{ 0xE40C };
