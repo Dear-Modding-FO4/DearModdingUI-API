@@ -8,22 +8,7 @@
 #include <DearModdingUI/ImGuiForward.h>
 #endif
 
-#if !defined(NOMINMAX)
-#define NOMINMAX
-#endif
-
-#if !defined(WIN32_LEAN_AND_MEAN)
-#define WIN32_LEAN_AND_MEAN
-#endif
-
-#include <Windows.h>
-
-// Windows macros that collide with REX::W32 symbols in consuming plugins.
-#undef ERROR
-#undef MEM_RELEASE
-#undef MAX_PATH
-#undef PAGE_EXECUTE_READWRITE
-#undef IMAGE_DOS_SIGNATURE
+#include <DearModdingUI/Win32Discovery.h>
 
 #include <algorithm>
 #include <atomic>
@@ -32,6 +17,7 @@
 #include <cstdint>
 #include <deque>
 #include <functional>
+#include <memory>
 #include <new>
 #include <optional>
 #include <string>
@@ -202,6 +188,113 @@ namespace dmui
 				Fail(DMUI_RESULT_CALLBACK_FAILED);
 				return std::nullopt;
 			}
+		}
+
+		template <class Callable>
+			requires std::invocable<std::decay_t<Callable>&, bool>
+		[[nodiscard]] std::optional<DMUI_HotkeyActionHandle> AddHotkeyAction(
+			const char* a_id,
+			const char* a_displayName,
+			const char* a_suggestedDefaultChord,
+			Callable&& a_callback) noexcept
+		{
+			if (!IsConnected())
+			{
+				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+				return std::nullopt;
+			}
+			if (api_->structSize < DMUI_HOST_API_REGISTER_HOTKEY_ACTION_SIZE ||
+				!api_->registerHotkeyAction)
+			{
+				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
+				return std::nullopt;
+			}
+
+			try
+			{
+				std::function<void(bool)> callback{ std::forward<Callable>(a_callback) };
+				if (!callback)
+				{
+					Fail(DMUI_RESULT_INVALID_ARGUMENT);
+					return std::nullopt;
+				}
+
+				auto callbackState = std::make_unique<HotkeyCallbackState>();
+				callbackState->callback = std::move(callback);
+				hotkeyActions_.push_back(
+					{ DMUI_INVALID_HOTKEY_ACTION_HANDLE, std::move(callbackState) });
+				auto& registration = hotkeyActions_.back();
+				DMUI_HotkeyActionDescriptor descriptor{};
+				descriptor.structSize = sizeof(descriptor);
+				descriptor.id = a_id;
+				descriptor.displayName = a_displayName;
+				descriptor.suggestedDefaultChord = a_suggestedDefaultChord;
+				descriptor.callback = &InvokeHotkey;
+				descriptor.userData = registration.callback.get();
+
+				DMUI_HotkeyActionHandle handle{ DMUI_INVALID_HOTKEY_ACTION_HANDLE };
+				lastResult_ = api_->registerHotkeyAction(
+					clientHandle_, &descriptor, &handle);
+				if (lastResult_ != DMUI_RESULT_OK)
+				{
+					hotkeyActions_.pop_back();
+					return std::nullopt;
+				}
+				registration.handle = handle;
+				return handle;
+			}
+			catch (const std::bad_alloc&)
+			{
+				Fail(DMUI_RESULT_RESOURCE_EXHAUSTED);
+				return std::nullopt;
+			}
+			catch (...)
+			{
+				Fail(DMUI_RESULT_CALLBACK_FAILED);
+				return std::nullopt;
+			}
+		}
+
+		[[nodiscard]] std::optional<DMUI_HotkeyBindingInfo> QueryHotkeyBinding(
+			DMUI_HotkeyActionHandle a_action) noexcept
+		{
+			if (!IsConnected())
+			{
+				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+				return std::nullopt;
+			}
+			if (api_->structSize < DMUI_HOST_API_QUERY_HOTKEY_BINDING_SIZE ||
+				!api_->queryHotkeyBinding)
+			{
+				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
+				return std::nullopt;
+			}
+			DMUI_HotkeyBindingInfo binding{};
+			binding.structSize = sizeof(binding);
+			lastResult_ = api_->queryHotkeyBinding(clientHandle_, a_action, &binding);
+			if (lastResult_ != DMUI_RESULT_OK)
+				return std::nullopt;
+			return binding;
+		}
+
+		bool UnregisterHotkeyAction(DMUI_HotkeyActionHandle a_action) noexcept
+		{
+			if (!IsConnected())
+				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			if (api_->structSize < DMUI_HOST_API_UNREGISTER_HOTKEY_ACTION_SIZE ||
+				!api_->unregisterHotkeyAction)
+				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
+			const auto registration = std::ranges::find(
+				hotkeyActions_, a_action, &HotkeyActionRegistration::handle);
+			if (registration == hotkeyActions_.end())
+				return Fail(DMUI_RESULT_ACTION_NOT_FOUND);
+			lastResult_ = api_->unregisterHotkeyAction(clientHandle_, a_action);
+			if (lastResult_ != DMUI_RESULT_OK)
+				return false;
+			auto* callback = registration->callback.release();
+			hotkeyActions_.erase(registration);
+			ReleaseHotkeyCallback(callback);
+			return true;
 		}
 
 		template <class Callable>
@@ -657,7 +750,6 @@ namespace dmui
 
 	private:
 		using GetHostAPIFn = const DMUI_HostAPI* (DMUI_CALL*)(uint32_t) noexcept;
-		using EnumProcessModulesFn = BOOL(WINAPI*)(HANDLE, HMODULE*, DWORD, LPDWORD);
 
 		struct PageRegistration
 		{
@@ -677,6 +769,18 @@ namespace dmui
 			std::function<void()> callback;
 		};
 
+		struct HotkeyCallbackState
+		{
+			std::atomic<uint32_t> references{ 1 };
+			std::function<void(bool)> callback;
+		};
+
+		struct HotkeyActionRegistration
+		{
+			DMUI_HotkeyActionHandle handle;
+			std::unique_ptr<HotkeyCallbackState> callback;
+		};
+
 		static constexpr uint32_t kRegisterClientSize =
 			static_cast<uint32_t>(offsetof(DMUI_HostAPI, registerClient) + sizeof(DMUI_RegisterClientFn));
 		static constexpr uint32_t kRegisterPageSize =
@@ -688,44 +792,7 @@ namespace dmui
 
 		[[nodiscard]] static GetHostAPIFn FindHostAPI() noexcept
 		{
-			const auto kernel32 = GetModuleHandleW(L"kernel32.dll");
-			if (!kernel32)
-				return nullptr;
-
-			const auto enumerateModules = reinterpret_cast<EnumProcessModulesFn>(
-				GetProcAddress(kernel32, "K32EnumProcessModules"));
-			if (!enumerateModules)
-				return nullptr;
-
-			try
-			{
-				std::vector<HMODULE> modules(128);
-				for (;;)
-				{
-					DWORD bytesNeeded{};
-					const auto bytesAvailable = static_cast<DWORD>(modules.size() * sizeof(HMODULE));
-					if (!enumerateModules(GetCurrentProcess(), modules.data(), bytesAvailable, &bytesNeeded))
-						return nullptr;
-					if (bytesNeeded > bytesAvailable)
-					{
-						modules.resize((bytesNeeded + sizeof(HMODULE) - 1) / sizeof(HMODULE));
-						continue;
-					}
-
-					const auto moduleCount = bytesNeeded / sizeof(HMODULE);
-					for (std::size_t index = 0; index < moduleCount; ++index)
-					{
-						const auto address = GetProcAddress(modules[index], "DMUI_GetHostAPI");
-						if (address)
-							return reinterpret_cast<GetHostAPIFn>(address);
-					}
-					return nullptr;
-				}
-			}
-			catch (...)
-			{
-				return nullptr;
-			}
+			return detail::ResolveHostSymbol<GetHostAPIFn>("DMUI_GetHostAPI");
 		}
 
 		[[nodiscard]] bool CanRegisterPage() noexcept
@@ -783,6 +850,31 @@ namespace dmui
 			{}
 		}
 
+		static void DMUI_CALL InvokeHotkey(
+			DMUI_HotkeyActionHandle,
+			uint32_t a_pressed,
+			void* a_userData) noexcept
+		{
+			auto* const state = static_cast<HotkeyCallbackState*>(a_userData);
+			if (!state)
+				return;
+			state->references.fetch_add(1, std::memory_order_relaxed);
+			try
+			{
+				state->callback(a_pressed != 0);
+			}
+			catch (...)
+			{}
+			ReleaseHotkeyCallback(state);
+		}
+
+		static void ReleaseHotkeyCallback(HotkeyCallbackState* a_state) noexcept
+		{
+			if (a_state &&
+				a_state->references.fetch_sub(1, std::memory_order_acq_rel) == 1)
+				delete a_state;
+		}
+
 		std::string id_;
 		std::string displayName_;
 		Version version_;
@@ -795,6 +887,7 @@ namespace dmui
 		std::deque<PageRegistration> pages_;
 		std::deque<ActionRegistration> actions_;
 		std::deque<FrameObserverRegistration> frameObservers_;
+		std::deque<HotkeyActionRegistration> hotkeyActions_;
 	};
 
 	class FontGuard

@@ -4,23 +4,8 @@
 // Call ImGui::IsForwardVersionCompatible() before drawing to detect ABI drift.
 // cimgui API definitions are distributed under the MIT License.
 
-#if !defined(NOMINMAX)
-#define NOMINMAX
-#endif
-
-#if !defined(WIN32_LEAN_AND_MEAN)
-#define WIN32_LEAN_AND_MEAN
-#endif
-
-#include <Windows.h>
-
 #include <DearModdingUI/API.h>
-
-#undef ERROR
-#undef MEM_RELEASE
-#undef MAX_PATH
-#undef PAGE_EXECUTE_READWRITE
-#undef IMAGE_DOS_SIGNATURE
+#include <DearModdingUI/Win32Discovery.h>
 
 #include <cfloat>
 #include <cstdarg>
@@ -352,17 +337,10 @@ namespace ImGui
 
 	namespace detail
 	{
-		inline HMODULE HostModule() noexcept
-		{
-			static const HMODULE module = GetModuleHandleW(L"DearModdingUI.dll");
-			return module;
-		}
-
 		template <class Function>
 		Function Resolve(const char* symbol) noexcept
 		{
-			const auto module = HostModule();
-			return module ? reinterpret_cast<Function>(GetProcAddress(module, symbol)) : nullptr;
+			return dmui::detail::ResolveHostSymbol<Function>(symbol);
 		}
 	}
 

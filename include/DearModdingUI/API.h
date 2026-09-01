@@ -73,6 +73,9 @@ typedef uint32_t DMUI_Result;
 #define DMUI_RESULT_RENDERER_BUSY 21u
 #define DMUI_RESULT_DUPLICATE_ACTION_ID 22u
 #define DMUI_RESULT_ACTION_NOT_FOUND 23u
+#define DMUI_RESULT_MALFORMED_ACTION_ID 24u
+#define DMUI_RESULT_UNKNOWN_CHORD 25u
+#define DMUI_RESULT_WRONG_THREAD 26u
 
 static inline const char* DMUI_ResultToString(DMUI_Result result) DMUI_NOEXCEPT
 {
@@ -126,6 +129,12 @@ static inline const char* DMUI_ResultToString(DMUI_Result result) DMUI_NOEXCEPT
 		return "DUPLICATE_ACTION_ID";
 	case DMUI_RESULT_ACTION_NOT_FOUND:
 		return "ACTION_NOT_FOUND";
+	case DMUI_RESULT_MALFORMED_ACTION_ID:
+		return "MALFORMED_ACTION_ID";
+	case DMUI_RESULT_UNKNOWN_CHORD:
+		return "UNKNOWN_CHORD";
+	case DMUI_RESULT_WRONG_THREAD:
+		return "WRONG_THREAD";
 	default:
 		return "UNKNOWN";
 	}
@@ -172,6 +181,15 @@ typedef uint32_t DMUI_SettingsAction;
 #define DMUI_SETTINGS_ACTION_REVERT 1u
 #define DMUI_SETTINGS_ACTION_APPLY 2u
 
+typedef uint32_t DMUI_HotkeyBindingState;
+
+#define DMUI_HOTKEY_BINDING_BOUND 0u
+#define DMUI_HOTKEY_BINDING_UNBOUND_USER 1u
+#define DMUI_HOTKEY_BINDING_UNBOUND_DEFAULT_CONFLICT 2u
+#define DMUI_HOTKEY_BINDING_UNBOUND_NEVER_SET 3u
+#define DMUI_HOTKEY_BINDING_UNBOUND_OVERRIDE_CONFLICT 4u
+#define DMUI_HOTKEY_BINDING_UNBOUND_INVALID_OVERRIDE 5u
+
 typedef uint32_t DMUI_ClientCapabilities;
 
 #define DMUI_CLIENT_CAPABILITY_NONE 0u
@@ -181,11 +199,13 @@ typedef uint64_t DMUI_ClientHandle;
 typedef uint64_t DMUI_PageHandle;
 typedef uint64_t DMUI_ActionHandle;
 typedef uint64_t DMUI_FrameObserverHandle;
+typedef uint64_t DMUI_HotkeyActionHandle;
 
 #define DMUI_INVALID_CLIENT_HANDLE ((DMUI_ClientHandle)0u)
 #define DMUI_INVALID_PAGE_HANDLE ((DMUI_PageHandle)0u)
 #define DMUI_INVALID_ACTION_HANDLE ((DMUI_ActionHandle)0u)
 #define DMUI_INVALID_FRAME_OBSERVER_HANDLE ((DMUI_FrameObserverHandle)0u)
+#define DMUI_INVALID_HOTKEY_ACTION_HANDLE ((DMUI_HotkeyActionHandle)0u)
 
 #if defined(_MSC_VER)
 #pragma pack(push, 8)
@@ -260,6 +280,18 @@ typedef void (DMUI_CALL *DMUI_PageDrawCallback)(void* userData);
 typedef void (DMUI_CALL *DMUI_ActionCallback)(void* userData);
 // Frame callbacks run on the render thread and cannot be unregistered in DMUI v1.
 typedef void (DMUI_CALL *DMUI_FrameCallback)(void* userData);
+// Hotkey callbacks run on the render thread, beside frame observers.
+// Handlers must return promptly: blocking I/O or long work costs frame time directly.
+// Edges dispatch FIFO, are never collapsed, and persist across stalled frames.
+// Auto-repeat is coalesced, so each physical press delivers exactly one press edge.
+// On overflow the bounded queue drops and logs only whole press/release pairs.
+// Unregistering cancels queued edges, so the pair guarantee ends when the action is removed.
+// A callback may unregister its own action; keep userData valid until that callback returns.
+// Otherwise clients own userData and must keep it valid until unregister returns.
+typedef void (DMUI_CALL *DMUI_HotkeyCallback)(
+	DMUI_HotkeyActionHandle action,
+	uint32_t pressed,
+	void* userData);
 
 typedef struct DMUI_ClientDescriptor
 {
@@ -307,6 +339,23 @@ typedef struct DMUI_FrameObserverDescriptor
 	DMUI_FrameCallback callback;
 	void* userData;
 } DMUI_FrameObserverDescriptor;
+
+typedef struct DMUI_HotkeyActionDescriptor
+{
+	uint32_t structSize;
+	const char* id;
+	const char* displayName;
+	const char* suggestedDefaultChord;
+	DMUI_HotkeyCallback callback;
+	void* userData;
+} DMUI_HotkeyActionDescriptor;
+
+typedef struct DMUI_HotkeyBindingInfo
+{
+	uint32_t structSize;
+	DMUI_HotkeyBindingState state;
+	char chord[32];
+} DMUI_HotkeyBindingInfo;
 
 typedef struct DMUI_HostStateInfo
 {
@@ -460,6 +509,24 @@ typedef DMUI_Result (DMUI_CALL *DMUI_QueryVideoMemoryFn)(
 	DMUI_ClientHandle client,
 	uint64_t* used,
 	uint64_t* budget) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_RegisterHotkeyActionFn)(
+	DMUI_ClientHandle client,
+	const DMUI_HotkeyActionDescriptor* descriptor,
+	DMUI_HotkeyActionHandle* action) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_QueryHotkeyBindingFn)(
+	DMUI_ClientHandle client,
+	DMUI_HotkeyActionHandle action,
+	DMUI_HotkeyBindingInfo* binding) DMUI_NOEXCEPT;
+// Registration accepts any thread; unregister must run on the render thread, or returns
+// DMUI_RESULT_WRONG_THREAD. The asymmetry exists for userData lifetime, not container safety:
+// dispatch also runs on the render thread, so no callback can be in flight when unregister returns.
+// No later callback for the action runs after unregister returns successfully.
+// The saved override remains orphaned and is reapplied if the action is registered again.
+// A key held across unregister releases against the old handle, so a re-registered action
+// never receives a release edge for a press it did not observe.
+typedef DMUI_Result (DMUI_CALL *DMUI_UnregisterHotkeyActionFn)(
+	DMUI_ClientHandle client,
+	DMUI_HotkeyActionHandle action) DMUI_NOEXCEPT;
 
 typedef struct DMUI_HostAPI
 {
@@ -488,6 +555,9 @@ typedef struct DMUI_HostAPI
 	DMUI_RegisterFrameObserverFn registerFrameObserver;
 	DMUI_QueryVideoMemoryFn queryVideoMemory;
 	DMUI_DrawBulletTextFn drawBulletText;
+	DMUI_RegisterHotkeyActionFn registerHotkeyAction;
+	DMUI_QueryHotkeyBindingFn queryHotkeyBinding;
+	DMUI_UnregisterHotkeyActionFn unregisterHotkeyAction;
 } DMUI_HostAPI;
 
 #define DMUI_HOST_API_SELECT_PAGE_SIZE \
@@ -522,6 +592,12 @@ typedef struct DMUI_HostAPI
 	((uint32_t)(offsetof(DMUI_HostAPI, queryVideoMemory) + sizeof(DMUI_QueryVideoMemoryFn)))
 #define DMUI_HOST_API_DRAW_BULLET_TEXT_SIZE \
 	((uint32_t)(offsetof(DMUI_HostAPI, drawBulletText) + sizeof(DMUI_DrawBulletTextFn)))
+#define DMUI_HOST_API_REGISTER_HOTKEY_ACTION_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, registerHotkeyAction) + sizeof(DMUI_RegisterHotkeyActionFn)))
+#define DMUI_HOST_API_QUERY_HOTKEY_BINDING_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, queryHotkeyBinding) + sizeof(DMUI_QueryHotkeyBindingFn)))
+#define DMUI_HOST_API_UNREGISTER_HOTKEY_ACTION_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, unregisterHotkeyAction) + sizeof(DMUI_UnregisterHotkeyActionFn)))
 
 #if defined(_MSC_VER)
 #pragma pack(pop)
