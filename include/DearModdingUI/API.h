@@ -541,6 +541,8 @@ typedef DMUI_Result (DMUI_CALL *DMUI_UnregisterHotkeyActionFn)(
 	DMUI_ClientHandle client,
 	DMUI_HotkeyActionHandle action) DMUI_NOEXCEPT;
 // Settings-table brackets are render-thread-only, non-nestable, and valid only in page callbacks.
+// A successful begin with visible == 0 opens no bracket and requires no matching end.
+// A successful begin with visible != 0 must be matched by its corresponding end.
 typedef DMUI_Result (DMUI_CALL *DMUI_BeginSettingsTableFn)(
 	DMUI_ClientHandle client,
 	const char* id,

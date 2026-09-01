@@ -1159,8 +1159,9 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (api_->structSize < DMUI_HOST_API_BEGIN_SETTINGS_TABLE_SIZE ||
-				!api_->beginSettingsTable)
+			if (api_->structSize < DMUI_HOST_API_END_SETTINGS_TABLE_SIZE ||
+				!api_->beginSettingsTable ||
+				!api_->endSettingsTable)
 			{
 				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
@@ -1183,8 +1184,9 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (api_->structSize < DMUI_HOST_API_BEGIN_SETTINGS_ROW_SIZE ||
-				!api_->beginSettingsRow)
+			if (api_->structSize < DMUI_HOST_API_END_SETTINGS_ROW_SIZE ||
+				!api_->beginSettingsRow ||
+				!api_->endSettingsRow)
 			{
 				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
@@ -1711,12 +1713,89 @@ namespace dmui
 			return matches;
 		}
 
-		[[nodiscard]] inline bool EndFallbackRow(Client& a_client)
+		class SettingsRowBracket
 		{
-			ImGui::BeginDisabled();
-			ImGui::TextUnformatted("Unsupported setting control.");
-			ImGui::EndDisabled();
-			return a_client.EndSettingsRow(false, false).has_value();
+		public:
+			explicit SettingsRowBracket(Client& a_client) noexcept :
+				m_client(a_client)
+			{}
+
+			~SettingsRowBracket() noexcept
+			{
+				if (m_active)
+					(void)m_client.EndSettingsRow(false, false);
+			}
+
+			[[nodiscard]] std::optional<bool> End(
+				bool a_resetVisible,
+				bool a_resetEnabled) noexcept
+			{
+				m_active = false;
+				return m_client.EndSettingsRow(
+					a_resetVisible,
+					a_resetEnabled);
+			}
+
+			SettingsRowBracket(const SettingsRowBracket&) = delete;
+			SettingsRowBracket(SettingsRowBracket&&) = delete;
+
+		private:
+			Client& m_client;
+			bool m_active{ true };
+		};
+
+		class SettingsTableBracket
+		{
+		public:
+			explicit SettingsTableBracket(Client& a_client) noexcept :
+				m_client(a_client)
+			{}
+
+			~SettingsTableBracket() noexcept
+			{
+				if (m_active)
+					(void)m_client.EndSettingsTable();
+			}
+
+			[[nodiscard]] bool End() noexcept
+			{
+				m_active = false;
+				return m_client.EndSettingsTable();
+			}
+
+			SettingsTableBracket(const SettingsTableBracket&) = delete;
+			SettingsTableBracket(SettingsTableBracket&&) = delete;
+
+		private:
+			Client& m_client;
+			bool m_active{ true };
+		};
+
+		class DisabledScope
+		{
+		public:
+			explicit DisabledScope(bool a_disabled = true) noexcept
+			{
+				ImGui::BeginDisabled(a_disabled);
+			}
+
+			~DisabledScope() noexcept
+			{
+				ImGui::EndDisabled();
+			}
+
+			DisabledScope(const DisabledScope&) = delete;
+			DisabledScope(DisabledScope&&) = delete;
+		};
+
+		[[nodiscard]] inline bool EndFallbackRow(
+			SettingsRowBracket& a_row)
+		{
+			{
+				const DisabledScope disabled;
+				ImGui::TextUnformatted("Unsupported setting control.");
+			}
+			return a_row.End(false, false).has_value();
 		}
 
 		[[nodiscard]] inline bool DrawSettingRow(
@@ -1733,11 +1812,12 @@ namespace dmui
 				return false;
 			if (!*row)
 				return true;
+			SettingsRowBracket rowBracket{ a_client };
 
 			const auto presentation =
 				ResolveSettingControlPresentation(setting.control);
 			if (!presentation.supported)
-				return EndFallbackRow(a_client);
+				return EndFallbackRow(rowBracket);
 
 			const auto enabled =
 				!setting.isEnabled || setting.isEnabled();
@@ -1746,11 +1826,12 @@ namespace dmui
 				const auto& control =
 					std::get<ReadOnlySettingControl>(setting.control);
 				if (!control.draw)
-					return EndFallbackRow(a_client);
-				ImGui::BeginDisabled(!enabled);
-				control.draw();
-				ImGui::EndDisabled();
-				return a_client.EndSettingsRow(false, false).has_value();
+					return EndFallbackRow(rowBracket);
+				{
+					const DisabledScope disabled{ !enabled };
+					control.draw();
+				}
+				return rowBracket.End(false, false).has_value();
 			}
 
 			if (!setting.binding.get ||
@@ -1758,14 +1839,15 @@ namespace dmui
 				!SettingValueMatchesControl(
 					setting.control,
 					setting.defaultValue))
-				return EndFallbackRow(a_client);
+				return EndFallbackRow(rowBracket);
 
 			auto value = setting.binding.get();
 			if (!SettingValueMatchesControl(setting.control, value))
 				throw std::bad_variant_access{};
-			ImGui::BeginDisabled(!enabled);
-			value = DrawBoundSetting(setting, std::move(value));
-			ImGui::EndDisabled();
+			{
+				const DisabledScope disabled{ !enabled };
+				value = DrawBoundSetting(setting, std::move(value));
+			}
 
 			const auto resetVisible =
 				setting.showReset && presentation.resetVisible;
@@ -1775,7 +1857,7 @@ namespace dmui
 			const auto resetEnabled =
 				resetVisible && enabled && modified;
 			const auto reset =
-				a_client.EndSettingsRow(resetVisible, resetEnabled);
+				rowBracket.End(resetVisible, resetEnabled);
 			if (!reset)
 				return false;
 			if (*reset)
@@ -1815,12 +1897,13 @@ namespace dmui
 				return false;
 			if (!*table)
 				return true;
+			SettingsTableBracket tableBracket{ a_client };
 			for (const auto& setting : matches)
 			{
 				if (!DrawSettingRow(a_client, setting))
 					return false;
 			}
-			if (!a_client.EndSettingsTable())
+			if (!tableBracket.End())
 				return false;
 			ImGui::Spacing();
 			return true;
