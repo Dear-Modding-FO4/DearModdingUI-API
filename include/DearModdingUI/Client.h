@@ -9,9 +9,11 @@
 #endif
 
 #include <DearModdingUI/SettingsActions.h>
+#include <DearModdingUI/VisualDecisions.h>
 #include <DearModdingUI/Win32Discovery.h>
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <cmath>
 #include <concepts>
@@ -347,6 +349,13 @@ namespace dmui
 		std::function<void()> apply;
 	};
 
+	struct SettingsPageActionTooltips
+	{
+		std::string reset;
+		std::string revert;
+		std::function<std::string(size_t)> apply;
+	};
+
 	struct SettingsPageNote
 	{
 		std::string text;
@@ -445,9 +454,11 @@ namespace dmui
 	{
 		std::vector<SettingGroup> groups;
 		SettingsPageActionCallbacks actions;
+		SettingsPageActionTooltips actionTooltips;
 		SettingFilterOptions filterOptions;
 		std::vector<SettingsPageNote> notes;
 		std::function<void()> prepare;
+		std::function<void(SettingsPage&)> prepareView;
 		SettingFilter filter;
 
 		[[nodiscard]] size_t PendingCount() const
@@ -1758,8 +1769,11 @@ namespace dmui
 
 			const auto resetVisible =
 				setting.showReset && presentation.resetVisible;
+			const auto modified = setting.isModified ?
+				setting.isModified() :
+				!IsSettingDefault(setting, value);
 			const auto resetEnabled =
-				resetVisible && enabled && !IsSettingDefault(setting, value);
+				resetVisible && enabled && modified;
 			const auto reset =
 				a_client.EndSettingsRow(resetVisible, resetEnabled);
 			if (!reset)
@@ -1812,77 +1826,206 @@ namespace dmui
 			return true;
 		}
 
-		[[nodiscard]] inline bool DrawPageActions(SettingsPage& a_page)
+		[[nodiscard]] inline bool DrawPageHeader(
+			Client& a_client,
+			SettingsPage& a_page)
 		{
 			struct Action
 			{
 				DearModdingUI::SettingsAction action;
-				std::string label;
+				const char* id;
+				std::string fallbackLabel;
+				const char* widthLabel;
 				std::string tooltip;
 			};
 
-			std::vector<Action> actions;
-			actions.reserve(3);
+			const auto pending = a_page.PendingCount();
+			const auto dirty = pending != 0;
+			std::array<Action, 3> actions{};
+			size_t actionCount{};
 			if (a_page.actions.showReset || a_page.actions.reset)
 			{
-				actions.push_back({
+				actions[actionCount++] = {
 					DearModdingUI::SettingsAction::kReset,
-					"Reset all###dmui.settings.reset",
-					"Load every setting's default into the draft."
-				});
+					"##dmui.settings.reset",
+					"Reset all",
+					"Reset all",
+					a_page.actionTooltips.reset.empty() ?
+						"Reset loads every setting's default into the draft. "
+						"Use Apply to save them." :
+						a_page.actionTooltips.reset
+				};
 			}
 			if (a_page.actions.revert)
 			{
-				actions.push_back({
+				actions[actionCount++] = {
 					DearModdingUI::SettingsAction::kRevert,
-					"Revert###dmui.settings.revert",
-					"Discard pending edits and restore committed values."
-				});
+					"##dmui.settings.revert",
+					"Revert",
+					"Revert",
+					a_page.actionTooltips.revert.empty() ?
+						"Revert discards pending edits and restores committed settings." :
+						a_page.actionTooltips.revert
+				};
 			}
 			if (a_page.actions.apply)
 			{
-				actions.push_back({
+				actions[actionCount++] = {
 					DearModdingUI::SettingsAction::kApply,
-					{},
-					{}
-				});
+					"##dmui.settings.apply",
+					"Apply (" + std::to_string(pending) + ")",
+					"Apply (112)",
+					a_page.actionTooltips.apply ?
+						a_page.actionTooltips.apply(pending) :
+						"Apply saves " + std::to_string(pending) + " pending " +
+							(pending == 1 ? "change." : "changes.")
+				};
 			}
-			if (actions.empty())
+
+			const auto drawFilter =
+				a_page.filterOptions.showSearch ||
+				a_page.filterOptions.showModifiedOnly;
+			if (actionCount == 0 && !drawFilter)
 				return true;
 
-			const auto pending = a_page.PendingCount();
-			for (auto& action : actions)
+			const auto start = ImGui::GetCursorScreenPos();
+			const auto available =
+				(std::max)(ImGui::GetContentRegionAvail().x, 0.0f);
+			float spacing{};
+			float itemSpacingY{};
+			float itemInnerSpacingX{};
+#if defined(IMGUI_VERSION) && defined(IMGUI_VERSION_NUM)
+			const auto& style = ImGui::GetStyle();
+			spacing = style.ItemSpacing.x;
+			itemSpacingY = style.ItemSpacing.y;
+			itemInnerSpacingX = style.ItemInnerSpacing.x;
+#else
+			DMUI_StyleMetrics style{};
+			if (ImGui::GetStyleMetrics(style) != DMUI_RESULT_OK)
+				return false;
+			spacing = style.itemSpacing.x;
+			itemSpacingY = style.itemSpacing.y;
+			itemInnerSpacingX = style.itemInnerSpacing.x;
+#endif
+			const auto frameHeight = ImGui::GetFrameHeight();
+			auto buttonExtent = frameHeight;
+			std::array<float, actions.size()> widths{};
+			if (actionCount != 0)
 			{
-				if (action.action != DearModdingUI::SettingsAction::kApply)
-					continue;
-				action.label =
-					"Apply (" + std::to_string(pending) +
-						")###dmui.settings.apply";
-				action.tooltip =
-					"Apply " + std::to_string(pending) + " pending " +
-					(pending == 1 ? "change." : "changes.");
+				const auto extent = a_client.SettingsActionButtonExtent();
+				if (!extent)
+					return false;
+				buttonExtent = *extent;
+				for (size_t index = 0; index < actionCount; ++index)
+				{
+					const auto width = a_client.SettingsActionButtonWidth(
+						static_cast<DMUI_SettingsAction>(actions[index].action),
+						actions[index].widthLabel,
+						buttonExtent);
+					if (!width)
+						return false;
+					widths[index] = *width;
+				}
+			}
+			const auto widthSum =
+				DearModdingUI::ResolveSettingsActionButtonWidthSum(
+					widths,
+					dirty,
+					pending);
+			const auto layout = DearModdingUI::ResolvePageActionRowLayout(
+				start.x,
+				start.x + available,
+				widthSum,
+				actionCount,
+				spacing);
+			const auto rowHeight = (std::max)(frameHeight, buttonExtent);
+			const auto filterWidth =
+				(std::max)(layout.titleMaxX - start.x, 0.0f);
+
+			auto modifiedInline = true;
+			if (a_page.filterOptions.showSearch)
+			{
+				std::array<char, 256> search{};
+				const auto length = (std::min)(
+					a_page.filter.search.size(),
+					search.size() - 1);
+				std::copy_n(
+					a_page.filter.search.data(),
+					length,
+					search.data());
+				const auto modifiedWidth =
+					a_page.filterOptions.showModifiedOnly ?
+					frameHeight +
+						itemInnerSpacingX +
+						ImGui::CalcTextSize("Modified only").x :
+					0.0f;
+				const auto minimumSearchWidth = ImGui::GetFontSize() * 10.0f;
+				const auto searchWidth = (std::max)(
+					minimumSearchWidth,
+					(std::min)(
+						ImGui::GetFontSize() * 24.0f,
+						filterWidth - modifiedWidth - spacing));
+				ImGui::SetNextItemWidth((std::min)(searchWidth, filterWidth));
+				if (ImGui::InputTextWithHint(
+						"##dmui.settings.search",
+						a_page.filterOptions.searchHint.c_str(),
+						search.data(),
+						search.size()))
+					a_page.filter.search = search.data();
+				if (a_page.filterOptions.showModifiedOnly)
+				{
+					modifiedInline =
+						searchWidth + modifiedWidth + spacing <= filterWidth;
+					if (modifiedInline)
+						ImGui::SameLine();
+					else
+					{
+						ImGui::SetCursorScreenPos({
+							start.x,
+							start.y + rowHeight + itemSpacingY
+						});
+					}
+				}
+			}
+			if (a_page.filterOptions.showModifiedOnly)
+			{
+				(void)ImGui::Checkbox(
+					"Modified only###dmui.settings.modified",
+					&a_page.filter.modifiedOnly);
 			}
 
-			const auto dirty = pending != 0;
 			std::optional<DearModdingUI::SettingsAction> pressed;
-			for (size_t index = 0; index < actions.size(); ++index)
+			auto actionX = layout.actionsMinX;
+			for (size_t index = 0; index < actionCount; ++index)
 			{
-				if (index != 0)
-					ImGui::SameLine();
 				const auto& action = actions[index];
-				const auto enabled = DearModdingUI::SettingsActionEnabled(
-					action.action,
-					dirty);
-				ImGui::BeginDisabled(!enabled);
-				const auto selected = ImGui::Button(action.label.c_str());
-				ImGui::EndDisabled();
-				if (ImGui::IsItemHovered(
-						ImGuiHoveredFlags_AllowWhenDisabled |
-						ImGuiHoveredFlags_DelayNormal))
-					ImGui::SetTooltip("%s", action.tooltip.c_str());
-				if (selected && enabled)
+				const auto selected = a_client.DrawSettingsActionButton(
+					action.id,
+					{
+						actionX,
+						start.y + (rowHeight - buttonExtent) * 0.5f
+					},
+					{ widths[index], buttonExtent },
+					static_cast<DMUI_SettingsAction>(action.action),
+					action.fallbackLabel.c_str(),
+					action.tooltip.c_str(),
+					DearModdingUI::SettingsActionEnabled(
+						action.action,
+						dirty));
+				if (!selected)
+					return false;
+				if (*selected)
 					pressed = action.action;
+				actionX += widths[index] + spacing;
 			}
+
+			auto consumedHeight = rowHeight;
+			if (a_page.filterOptions.showSearch &&
+				a_page.filterOptions.showModifiedOnly &&
+				!modifiedInline)
+				consumedHeight += itemSpacingY + frameHeight;
+			ImGui::SetCursorScreenPos(start);
+			ImGui::Dummy({ available, consumedHeight });
 			ImGui::Spacing();
 
 			if (!pressed)
@@ -1905,33 +2048,6 @@ namespace dmui
 			return true;
 		}
 
-		[[nodiscard]] inline bool DrawPageFilter(
-			Client& a_client,
-			SettingsPage& a_page) noexcept
-		{
-			auto drewFilter = false;
-			if (a_page.filterOptions.showSearch)
-			{
-				const auto search = a_client.DrawSearchInput(
-					"dmui.settings.search",
-					a_page.filterOptions.searchHint.c_str(),
-					a_page.filter.search);
-				if (!search)
-					return false;
-				drewFilter = true;
-			}
-			if (a_page.filterOptions.showModifiedOnly)
-			{
-				(void)ImGui::Checkbox(
-					"Modified only###dmui.settings.modified",
-					&a_page.filter.modifiedOnly);
-				drewFilter = true;
-			}
-			if (drewFilter)
-				ImGui::Spacing();
-			return true;
-		}
-
 		inline void DrawPageNotes(const SettingsPage& a_page) noexcept
 		{
 			for (const auto& note : a_page.notes)
@@ -1950,8 +2066,9 @@ namespace dmui
 	{
 		if (prepare)
 			prepare();
-		if (!setting_detail::DrawPageActions(*this) ||
-			!setting_detail::DrawPageFilter(a_client, *this))
+		if (prepareView)
+			prepareView(*this);
+		if (!setting_detail::DrawPageHeader(a_client, *this))
 			return;
 		setting_detail::DrawPageNotes(*this);
 		for (auto& group : groups)
