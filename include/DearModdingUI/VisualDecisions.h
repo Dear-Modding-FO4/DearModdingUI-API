@@ -355,22 +355,6 @@ namespace DearModdingUI
 		};
 	}
 
-	struct FooterStatusLayout
-	{
-		float metadataMinX{ 0.0f };
-		float metadataMaxX{ 0.0f };
-		float statusMinX{ 0.0f };
-		float statusMaxX{ 0.0f };
-		float dismissMinX{ 0.0f };
-		float dismissMaxX{ 0.0f };
-		float settingsMinX{ 0.0f };
-		float settingsMaxX{ 0.0f };
-		float rowHeight{ 0.0f };
-		float footerHeight{ 0.0f };
-
-		constexpr bool operator==(const FooterStatusLayout&) const noexcept = default;
-	};
-
 	[[nodiscard]] constexpr float ReservedFooterHeight(
 		float a_rowHeight,
 		float a_verticalSpacing,
@@ -393,72 +377,40 @@ namespace DearModdingUI
 			separator;
 	}
 
-	[[nodiscard]] constexpr FooterStatusLayout ResolveFooterStatusLayout(
+	struct FooterControlsLayout
+	{
+		float runMaxX{ 0.0f };
+		float dismissMinX{ 0.0f };
+		float dismissMaxX{ 0.0f };
+		float settingsMinX{ 0.0f };
+		float settingsMaxX{ 0.0f };
+
+		constexpr bool operator==(const FooterControlsLayout&) const noexcept = default;
+	};
+
+	[[nodiscard]] constexpr FooterControlsLayout ResolveFooterControlsLayout(
 		float a_contentMinX,
 		float a_contentMaxX,
 		float a_settingsWidth,
-		float a_metadataMaxX,
-		float a_statusTextWidth,
 		float a_dismissWidth,
-		float a_horizontalSpacing,
-		float a_rowHeight,
-		float a_verticalSpacing,
-		float a_windowPadding,
-		float a_separatorThickness,
-		bool a_hasStatus,
-		bool a_persistentStatus) noexcept
+		float a_horizontalSpacing) noexcept
 	{
-		const auto trailing = ResolveTrailingControlLayout(
+		const auto settings = ResolveTrailingControlLayout(
 			a_contentMinX,
 			a_contentMaxX,
 			a_settingsWidth,
 			a_horizontalSpacing);
-		const auto rowHeight = a_rowHeight > 0.0f ? a_rowHeight : 0.0f;
-		const auto spacing = a_horizontalSpacing > 0.0f ?
-			a_horizontalSpacing :
-			0.0f;
-		const auto metadataLimit = trailing.adjacentMaxX;
-		const auto metadataMax = metadataLimit;
-		const auto metadataRight = (std::min)(
-			(std::max)(a_metadataMaxX, a_contentMinX),
-			metadataMax);
-		const auto statusMin = (std::min)(
-			metadataRight + spacing,
-			metadataMax);
-		const auto availableAfterMetadata = metadataMax - statusMin;
-		const auto dismissWidth = (std::min)(
-			a_hasStatus && a_persistentStatus && a_dismissWidth > 0.0f ?
-				a_dismissWidth :
-				0.0f,
-			availableAfterMetadata);
-		const auto dismissMax = metadataMax;
-		const auto dismissMin = dismissMax - dismissWidth;
-		const auto statusLimit = dismissWidth > 0.0f ?
-			(std::max)(statusMin, dismissMin - spacing) :
-			dismissMin;
-		const auto availableStatusWidth = statusLimit - statusMin;
-		const auto desiredTextWidth = a_hasStatus && a_statusTextWidth > 0.0f ?
-			a_statusTextWidth :
-			0.0f;
-		const auto statusWidth = (std::min)(
-			desiredTextWidth,
-			availableStatusWidth);
-		const auto statusMax = statusMin + statusWidth;
-		return {
+		const auto dismiss = ResolveTrailingControlLayout(
 			a_contentMinX,
-			metadataMax,
-			statusMin,
-			statusMax,
-			dismissMin,
-			dismissMax,
-			trailing.controlMinX,
-			trailing.controlMaxX,
-			rowHeight,
-			ReservedFooterHeight(
-				rowHeight,
-				a_verticalSpacing,
-				a_windowPadding,
-				a_separatorThickness)
+			settings.adjacentMaxX,
+			a_dismissWidth,
+			a_dismissWidth > 0.0f ? a_horizontalSpacing : 0.0f);
+		return {
+			dismiss.adjacentMaxX,
+			dismiss.controlMinX,
+			dismiss.controlMaxX,
+			settings.controlMinX,
+			settings.controlMaxX
 		};
 	}
 
