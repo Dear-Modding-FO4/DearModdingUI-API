@@ -309,7 +309,13 @@ typedef struct DMUI_ClientDescriptor
 	DMUI_HostUnavailableCallback onHostUnavailable;
 	void* userData;
 	DMUI_ClientCapabilities capabilities;
+	const char* iconName;
 } DMUI_ClientDescriptor;
+
+#define DMUI_CLIENT_DESCRIPTOR_1_0_SIZE \
+	((uint32_t)(offsetof(DMUI_ClientDescriptor, capabilities) + sizeof(DMUI_ClientCapabilities)))
+#define DMUI_CLIENT_DESCRIPTOR_ICON_NAME_SIZE \
+	((uint32_t)(offsetof(DMUI_ClientDescriptor, iconName) + sizeof(const char*)))
 
 typedef struct DMUI_PageDescriptor
 {

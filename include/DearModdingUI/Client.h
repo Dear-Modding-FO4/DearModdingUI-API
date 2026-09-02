@@ -495,9 +495,14 @@ namespace dmui
 	{
 	public:
 #if defined(IMGUI_VERSION) && defined(IMGUI_VERSION_NUM)
-		Client(std::string_view a_id, std::string_view a_displayName, Version a_version) :
+		Client(
+			std::string_view a_id,
+			std::string_view a_displayName,
+			Version a_version,
+			std::string_view a_iconName = {}) :
 			id_(a_id),
 			displayName_(a_displayName),
+			iconName_(a_iconName),
 			version_(a_version),
 			fingerprint_(DMUI_MakeImGuiFingerprint())
 		{}
@@ -507,9 +512,11 @@ namespace dmui
 			std::string_view a_id,
 			std::string_view a_displayName,
 			Version a_version,
-			ForwardingClientTag) :
+			ForwardingClientTag,
+			std::string_view a_iconName = {}) :
 			id_(a_id),
 			displayName_(a_displayName),
+			iconName_(a_iconName),
 			version_(a_version)
 		{}
 
@@ -560,6 +567,8 @@ namespace dmui
 			descriptor.onHostUnavailable = &OnHostUnavailable;
 			descriptor.userData = this;
 			descriptor.capabilities = DMUI_CLIENT_CAPABILITY_NONE;
+			descriptor.iconName =
+				iconName_.empty() ? nullptr : iconName_.c_str();
 
 			DMUI_ClientHandle handle{ DMUI_INVALID_CLIENT_HANDLE };
 			lastResult_ = api_->registerClient(&descriptor, &handle);
@@ -1448,6 +1457,7 @@ namespace dmui
 
 		std::string id_;
 		std::string displayName_;
+		std::string iconName_;
 		Version version_;
 		std::optional<DMUI_ImGuiFingerprint> fingerprint_;
 		const DMUI_HostAPI* api_{};

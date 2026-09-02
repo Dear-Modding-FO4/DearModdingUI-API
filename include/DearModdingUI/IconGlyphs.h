@@ -75,6 +75,19 @@ namespace DearModdingUI
 		IconGlyphMapping{ "dearmoddingcommunityshaders", PhosphorGlyph::kSun }
 	};
 
+	inline constexpr std::array kClientIconGlyphs{
+		IconGlyphMapping{ "arrowcounterclockwise", PhosphorGlyph::kArrowCounterClockwise },
+		IconGlyphMapping{ "files", PhosphorGlyph::kFiles },
+		IconGlyphMapping{ "gauge", PhosphorGlyph::kGauge },
+		IconGlyphMapping{ "monitor", PhosphorGlyph::kMonitor },
+		IconGlyphMapping{ "palette", PhosphorGlyph::kPalette },
+		IconGlyphMapping{ "puzzlepiece", PhosphorGlyph::kPuzzlePiece },
+		IconGlyphMapping{ "shieldcheck", PhosphorGlyph::kShieldCheck },
+		IconGlyphMapping{ "squaresfour", PhosphorGlyph::kSquaresFour },
+		IconGlyphMapping{ "sun", PhosphorGlyph::kSun },
+		IconGlyphMapping{ "terminalwindow", PhosphorGlyph::kTerminalWindow }
+	};
+
 	inline constexpr std::array kActionGlyphs{
 		IconGlyphMapping{ "arrowcounterclockwise", PhosphorGlyph::kArrowCounterClockwise },
 		IconGlyphMapping{ "arrow-counter-clockwise", PhosphorGlyph::kArrowCounterClockwise },
@@ -144,7 +157,7 @@ namespace DearModdingUI
 	}
 
 	template <std::size_t Size>
-	[[nodiscard]] inline char32_t FindIconGlyph(
+	[[nodiscard]] inline char32_t FindIconGlyphOrZero(
 		const std::array<IconGlyphMapping, Size>& a_mappings,
 		std::string_view a_name)
 	{
@@ -154,6 +167,16 @@ namespace DearModdingUI
 			if (mapping.slug == slug)
 				return mapping.glyph;
 		}
+		return {};
+	}
+
+	template <std::size_t Size>
+	[[nodiscard]] inline char32_t FindIconGlyph(
+		const std::array<IconGlyphMapping, Size>& a_mappings,
+		std::string_view a_name)
+	{
+		if (const auto glyph = FindIconGlyphOrZero(a_mappings, a_name))
+			return glyph;
 		return PhosphorGlyph::kQuestion;
 	}
 
@@ -173,10 +196,31 @@ namespace DearModdingUI
 		}
 	}
 
+	[[nodiscard]] inline char32_t ResolveIconGlyph(
+		IconKind a_kind,
+		std::string_view a_iconName,
+		std::string_view a_fallbackName) noexcept
+	{
+		if (a_kind != IconKind::kClient)
+			return ResolveIconGlyph(a_kind, a_iconName);
+		try
+		{
+			if (const auto glyph =
+					FindIconGlyphOrZero(kClientIconGlyphs, a_iconName))
+				return glyph;
+			return FindIconGlyph(kClientGlyphs, a_fallbackName);
+		}
+		catch (...)
+		{
+			return static_cast<char32_t>(PhosphorGlyph::kQuestion);
+		}
+	}
+
 	[[nodiscard]] inline char32_t ResolveCategoryIconGlyph(
 		std::string_view a_category,
 		std::string_view a_clientDisplayName,
-		std::string_view a_clientId) noexcept
+		std::string_view a_clientId,
+		std::string_view a_clientIconName = {}) noexcept
 	{
 		try
 		{
@@ -184,7 +228,10 @@ namespace DearModdingUI
 			if (!category.empty() &&
 				(category == NormalizeIconOwnerName(a_clientDisplayName) ||
 					category == NormalizeIconOwnerName(a_clientId)))
-				return FindIconGlyph(kClientGlyphs, a_clientId);
+				return ResolveIconGlyph(
+					IconKind::kClient,
+					a_clientIconName,
+					a_clientId);
 			return FindIconGlyph(kCategoryGlyphs, a_category);
 		}
 		catch (...)
