@@ -423,6 +423,7 @@ namespace dmui
 		std::function<bool()> isModified;
 		bool showReset{ true };
 		RowPresentation presentation;
+		std::function<std::string()> resolveDescription;
 	};
 
 	struct SettingsActionRow
@@ -470,7 +471,9 @@ namespace dmui
 		{
 			size_t value{};
 		};
-		using Row = std::variant<SettingIndex, ActionIndex>;
+		struct DividerRow
+		{};
+		using Row = std::variant<SettingIndex, ActionIndex, DividerRow>;
 		bool expanded{ true };
 		HeadingMode headingMode{ HeadingMode::kAutomatic };
 		std::vector<SettingsActionRow> actionRows;
@@ -2038,7 +2041,9 @@ namespace dmui
 		[[nodiscard]] inline std::string ResolveSettingDescription(
 			const SettingDescriptor& a_setting)
 		{
-			auto description = a_setting.description;
+			auto description = a_setting.resolveDescription ?
+				a_setting.resolveDescription() :
+				a_setting.description;
 			if (a_setting.applyTiming != SettingApplyTiming::kImmediate)
 				return description;
 			if (!description.empty())
@@ -2059,7 +2064,11 @@ namespace dmui
 			std::string label;
 		};
 
-		using EvaluatedRow = std::variant<EvaluatedSetting, EvaluatedAction>;
+		struct EvaluatedDivider
+		{};
+
+		using EvaluatedRow =
+			std::variant<EvaluatedSetting, EvaluatedAction, EvaluatedDivider>;
 
 		[[nodiscard]] inline std::string ResolveActionLabel(
 			const SettingsActionRow& a_action)
@@ -2075,10 +2084,14 @@ namespace dmui
 			const SettingFilter& a_filter)
 		{
 			std::vector<EvaluatedRow> matches;
-			matches.reserve(a_group.settings.size() + a_group.actionRows.size());
-			const auto addSetting = [&](const SettingDescriptor& a_setting) {
+			matches.reserve(a_group.rows.empty() ?
+					a_group.settings.size() + a_group.actionRows.size() :
+					a_group.rows.size());
+			const auto evaluateSetting =
+				[&](const SettingDescriptor& a_setting)
+				-> std::optional<EvaluatedRow> {
 				if (a_setting.isVisible && !a_setting.isVisible())
-					return;
+					return std::nullopt;
 				auto label = ResolveSettingLabel(a_setting);
 				const auto modified = a_filter.modifiedOnly &&
 					a_setting.isModified &&
@@ -2088,50 +2101,82 @@ namespace dmui
 						label,
 						modified,
 						a_filter))
-					return;
-				matches.emplace_back(EvaluatedSetting{
+					return std::nullopt;
+				return EvaluatedSetting{
 					&a_setting,
 					std::move(label)
-				});
+				};
 			};
-			const auto addAction = [&](const SettingsActionRow& a_action) {
+			const auto evaluateAction =
+				[&](const SettingsActionRow& a_action)
+				-> std::optional<EvaluatedRow> {
 				if (a_action.isVisible && !a_action.isVisible())
-					return;
+					return std::nullopt;
 				auto label = ResolveActionLabel(a_action);
 				if (!MatchesActionFilter(a_action, label, a_filter))
-					return;
-				matches.emplace_back(EvaluatedAction{
+					return std::nullopt;
+				return EvaluatedAction{
 					&a_action,
 					std::move(label)
-				});
+				};
 			};
 			if (a_group.rows.empty())
 			{
 				for (const auto& setting : a_group.settings)
-					addSetting(setting);
+					if (auto row = evaluateSetting(setting))
+						matches.push_back(std::move(*row));
 				for (const auto& action : a_group.actionRows)
-					addAction(action);
+					if (auto row = evaluateAction(action))
+						matches.push_back(std::move(*row));
 				return matches;
 			}
+			auto pendingDivider = false;
 			for (const auto& row : a_group.rows)
 			{
 				std::visit(
 					[&](const auto& a_index) {
 						using T = std::remove_cvref_t<decltype(a_index)>;
-						if constexpr (std::same_as<T, SettingGroup::SettingIndex>)
+						if constexpr (std::same_as<T, SettingGroup::DividerRow>)
 						{
-							if (a_index.value < a_group.settings.size())
-								addSetting(a_group.settings[a_index.value]);
+							pendingDivider = !matches.empty();
 						}
 						else
 						{
-							if (a_index.value < a_group.actionRows.size())
-								addAction(a_group.actionRows[a_index.value]);
+							std::optional<EvaluatedRow> evaluated;
+							if constexpr (
+								std::same_as<T, SettingGroup::SettingIndex>)
+							{
+								if (a_index.value < a_group.settings.size())
+									evaluated = evaluateSetting(
+										a_group.settings[a_index.value]);
+							}
+							else
+							{
+								if (a_index.value < a_group.actionRows.size())
+									evaluated = evaluateAction(
+										a_group.actionRows[a_index.value]);
+							}
+							if (!evaluated)
+								return;
+							if (pendingDivider)
+								matches.emplace_back(EvaluatedDivider{});
+							matches.push_back(std::move(*evaluated));
+							pendingDivider = false;
 						}
 					},
 					row);
 			}
 			return matches;
+		}
+
+		[[nodiscard]] inline size_t MatchingContentCount(
+			const std::vector<EvaluatedRow>& a_rows) noexcept
+		{
+			return static_cast<size_t>(std::ranges::count_if(
+				a_rows,
+				[](const EvaluatedRow& a_row) {
+					return !std::holds_alternative<EvaluatedDivider>(a_row);
+				}));
 		}
 
 		class SettingsRowBracket
@@ -2349,7 +2394,7 @@ namespace dmui
 						label.c_str(),
 						glyph,
 						a_group.expanded,
-						matches.size()))
+						MatchingContentCount(matches)))
 					return false;
 				if (!a_group.expanded)
 					return true;
@@ -2369,8 +2414,15 @@ namespace dmui
 						using T = std::remove_cvref_t<decltype(a_evaluated)>;
 						if constexpr (std::same_as<T, EvaluatedSetting>)
 							return DrawSettingRow(a_client, a_evaluated);
-						else
+						else if constexpr (std::same_as<T, EvaluatedAction>)
 							return DrawActionRow(a_client, a_evaluated);
+						else
+						{
+							ImGui::TableNextRow();
+							(void)ImGui::TableSetColumnIndex(0);
+							DrawDivider();
+							return true;
+						}
 					},
 					row);
 				if (!drawn)
