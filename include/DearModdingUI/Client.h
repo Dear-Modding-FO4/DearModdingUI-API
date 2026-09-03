@@ -110,6 +110,12 @@ namespace dmui
 		std::string label;
 	};
 
+	[[nodiscard]] inline const std::string& ResolveChoiceOptionLabel(
+		const ChoiceSettingOption& a_option) noexcept
+	{
+		return a_option.label.empty() ? a_option.value : a_option.label;
+	}
+
 	struct ChoiceSettingControl
 	{
 		std::vector<ChoiceSettingOption> options;
@@ -303,6 +309,12 @@ namespace dmui
 
 	struct SettingDescriptor
 	{
+		enum class LabelMode : uint32_t
+		{
+			kAutomatic,
+			kHidden
+		};
+
 		std::string id;
 		std::string label;
 		std::string description;
@@ -316,6 +328,7 @@ namespace dmui
 		std::function<bool()> isDirty;
 		std::function<bool()> isModified;
 		bool showReset{ true };
+		LabelMode labelMode{ LabelMode::kAutomatic };
 	};
 
 	struct SettingFilter
@@ -333,11 +346,18 @@ namespace dmui
 
 	struct SettingGroup
 	{
+		enum class HeadingMode : uint32_t
+		{
+			kAutomatic,
+			kDivider
+		};
+
 		std::string id;
 		std::string label;
 		char32_t glyph{};
 		std::vector<SettingDescriptor> settings;
 		bool expanded{ true };
+		HeadingMode headingMode{ HeadingMode::kAutomatic };
 	};
 
 	struct SettingsPageActionCallbacks
@@ -1638,14 +1658,20 @@ namespace dmui
 				const auto& control =
 					std::get<ChoiceSettingControl>(a_setting.control);
 				const auto& value = std::get<std::string>(a_value);
-				if (ImGui::BeginCombo("##Value", value.c_str()))
+				const auto selectedOption = std::ranges::find(
+					control.options,
+					value,
+					&ChoiceSettingOption::value);
+				const auto& previewLabel = selectedOption == control.options.end() ?
+					value :
+					ResolveChoiceOptionLabel(*selectedOption);
+				if (ImGui::BeginCombo("##Value", previewLabel.c_str()))
 				{
 					for (const auto& option : control.options)
 					{
 						const auto selected = option.value == value;
-						const auto visibleLabel = option.label.empty() ?
-							option.value :
-							option.label;
+						const auto& visibleLabel =
+							ResolveChoiceOptionLabel(option);
 						const auto itemLabel =
 							visibleLabel + "###" + option.value;
 						if (ImGui::Selectable(itemLabel.c_str(), selected))
@@ -1671,6 +1697,8 @@ namespace dmui
 		[[nodiscard]] inline std::string ResolveSettingLabel(
 			const SettingDescriptor& a_setting)
 		{
+			if (a_setting.labelMode == SettingDescriptor::LabelMode::kHidden)
+				return {};
 			if (a_setting.resolveLabel)
 			{
 				auto label = a_setting.resolveLabel();
@@ -1885,21 +1913,29 @@ namespace dmui
 				return true;
 
 			const auto key = a_group.id.empty() ? a_group.label : a_group.id;
-			const auto label = a_group.label.empty() ? key : a_group.label;
-			const auto glyph = a_group.glyph ?
-				a_group.glyph :
-				DearModdingUI::ResolveIconGlyph(
-					DearModdingUI::IconKind::kCategory,
-					label);
-			if (!a_client.DrawCollapsingSectionHeader(
-					key.c_str(),
-					label.c_str(),
-					glyph,
-					a_group.expanded,
-					matches.size()))
-				return false;
-			if (!a_group.expanded)
-				return true;
+			if (a_group.headingMode == SettingGroup::HeadingMode::kDivider)
+			{
+				if (!a_client.DrawSectionHeader(""))
+					return false;
+			}
+			else
+			{
+				const auto label = a_group.label.empty() ? key : a_group.label;
+				const auto glyph = a_group.glyph ?
+					a_group.glyph :
+					DearModdingUI::ResolveIconGlyph(
+						DearModdingUI::IconKind::kCategory,
+						label);
+				if (!a_client.DrawCollapsingSectionHeader(
+						key.c_str(),
+						label.c_str(),
+						glyph,
+						a_group.expanded,
+						matches.size()))
+					return false;
+				if (!a_group.expanded)
+					return true;
+			}
 
 			const auto tableId = "##dmui.settings.table." + key;
 			const auto table = a_client.BeginSettingsTable(tableId.c_str());
