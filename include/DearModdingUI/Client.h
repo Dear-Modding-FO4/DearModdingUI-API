@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <deque>
 #include <functional>
+#include <limits>
 #include <memory>
 #include <new>
 #include <optional>
@@ -42,6 +43,20 @@ namespace dmui
 		{
 			return DMUI_MAKE_VERSION(major, minor);
 		}
+	};
+
+	enum class PageActivityKind : uint32_t
+	{
+		kActivated = DMUI_PAGE_ACTIVITY_ACTIVATED,
+		kChanged = DMUI_PAGE_ACTIVITY_CHANGED,
+		kDeactivated = DMUI_PAGE_ACTIVITY_DEACTIVATED
+	};
+
+	struct PageActivity
+	{
+		PageActivityKind kind{ PageActivityKind::kActivated };
+		DMUI_PageHandle previousPage{ DMUI_INVALID_PAGE_HANDLE };
+		DMUI_PageHandle activePage{ DMUI_INVALID_PAGE_HANDLE };
 	};
 
 	struct VideoMemoryInfo
@@ -84,6 +99,13 @@ namespace dmui
 		std::optional<T> maximum;
 	};
 
+	template <NumericSettingValue T>
+	struct NumericQuantization
+	{
+		T interval;
+		T origin;
+	};
+
 	struct CheckboxSettingControl
 	{};
 
@@ -91,6 +113,7 @@ namespace dmui
 	struct NumericSettingControl
 	{
 		std::optional<NumericSettingRange<T>> range;
+		std::optional<NumericQuantization<T>> quantization;
 		std::string format;
 		float dragSpeed{};
 	};
@@ -263,6 +286,58 @@ namespace dmui
 		return a_value;
 	}
 
+	template <NumericSettingValue T>
+	[[nodiscard]] inline T QuantizeSettingNumber(
+		T a_value,
+		const std::optional<NumericQuantization<T>>& a_quantization) noexcept
+	{
+		if (!a_quantization)
+			return a_value;
+		const auto interval = a_quantization->interval;
+		const auto origin = a_quantization->origin;
+		if constexpr (std::same_as<T, double>)
+		{
+			if (!std::isfinite(a_value) ||
+				!std::isfinite(interval) ||
+				!std::isfinite(origin) ||
+				interval <= 0.0)
+				return a_value;
+			const auto quantized =
+				origin + std::round((a_value - origin) / interval) * interval;
+			return std::isfinite(quantized) ? quantized : a_value;
+		}
+		else
+		{
+			if (interval <= T{})
+				return a_value;
+			using Unsigned = std::make_unsigned_t<T>;
+			const auto unsignedInterval = static_cast<Unsigned>(interval);
+			const auto above = a_value >= origin;
+			const auto distance = above ?
+				static_cast<Unsigned>(a_value) - static_cast<Unsigned>(origin) :
+				static_cast<Unsigned>(origin) - static_cast<Unsigned>(a_value);
+			auto steps = distance / unsignedInterval;
+			const auto remainder = distance % unsignedInterval;
+			if (remainder >= unsignedInterval - remainder)
+				++steps;
+			const auto room = above ?
+				static_cast<Unsigned>((std::numeric_limits<T>::max)()) -
+					static_cast<Unsigned>(origin) :
+				static_cast<Unsigned>(origin) -
+					static_cast<Unsigned>((std::numeric_limits<T>::min)());
+			if (steps > room / unsignedInterval)
+			{
+				return above ?
+					(std::numeric_limits<T>::max)() :
+					(std::numeric_limits<T>::min)();
+			}
+			const auto offset = steps * unsignedInterval;
+			return above ?
+				static_cast<T>(static_cast<Unsigned>(origin) + offset) :
+				static_cast<T>(static_cast<Unsigned>(origin) - offset);
+		}
+	}
+
 	struct SettingBinding
 	{
 		// get runs on the render thread only for visible rows and must be cheap, pure, and non-blocking.
@@ -307,13 +382,32 @@ namespace dmui
 		};
 	}
 
-	struct SettingDescriptor
+	struct RowPresentation
 	{
 		enum class LabelMode : uint32_t
 		{
 			kAutomatic,
 			kHidden
 		};
+
+		enum class Layout : uint32_t
+		{
+			kLabelValue,
+			kFullSpan
+		};
+
+		LabelMode labelMode{ LabelMode::kAutomatic };
+		Layout layout{ Layout::kLabelValue };
+	};
+
+	inline void DrawDivider() noexcept
+	{
+		ImGui::Separator();
+	}
+
+	struct SettingDescriptor
+	{
+		using LabelMode = RowPresentation::LabelMode;
 
 		std::string id;
 		std::string label;
@@ -328,7 +422,19 @@ namespace dmui
 		std::function<bool()> isDirty;
 		std::function<bool()> isModified;
 		bool showReset{ true };
-		LabelMode labelMode{ LabelMode::kAutomatic };
+		RowPresentation presentation;
+	};
+
+	struct SettingsActionRow
+	{
+		std::string id;
+		std::string label;
+		std::string buttonLabel;
+		std::string description;
+		std::function<void()> activate;
+		std::function<bool()> isVisible;
+		std::function<bool()> isEnabled;
+		RowPresentation presentation;
 	};
 
 	struct SettingFilter
@@ -356,8 +462,19 @@ namespace dmui
 		std::string label;
 		char32_t glyph{};
 		std::vector<SettingDescriptor> settings;
+		struct SettingIndex
+		{
+			size_t value{};
+		};
+		struct ActionIndex
+		{
+			size_t value{};
+		};
+		using Row = std::variant<SettingIndex, ActionIndex>;
 		bool expanded{ true };
 		HeadingMode headingMode{ HeadingMode::kAutomatic };
+		std::vector<SettingsActionRow> actionRows;
+		std::vector<Row> rows;
 	};
 
 	struct SettingsPageActionCallbacks
@@ -380,6 +497,7 @@ namespace dmui
 	{
 		std::string text;
 		bool muted{};
+		std::string noteId;
 	};
 
 	[[nodiscard]] inline bool MatchesSettingFilter(
@@ -426,6 +544,50 @@ namespace dmui
 			contains(a_setting.description);
 	}
 
+	[[nodiscard]] inline bool MatchesActionFilter(
+		const SettingsActionRow& a_action,
+		std::string_view a_label,
+		const SettingFilter& a_filter) noexcept
+	{
+		if (a_filter.modifiedOnly)
+			return false;
+		if (a_filter.search.empty())
+			return true;
+
+		const auto contains = [&](std::string_view a_text) noexcept {
+			if (a_filter.search.size() > a_text.size())
+				return false;
+			const auto fold = [](unsigned char a_character) noexcept {
+				return a_character >= 'A' && a_character <= 'Z' ?
+					static_cast<unsigned char>(a_character - 'A' + 'a') :
+					a_character;
+			};
+			for (size_t offset = 0;
+				 offset + a_filter.search.size() <= a_text.size();
+				 ++offset)
+			{
+				auto matches = true;
+				for (size_t index = 0; index < a_filter.search.size(); ++index)
+				{
+					if (fold(static_cast<unsigned char>(a_text[offset + index])) !=
+						fold(static_cast<unsigned char>(a_filter.search[index])))
+					{
+						matches = false;
+						break;
+					}
+				}
+				if (matches)
+					return true;
+			}
+			return false;
+		};
+
+		return contains(a_action.id) ||
+			contains(a_label) ||
+			contains(a_action.buttonLabel) ||
+			contains(a_action.description);
+	}
+
 	[[nodiscard]] inline bool IsSettingDefault(
 		const SettingDescriptor& a_setting,
 		const SettingValue& a_value) noexcept
@@ -433,6 +595,46 @@ namespace dmui
 		return SettingValueMatchesControl(a_setting.control, a_setting.defaultValue) &&
 			SettingValueMatchesControl(a_setting.control, a_value) &&
 			a_value == a_setting.defaultValue;
+	}
+
+	[[nodiscard]] inline SettingValue NormalizeSettingValue(
+		const SettingDescriptor& a_setting,
+		SettingValue a_value)
+	{
+		if (const auto* control =
+				std::get_if<DoubleSettingControl>(&a_setting.control))
+		{
+			auto value = QuantizeSettingNumber(
+				std::get<double>(a_value),
+				control->quantization);
+			return ClampSettingNumber(
+				value,
+				std::get<double>(a_setting.defaultValue),
+				control->range);
+		}
+		if (const auto* control =
+				std::get_if<SignedSettingControl>(&a_setting.control))
+		{
+			auto value = QuantizeSettingNumber(
+				std::get<int64_t>(a_value),
+				control->quantization);
+			return ClampSettingNumber(
+				value,
+				std::get<int64_t>(a_setting.defaultValue),
+				control->range);
+		}
+		if (const auto* control =
+				std::get_if<UnsignedSettingControl>(&a_setting.control))
+		{
+			auto value = QuantizeSettingNumber(
+				std::get<uint64_t>(a_value),
+				control->quantization);
+			return ClampSettingNumber(
+				value,
+				std::get<uint64_t>(a_setting.defaultValue),
+				control->range);
+		}
+		return a_value;
 	}
 
 	[[nodiscard]] inline std::optional<SettingValue> ResetSettingToDefault(
@@ -447,7 +649,8 @@ namespace dmui
 				a_setting.defaultValue))
 			return std::nullopt;
 
-		auto effective = a_setting.binding.set(a_setting.defaultValue);
+		auto effective = a_setting.binding.set(
+			NormalizeSettingValue(a_setting, a_setting.defaultValue));
 		if (!SettingValueMatchesControl(a_setting.control, effective))
 			throw std::bad_variant_access{};
 		return effective;
@@ -916,6 +1119,73 @@ namespace dmui
 			}
 		}
 
+		template <class Callable>
+			requires std::invocable<std::decay_t<Callable>&, const PageActivity&>
+		[[nodiscard]] std::optional<DMUI_PageActivityObserverHandle>
+			AddPageActivityObserver(Callable&& a_callback) noexcept
+		{
+			if (!IsConnected())
+			{
+				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+				return std::nullopt;
+			}
+			if (api_->structSize <
+					DMUI_HOST_API_REGISTER_PAGE_ACTIVITY_OBSERVER_SIZE ||
+				!api_->registerPageActivityObserver)
+			{
+				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
+				return std::nullopt;
+			}
+
+			try
+			{
+				std::function<void(const PageActivity&)> callback{
+					std::forward<Callable>(a_callback)
+				};
+				if (!callback)
+				{
+					Fail(DMUI_RESULT_INVALID_ARGUMENT);
+					return std::nullopt;
+				}
+
+				pageActivityObservers_.push_back({
+					DMUI_INVALID_PAGE_ACTIVITY_OBSERVER_HANDLE,
+					std::move(callback)
+				});
+				auto& registration = pageActivityObservers_.back();
+				DMUI_PageActivityObserverDescriptor descriptor{};
+				descriptor.structSize = sizeof(descriptor);
+				descriptor.callback = &InvokePageActivity;
+				descriptor.userData = &registration.callback;
+
+				DMUI_PageActivityObserverHandle handle{
+					DMUI_INVALID_PAGE_ACTIVITY_OBSERVER_HANDLE
+				};
+				lastResult_ = api_->registerPageActivityObserver(
+					clientHandle_,
+					&descriptor,
+					&handle);
+				if (lastResult_ != DMUI_RESULT_OK)
+				{
+					pageActivityObservers_.pop_back();
+					return std::nullopt;
+				}
+
+				registration.handle = handle;
+				return handle;
+			}
+			catch (const std::bad_alloc&)
+			{
+				Fail(DMUI_RESULT_RESOURCE_EXHAUSTED);
+				return std::nullopt;
+			}
+			catch (...)
+			{
+				Fail(DMUI_RESULT_CALLBACK_FAILED);
+				return std::nullopt;
+			}
+		}
+
 		[[nodiscard]] std::optional<VideoMemoryInfo> QueryVideoMemory() noexcept
 		{
 			if (!IsConnected())
@@ -1206,7 +1476,9 @@ namespace dmui
 		[[nodiscard]] std::optional<bool> BeginSettingsRow(
 			const char* a_id,
 			const char* a_label,
-			const char* a_description) noexcept
+			const char* a_description,
+			RowPresentation::Layout a_layout =
+				RowPresentation::Layout::kLabelValue) noexcept
 		{
 			if (!IsConnected())
 			{
@@ -1214,7 +1486,6 @@ namespace dmui
 				return std::nullopt;
 			}
 			if (api_->structSize < DMUI_HOST_API_END_SETTINGS_ROW_SIZE ||
-				!api_->beginSettingsRow ||
 				!api_->endSettingsRow)
 			{
 				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
@@ -1222,12 +1493,37 @@ namespace dmui
 			}
 
 			uint32_t visible{};
-			lastResult_ = api_->beginSettingsRow(
-				clientHandle_,
-				a_id,
-				a_label,
-				a_description,
-				&visible);
+			if (api_->structSize >= DMUI_HOST_API_BEGIN_SETTINGS_ROW_EX_SIZE &&
+				api_->beginSettingsRowEx)
+			{
+				const DMUI_SettingsRowBeginOptions options{
+					sizeof(DMUI_SettingsRowBeginOptions),
+					a_layout == RowPresentation::Layout::kFullSpan ?
+						DMUI_SETTINGS_ROW_LAYOUT_FULL_SPAN :
+						DMUI_SETTINGS_ROW_LAYOUT_LABEL_VALUE
+				};
+				lastResult_ = api_->beginSettingsRowEx(
+					clientHandle_,
+					a_id,
+					a_label,
+					a_description,
+					&options,
+					&visible);
+			}
+			else if (api_->beginSettingsRow)
+			{
+				lastResult_ = api_->beginSettingsRow(
+					clientHandle_,
+					a_id,
+					a_label,
+					a_description,
+					&visible);
+			}
+			else
+			{
+				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
+				return std::nullopt;
+			}
 			if (lastResult_ != DMUI_RESULT_OK)
 				return std::nullopt;
 			return visible != 0;
@@ -1369,6 +1665,12 @@ namespace dmui
 			std::function<void()> callback;
 		};
 
+		struct PageActivityObserverRegistration
+		{
+			DMUI_PageActivityObserverHandle handle;
+			std::function<void(const PageActivity&)> callback;
+		};
+
 		struct HotkeyCallbackState
 		{
 			std::atomic<uint32_t> references{ 1 };
@@ -1450,6 +1752,27 @@ namespace dmui
 			{}
 		}
 
+		static void DMUI_CALL InvokePageActivity(
+			const DMUI_PageActivityInfo* a_info,
+			void* a_userData) noexcept
+		{
+			if (!a_info ||
+				a_info->structSize < DMUI_PAGE_ACTIVITY_INFO_1_0_SIZE ||
+				!a_userData)
+				return;
+			try
+			{
+				(*static_cast<std::function<void(const PageActivity&)>*>(
+					a_userData))({
+					static_cast<PageActivityKind>(a_info->kind),
+					a_info->previousPage,
+					a_info->activePage
+				});
+			}
+			catch (...)
+			{}
+		}
+
 		static void DMUI_CALL InvokeHotkey(
 			DMUI_HotkeyActionHandle,
 			uint32_t a_pressed,
@@ -1488,6 +1811,7 @@ namespace dmui
 		std::deque<PageRegistration> pages_;
 		std::deque<ActionRegistration> actions_;
 		std::deque<FrameObserverRegistration> frameObservers_;
+		std::deque<PageActivityObserverRegistration> pageActivityObservers_;
 		std::deque<HotkeyActionRegistration> hotkeyActions_;
 	};
 
@@ -1584,16 +1908,18 @@ namespace dmui
 				break;
 			}
 			}
-			return a_changed ?
-				ClampSettingNumber(edited, a_default, a_control.range) :
-				a_value;
+			if (!a_changed)
+				return a_value;
+			edited = QuantizeSettingNumber(edited, a_control.quantization);
+			return ClampSettingNumber(edited, a_default, a_control.range);
 		}
 
 		[[nodiscard]] inline SettingValue AcceptSettingValue(
 			const SettingDescriptor& a_setting,
 			SettingValue a_value)
 		{
-			auto effective = a_setting.binding.set(std::move(a_value));
+			auto effective = a_setting.binding.set(
+				NormalizeSettingValue(a_setting, std::move(a_value)));
 			if (!SettingValueMatchesControl(a_setting.control, effective))
 				throw std::bad_variant_access{};
 			return effective;
@@ -1697,7 +2023,8 @@ namespace dmui
 		[[nodiscard]] inline std::string ResolveSettingLabel(
 			const SettingDescriptor& a_setting)
 		{
-			if (a_setting.labelMode == SettingDescriptor::LabelMode::kHidden)
+			if (a_setting.presentation.labelMode ==
+				RowPresentation::LabelMode::kHidden)
 				return {};
 			if (a_setting.resolveLabel)
 			{
@@ -1726,27 +2053,83 @@ namespace dmui
 			std::string label;
 		};
 
-		[[nodiscard]] inline std::vector<EvaluatedSetting> MatchingSettings(
+		struct EvaluatedAction
+		{
+			const SettingsActionRow* action;
+			std::string label;
+		};
+
+		using EvaluatedRow = std::variant<EvaluatedSetting, EvaluatedAction>;
+
+		[[nodiscard]] inline std::string ResolveActionLabel(
+			const SettingsActionRow& a_action)
+		{
+			if (a_action.presentation.labelMode ==
+				RowPresentation::LabelMode::kHidden)
+				return {};
+			return a_action.label.empty() ? a_action.id : a_action.label;
+		}
+
+		[[nodiscard]] inline std::vector<EvaluatedRow> MatchingRows(
 			const SettingGroup& a_group,
 			const SettingFilter& a_filter)
 		{
-			std::vector<EvaluatedSetting> matches;
-			matches.reserve(a_group.settings.size());
-			for (const auto& setting : a_group.settings)
-			{
-				if (setting.isVisible && !setting.isVisible())
-					continue;
-				auto label = ResolveSettingLabel(setting);
+			std::vector<EvaluatedRow> matches;
+			matches.reserve(a_group.settings.size() + a_group.actionRows.size());
+			const auto addSetting = [&](const SettingDescriptor& a_setting) {
+				if (a_setting.isVisible && !a_setting.isVisible())
+					return;
+				auto label = ResolveSettingLabel(a_setting);
 				const auto modified = a_filter.modifiedOnly &&
-					setting.isModified &&
-					setting.isModified();
+					a_setting.isModified &&
+					a_setting.isModified();
 				if (!MatchesSettingFilter(
-						setting,
+						a_setting,
 						label,
 						modified,
 						a_filter))
-					continue;
-				matches.push_back({ &setting, std::move(label) });
+					return;
+				matches.emplace_back(EvaluatedSetting{
+					&a_setting,
+					std::move(label)
+				});
+			};
+			const auto addAction = [&](const SettingsActionRow& a_action) {
+				if (a_action.isVisible && !a_action.isVisible())
+					return;
+				auto label = ResolveActionLabel(a_action);
+				if (!MatchesActionFilter(a_action, label, a_filter))
+					return;
+				matches.emplace_back(EvaluatedAction{
+					&a_action,
+					std::move(label)
+				});
+			};
+			if (a_group.rows.empty())
+			{
+				for (const auto& setting : a_group.settings)
+					addSetting(setting);
+				for (const auto& action : a_group.actionRows)
+					addAction(action);
+				return matches;
+			}
+			for (const auto& row : a_group.rows)
+			{
+				std::visit(
+					[&](const auto& a_index) {
+						using T = std::remove_cvref_t<decltype(a_index)>;
+						if constexpr (std::same_as<T, SettingGroup::SettingIndex>)
+						{
+							if (a_index.value < a_group.settings.size())
+								addSetting(a_group.settings[a_index.value]);
+						}
+						else
+						{
+							if (a_index.value < a_group.actionRows.size())
+								addAction(a_group.actionRows[a_index.value]);
+						}
+					},
+					row);
 			}
 			return matches;
 		}
@@ -1845,7 +2228,8 @@ namespace dmui
 			const auto row = a_client.BeginSettingsRow(
 				setting.id.c_str(),
 				a_evaluated.label.c_str(),
-				description.c_str());
+				description.c_str(),
+				setting.presentation.layout);
 			if (!row)
 				return false;
 			if (!*row)
@@ -1903,20 +2287,54 @@ namespace dmui
 			return true;
 		}
 
+		[[nodiscard]] inline bool DrawActionRow(
+			Client& a_client,
+			const EvaluatedAction& a_evaluated)
+		{
+			const auto& action = *a_evaluated.action;
+			const auto row = a_client.BeginSettingsRow(
+				action.id.c_str(),
+				a_evaluated.label.c_str(),
+				action.description.c_str(),
+				action.presentation.layout);
+			if (!row)
+				return false;
+			if (!*row)
+				return true;
+			SettingsRowBracket rowBracket{ a_client };
+			const auto enabled =
+				action.activate && (!action.isEnabled || action.isEnabled());
+			{
+				const DisabledScope disabled{ !enabled };
+				const auto& label =
+					action.buttonLabel.empty() ? action.label : action.buttonLabel;
+				const auto itemLabel = label + "###" + action.id;
+				if (ImGui::Button(itemLabel.c_str()) && enabled)
+				{
+					try
+					{
+						action.activate();
+					}
+					catch (...)
+					{}
+				}
+			}
+			return rowBracket.End(false, false).has_value();
+		}
+
 		[[nodiscard]] inline bool DrawSettingGroup(
 			Client& a_client,
 			SettingGroup& a_group,
 			const SettingFilter& a_filter)
 		{
-			auto matches = MatchingSettings(a_group, a_filter);
+			auto matches = MatchingRows(a_group, a_filter);
 			if (matches.empty())
 				return true;
 
 			const auto key = a_group.id.empty() ? a_group.label : a_group.id;
 			if (a_group.headingMode == SettingGroup::HeadingMode::kDivider)
 			{
-				if (!a_client.DrawSectionHeader(""))
-					return false;
+				DrawDivider();
 			}
 			else
 			{
@@ -1944,9 +2362,18 @@ namespace dmui
 			if (!*table)
 				return true;
 			SettingsTableBracket tableBracket{ a_client };
-			for (const auto& setting : matches)
+			for (const auto& row : matches)
 			{
-				if (!DrawSettingRow(a_client, setting))
+				const auto drawn = std::visit(
+					[&](const auto& a_evaluated) {
+						using T = std::remove_cvref_t<decltype(a_evaluated)>;
+						if constexpr (std::same_as<T, EvaluatedSetting>)
+							return DrawSettingRow(a_client, a_evaluated);
+						else
+							return DrawActionRow(a_client, a_evaluated);
+					},
+					row);
+				if (!drawn)
 					return false;
 			}
 			if (!tableBracket.End())

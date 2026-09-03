@@ -203,12 +203,25 @@ typedef uint64_t DMUI_PageHandle;
 typedef uint64_t DMUI_ActionHandle;
 typedef uint64_t DMUI_FrameObserverHandle;
 typedef uint64_t DMUI_HotkeyActionHandle;
+typedef uint64_t DMUI_PageActivityObserverHandle;
 
 #define DMUI_INVALID_CLIENT_HANDLE ((DMUI_ClientHandle)0u)
 #define DMUI_INVALID_PAGE_HANDLE ((DMUI_PageHandle)0u)
 #define DMUI_INVALID_ACTION_HANDLE ((DMUI_ActionHandle)0u)
 #define DMUI_INVALID_FRAME_OBSERVER_HANDLE ((DMUI_FrameObserverHandle)0u)
 #define DMUI_INVALID_HOTKEY_ACTION_HANDLE ((DMUI_HotkeyActionHandle)0u)
+#define DMUI_INVALID_PAGE_ACTIVITY_OBSERVER_HANDLE ((DMUI_PageActivityObserverHandle)0u)
+
+typedef uint32_t DMUI_PageActivityKind;
+
+#define DMUI_PAGE_ACTIVITY_ACTIVATED 1u
+#define DMUI_PAGE_ACTIVITY_CHANGED 2u
+#define DMUI_PAGE_ACTIVITY_DEACTIVATED 3u
+
+typedef uint32_t DMUI_SettingsRowLayout;
+
+#define DMUI_SETTINGS_ROW_LAYOUT_LABEL_VALUE 0u
+#define DMUI_SETTINGS_ROW_LAYOUT_FULL_SPAN 1u
 
 #if defined(_MSC_VER)
 #pragma pack(push, 8)
@@ -281,6 +294,10 @@ typedef void (DMUI_CALL *DMUI_HostUnavailableCallback)(
 	void* userData);
 typedef void (DMUI_CALL *DMUI_PageDrawCallback)(void* userData);
 typedef void (DMUI_CALL *DMUI_ActionCallback)(void* userData);
+typedef struct DMUI_PageActivityInfo DMUI_PageActivityInfo;
+typedef void (DMUI_CALL *DMUI_PageActivityCallback)(
+	const DMUI_PageActivityInfo* info,
+	void* userData);
 // Frame callbacks run on the render thread and cannot be unregistered in DMUI v1.
 typedef void (DMUI_CALL *DMUI_FrameCallback)(void* userData);
 // Hotkey callbacks run on the render thread, beside frame observers.
@@ -330,6 +347,9 @@ typedef struct DMUI_PageDescriptor
 	void* userData;
 } DMUI_PageDescriptor;
 
+#define DMUI_PAGE_DESCRIPTOR_1_0_SIZE \
+	((uint32_t)(offsetof(DMUI_PageDescriptor, userData) + sizeof(void*)))
+
 typedef struct DMUI_ActionDescriptor
 {
 	uint32_t structSize;
@@ -342,12 +362,18 @@ typedef struct DMUI_ActionDescriptor
 	void* userData;
 } DMUI_ActionDescriptor;
 
+#define DMUI_ACTION_DESCRIPTOR_1_0_SIZE \
+	((uint32_t)(offsetof(DMUI_ActionDescriptor, userData) + sizeof(void*)))
+
 typedef struct DMUI_FrameObserverDescriptor
 {
 	uint32_t structSize;
 	DMUI_FrameCallback callback;
 	void* userData;
 } DMUI_FrameObserverDescriptor;
+
+#define DMUI_FRAME_OBSERVER_DESCRIPTOR_1_0_SIZE \
+	((uint32_t)(offsetof(DMUI_FrameObserverDescriptor, userData) + sizeof(void*)))
 
 typedef struct DMUI_HotkeyActionDescriptor
 {
@@ -358,6 +384,30 @@ typedef struct DMUI_HotkeyActionDescriptor
 	DMUI_HotkeyCallback callback;
 	void* userData;
 } DMUI_HotkeyActionDescriptor;
+
+#define DMUI_HOTKEY_ACTION_DESCRIPTOR_1_0_SIZE \
+	((uint32_t)(offsetof(DMUI_HotkeyActionDescriptor, userData) + sizeof(void*)))
+
+typedef struct DMUI_PageActivityInfo
+{
+	uint32_t structSize;
+	DMUI_PageActivityKind kind;
+	DMUI_PageHandle previousPage;
+	DMUI_PageHandle activePage;
+} DMUI_PageActivityInfo;
+
+#define DMUI_PAGE_ACTIVITY_INFO_1_0_SIZE \
+	((uint32_t)(offsetof(DMUI_PageActivityInfo, activePage) + sizeof(DMUI_PageHandle)))
+
+typedef struct DMUI_PageActivityObserverDescriptor
+{
+	uint32_t structSize;
+	DMUI_PageActivityCallback callback;
+	void* userData;
+} DMUI_PageActivityObserverDescriptor;
+
+#define DMUI_PAGE_ACTIVITY_OBSERVER_DESCRIPTOR_1_0_SIZE \
+	((uint32_t)(offsetof(DMUI_PageActivityObserverDescriptor, userData) + sizeof(void*)))
 
 typedef struct DMUI_HotkeyBindingInfo
 {
@@ -415,6 +465,15 @@ typedef struct DMUI_SettingsRowOptions
 
 #define DMUI_SETTINGS_ROW_OPTIONS_1_0_SIZE \
 	((uint32_t)(offsetof(DMUI_SettingsRowOptions, resetEnabled) + sizeof(uint32_t)))
+
+typedef struct DMUI_SettingsRowBeginOptions
+{
+	uint32_t structSize;
+	DMUI_SettingsRowLayout layout;
+} DMUI_SettingsRowBeginOptions;
+
+#define DMUI_SETTINGS_ROW_BEGIN_OPTIONS_1_0_SIZE \
+	((uint32_t)(offsetof(DMUI_SettingsRowBeginOptions, layout) + sizeof(DMUI_SettingsRowLayout)))
 
 typedef struct DMUI_ThemeColors
 {
@@ -565,6 +624,18 @@ typedef DMUI_Result (DMUI_CALL *DMUI_EndSettingsRowFn)(
 	uint32_t* resetPressed) DMUI_NOEXCEPT;
 typedef DMUI_Result (DMUI_CALL *DMUI_EndSettingsTableFn)(
 	DMUI_ClientHandle client) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_BeginSettingsRowExFn)(
+	DMUI_ClientHandle client,
+	const char* id,
+	const char* label,
+	const char* description,
+	const DMUI_SettingsRowBeginOptions* options,
+	uint32_t* visible) DMUI_NOEXCEPT;
+// Page activity observers are process-lifetime registrations invoked during shell drawing on the render thread.
+typedef DMUI_Result (DMUI_CALL *DMUI_RegisterPageActivityObserverFn)(
+	DMUI_ClientHandle client,
+	const DMUI_PageActivityObserverDescriptor* descriptor,
+	DMUI_PageActivityObserverHandle* observer) DMUI_NOEXCEPT;
 
 typedef struct DMUI_HostAPI
 {
@@ -600,6 +671,8 @@ typedef struct DMUI_HostAPI
 	DMUI_BeginSettingsRowFn beginSettingsRow;
 	DMUI_EndSettingsRowFn endSettingsRow;
 	DMUI_EndSettingsTableFn endSettingsTable;
+	DMUI_BeginSettingsRowExFn beginSettingsRowEx;
+	DMUI_RegisterPageActivityObserverFn registerPageActivityObserver;
 } DMUI_HostAPI;
 
 #define DMUI_HOST_API_SELECT_PAGE_SIZE \
@@ -648,6 +721,10 @@ typedef struct DMUI_HostAPI
 	((uint32_t)(offsetof(DMUI_HostAPI, endSettingsRow) + sizeof(DMUI_EndSettingsRowFn)))
 #define DMUI_HOST_API_END_SETTINGS_TABLE_SIZE \
 	((uint32_t)(offsetof(DMUI_HostAPI, endSettingsTable) + sizeof(DMUI_EndSettingsTableFn)))
+#define DMUI_HOST_API_BEGIN_SETTINGS_ROW_EX_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, beginSettingsRowEx) + sizeof(DMUI_BeginSettingsRowExFn)))
+#define DMUI_HOST_API_REGISTER_PAGE_ACTIVITY_OBSERVER_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, registerPageActivityObserver) + sizeof(DMUI_RegisterPageActivityObserverFn)))
 
 #if defined(_MSC_VER)
 #pragma pack(pop)
