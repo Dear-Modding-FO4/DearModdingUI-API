@@ -27,8 +27,8 @@
 #define DMUI_VERSION_MAJOR(version) ((uint32_t)(version) >> 16u)
 #define DMUI_VERSION_MINOR(version) ((uint32_t)(version) & 0xFFFFu)
 
-#define DMUI_API_VERSION_1_0 DMUI_MAKE_VERSION(1u, 0u)
-#define DMUI_API_VERSION_CURRENT DMUI_API_VERSION_1_0
+#define DMUI_API_VERSION_0_1 DMUI_MAKE_VERSION(0u, 1u)
+#define DMUI_API_VERSION_CURRENT DMUI_API_VERSION_0_1
 #define DMUI_IMGUI_UPSTREAM_COMMIT "9acdfbf46810c0c74ab281ce04122c4149ae8bd1"
 #define DMUI_IMGUI_VERSION_NUM 19291u
 #define DMUI_IMGUI_FINGERPRINT_DOCKING 0x00000001u
@@ -198,6 +198,11 @@ typedef uint32_t DMUI_ClientCapabilities;
 #define DMUI_CLIENT_CAPABILITY_NONE 0u
 #define DMUI_CLIENT_CAPABILITY_RENDERER_REPLACEMENT 0x00000001u
 
+typedef uint32_t DMUI_ClientOrigin;
+
+#define DMUI_CLIENT_ORIGIN_NATIVE 0u
+#define DMUI_CLIENT_ORIGIN_BRIDGED 1u
+
 typedef uint64_t DMUI_ClientHandle;
 typedef uint64_t DMUI_PageHandle;
 typedef uint64_t DMUI_ActionHandle;
@@ -298,7 +303,7 @@ typedef struct DMUI_PageActivityInfo DMUI_PageActivityInfo;
 typedef void (DMUI_CALL *DMUI_PageActivityCallback)(
 	const DMUI_PageActivityInfo* info,
 	void* userData);
-// Frame callbacks run on the render thread and cannot be unregistered in DMUI v1.
+// Frame callbacks run on the render thread and cannot be unregistered.
 typedef void (DMUI_CALL *DMUI_FrameCallback)(void* userData);
 // Hotkey callbacks run on the render thread, beside frame observers.
 // Handlers must return promptly: blocking I/O or long work costs frame time directly.
@@ -327,12 +332,12 @@ typedef struct DMUI_ClientDescriptor
 	void* userData;
 	DMUI_ClientCapabilities capabilities;
 	const char* iconName;
+	DMUI_ClientOrigin origin;
+	const char* bridgeSourceLabel;
 } DMUI_ClientDescriptor;
 
-#define DMUI_CLIENT_DESCRIPTOR_1_0_SIZE \
-	((uint32_t)(offsetof(DMUI_ClientDescriptor, capabilities) + sizeof(DMUI_ClientCapabilities)))
-#define DMUI_CLIENT_DESCRIPTOR_ICON_NAME_SIZE \
-	((uint32_t)(offsetof(DMUI_ClientDescriptor, iconName) + sizeof(const char*)))
+#define DMUI_CLIENT_DESCRIPTOR_0_1_SIZE \
+	((uint32_t)(offsetof(DMUI_ClientDescriptor, bridgeSourceLabel) + sizeof(const char*)))
 
 typedef struct DMUI_PageDescriptor
 {
@@ -347,7 +352,7 @@ typedef struct DMUI_PageDescriptor
 	void* userData;
 } DMUI_PageDescriptor;
 
-#define DMUI_PAGE_DESCRIPTOR_1_0_SIZE \
+#define DMUI_PAGE_DESCRIPTOR_0_1_SIZE \
 	((uint32_t)(offsetof(DMUI_PageDescriptor, userData) + sizeof(void*)))
 
 typedef struct DMUI_ActionDescriptor
@@ -362,7 +367,7 @@ typedef struct DMUI_ActionDescriptor
 	void* userData;
 } DMUI_ActionDescriptor;
 
-#define DMUI_ACTION_DESCRIPTOR_1_0_SIZE \
+#define DMUI_ACTION_DESCRIPTOR_0_1_SIZE \
 	((uint32_t)(offsetof(DMUI_ActionDescriptor, userData) + sizeof(void*)))
 
 typedef struct DMUI_FrameObserverDescriptor
@@ -372,7 +377,7 @@ typedef struct DMUI_FrameObserverDescriptor
 	void* userData;
 } DMUI_FrameObserverDescriptor;
 
-#define DMUI_FRAME_OBSERVER_DESCRIPTOR_1_0_SIZE \
+#define DMUI_FRAME_OBSERVER_DESCRIPTOR_0_1_SIZE \
 	((uint32_t)(offsetof(DMUI_FrameObserverDescriptor, userData) + sizeof(void*)))
 
 typedef struct DMUI_HotkeyActionDescriptor
@@ -385,7 +390,7 @@ typedef struct DMUI_HotkeyActionDescriptor
 	void* userData;
 } DMUI_HotkeyActionDescriptor;
 
-#define DMUI_HOTKEY_ACTION_DESCRIPTOR_1_0_SIZE \
+#define DMUI_HOTKEY_ACTION_DESCRIPTOR_0_1_SIZE \
 	((uint32_t)(offsetof(DMUI_HotkeyActionDescriptor, userData) + sizeof(void*)))
 
 typedef struct DMUI_PageActivityInfo
@@ -396,7 +401,7 @@ typedef struct DMUI_PageActivityInfo
 	DMUI_PageHandle activePage;
 } DMUI_PageActivityInfo;
 
-#define DMUI_PAGE_ACTIVITY_INFO_1_0_SIZE \
+#define DMUI_PAGE_ACTIVITY_INFO_0_1_SIZE \
 	((uint32_t)(offsetof(DMUI_PageActivityInfo, activePage) + sizeof(DMUI_PageHandle)))
 
 typedef struct DMUI_PageActivityObserverDescriptor
@@ -406,7 +411,7 @@ typedef struct DMUI_PageActivityObserverDescriptor
 	void* userData;
 } DMUI_PageActivityObserverDescriptor;
 
-#define DMUI_PAGE_ACTIVITY_OBSERVER_DESCRIPTOR_1_0_SIZE \
+#define DMUI_PAGE_ACTIVITY_OBSERVER_DESCRIPTOR_0_1_SIZE \
 	((uint32_t)(offsetof(DMUI_PageActivityObserverDescriptor, userData) + sizeof(void*)))
 
 typedef struct DMUI_HotkeyBindingInfo
@@ -453,7 +458,7 @@ typedef struct DMUI_StyleMetrics
 	float scrollbarSize;
 } DMUI_StyleMetrics;
 
-#define DMUI_STYLE_METRICS_1_0_SIZE \
+#define DMUI_STYLE_METRICS_0_1_SIZE \
 	((uint32_t)(offsetof(DMUI_StyleMetrics, scrollbarSize) + sizeof(float)))
 
 typedef struct DMUI_SettingsRowOptions
@@ -463,7 +468,7 @@ typedef struct DMUI_SettingsRowOptions
 	uint32_t resetEnabled;
 } DMUI_SettingsRowOptions;
 
-#define DMUI_SETTINGS_ROW_OPTIONS_1_0_SIZE \
+#define DMUI_SETTINGS_ROW_OPTIONS_0_1_SIZE \
 	((uint32_t)(offsetof(DMUI_SettingsRowOptions, resetEnabled) + sizeof(uint32_t)))
 
 typedef struct DMUI_SettingsRowBeginOptions
@@ -472,7 +477,7 @@ typedef struct DMUI_SettingsRowBeginOptions
 	DMUI_SettingsRowLayout layout;
 } DMUI_SettingsRowBeginOptions;
 
-#define DMUI_SETTINGS_ROW_BEGIN_OPTIONS_1_0_SIZE \
+#define DMUI_SETTINGS_ROW_BEGIN_OPTIONS_0_1_SIZE \
 	((uint32_t)(offsetof(DMUI_SettingsRowBeginOptions, layout) + sizeof(DMUI_SettingsRowLayout)))
 
 typedef struct DMUI_ThemeColors
@@ -494,7 +499,7 @@ typedef struct DMUI_ThemeColors
 	DMUI_Vec4 statusInfo;
 } DMUI_ThemeColors;
 
-#define DMUI_THEME_COLORS_1_0_SIZE \
+#define DMUI_THEME_COLORS_0_1_SIZE \
 	((uint32_t)(offsetof(DMUI_ThemeColors, statusInfo) + sizeof(DMUI_Vec4)))
 
 typedef DMUI_Result (DMUI_CALL *DMUI_RegisterClientFn)(

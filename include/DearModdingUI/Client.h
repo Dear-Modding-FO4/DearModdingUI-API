@@ -45,6 +45,28 @@ namespace dmui
 		}
 	};
 
+	enum class ClientOriginKind : uint32_t
+	{
+		kNative = DMUI_CLIENT_ORIGIN_NATIVE,
+		kBridged = DMUI_CLIENT_ORIGIN_BRIDGED
+	};
+
+	struct ClientOrigin
+	{
+		ClientOriginKind kind{ ClientOriginKind::kNative };
+		std::string_view sourceLabel;
+	};
+
+	struct PageDescriptor
+	{
+		const char* id{};
+		const char* displayName{};
+		const char* category{};
+		const char* summary{};
+		int32_t sortKey{};
+		DMUI_PageKind kind{ DMUI_PAGE_KIND_SETTINGS };
+	};
+
 	enum class PageActivityKind : uint32_t
 	{
 		kActivated = DMUI_PAGE_ACTIVITY_ACTIVATED,
@@ -705,7 +727,7 @@ namespace dmui
 		void Draw(Client& a_client);
 	};
 
-	// IMPORTANT: Client instances must outlive the game session because DMUI v1 cannot unregister callbacks.
+	// IMPORTANT: Client instances must outlive the game session because callbacks cannot be unregistered.
 	class Client
 	{
 	public:
@@ -714,10 +736,13 @@ namespace dmui
 			std::string_view a_id,
 			std::string_view a_displayName,
 			Version a_version,
-			std::string_view a_iconName = {}) :
+			std::string_view a_iconName = {},
+			ClientOrigin a_origin = {}) :
 			id_(a_id),
 			displayName_(a_displayName),
 			iconName_(a_iconName),
+			origin_(a_origin.kind),
+			bridgeSourceLabel_(a_origin.sourceLabel),
 			version_(a_version),
 			fingerprint_(DMUI_MakeImGuiFingerprint())
 		{}
@@ -728,10 +753,13 @@ namespace dmui
 			std::string_view a_displayName,
 			Version a_version,
 			ForwardingClientTag,
-			std::string_view a_iconName = {}) :
+			std::string_view a_iconName = {},
+			ClientOrigin a_origin = {}) :
 			id_(a_id),
 			displayName_(a_displayName),
 			iconName_(a_iconName),
+			origin_(a_origin.kind),
+			bridgeSourceLabel_(a_origin.sourceLabel),
 			version_(a_version)
 		{}
 
@@ -784,6 +812,9 @@ namespace dmui
 			descriptor.capabilities = DMUI_CLIENT_CAPABILITY_NONE;
 			descriptor.iconName =
 				iconName_.empty() ? nullptr : iconName_.c_str();
+			descriptor.origin = static_cast<DMUI_ClientOrigin>(origin_);
+			descriptor.bridgeSourceLabel =
+				bridgeSourceLabel_.empty() ? nullptr : bridgeSourceLabel_.c_str();
 
 			DMUI_ClientHandle handle{ DMUI_INVALID_CLIENT_HANDLE };
 			lastResult_ = api_->registerClient(&descriptor, &handle);
@@ -797,13 +828,8 @@ namespace dmui
 		template <class Callable>
 			requires std::invocable<std::decay_t<Callable>&>
 		[[nodiscard]] std::optional<DMUI_PageHandle> AddPage(
-			const char* a_id,
-			const char* a_displayName,
-			const char* a_category,
-			Callable&& a_draw,
-			const char* a_summary = nullptr,
-			int32_t a_sortKey = 0,
-			DMUI_PageKind a_kind = DMUI_PAGE_KIND_SETTINGS) noexcept
+			const PageDescriptor& a_page,
+			Callable&& a_draw) noexcept
 		{
 			if (!CanRegisterPage())
 				return std::nullopt;
@@ -822,12 +848,12 @@ namespace dmui
 
 				DMUI_PageDescriptor descriptor{};
 				descriptor.structSize = sizeof(descriptor);
-				descriptor.id = a_id;
-				descriptor.displayName = a_displayName;
-				descriptor.category = a_category;
-				descriptor.summary = a_summary;
-				descriptor.sortKey = a_sortKey;
-				descriptor.kind = a_kind;
+				descriptor.id = a_page.id;
+				descriptor.displayName = a_page.displayName;
+				descriptor.category = a_page.category;
+				descriptor.summary = a_page.summary;
+				descriptor.sortKey = a_page.sortKey;
+				descriptor.kind = a_page.kind;
 				descriptor.draw = &Invoke;
 				descriptor.userData = &registration.callback;
 
@@ -857,26 +883,18 @@ namespace dmui
 		template <class Page>
 			requires std::same_as<std::remove_cvref_t<Page>, SettingsPage>
 		[[nodiscard]] std::optional<DMUI_PageHandle> AddSettingsPage(
-			const char* a_id,
-			const char* a_displayName,
-			const char* a_category,
-			Page&& a_page,
-			const char* a_summary = nullptr,
-			int32_t a_sortKey = 0) noexcept
+			PageDescriptor a_descriptor,
+			Page&& a_page) noexcept
 		{
 			try
 			{
 				SettingsPage page{ std::forward<Page>(a_page) };
+				a_descriptor.kind = DMUI_PAGE_KIND_SETTINGS;
 				return AddPage(
-					a_id,
-					a_displayName,
-					a_category,
+					a_descriptor,
 					[this, page = std::move(page)]() mutable {
 						page.Draw(*this);
-					},
-					a_summary,
-					a_sortKey,
-					DMUI_PAGE_KIND_SETTINGS);
+					});
 			}
 			catch (const std::bad_alloc&)
 			{
@@ -1749,7 +1767,7 @@ namespace dmui
 			void* a_userData) noexcept
 		{
 			if (!a_info ||
-				a_info->structSize < DMUI_PAGE_ACTIVITY_INFO_1_0_SIZE ||
+				a_info->structSize < DMUI_PAGE_ACTIVITY_INFO_0_1_SIZE ||
 				!a_userData)
 				return;
 			try
@@ -1793,6 +1811,8 @@ namespace dmui
 		std::string id_;
 		std::string displayName_;
 		std::string iconName_;
+		ClientOriginKind origin_{ ClientOriginKind::kNative };
+		std::string bridgeSourceLabel_;
 		Version version_;
 		std::optional<DMUI_ImGuiFingerprint> fingerprint_;
 		const DMUI_HostAPI* api_{};
