@@ -17,8 +17,6 @@ namespace DearModdingUI
 	{
 		inline constexpr char32_t kFirstPrivateUse{ 0xE000 };
 		inline constexpr char32_t kLastPrivateUse{ 0xEE82 };
-
-		// Generated from @phosphor-icons/web 2.1.2 Fill selection.json.
 		inline constexpr char32_t kQuestion{ 0xE3E8 };
 		inline constexpr char32_t kArchive{ 0xE00C };
 		inline constexpr char32_t kAppWindow{ 0xE5DA };
@@ -50,59 +48,82 @@ namespace DearModdingUI
 		std::string_view slug;
 		char32_t glyph;
 	};
+}
 
-	inline constexpr std::array kCategoryGlyphs{
-		IconGlyphMapping{ "compatibility", PhosphorGlyph::kPuzzlePiece },
-		IconGlyphMapping{ "dev-tools", PhosphorGlyph::kTerminalWindow },
-		IconGlyphMapping{ "diagnostics", PhosphorGlyph::kTerminalWindow },
-		IconGlyphMapping{ "audio", PhosphorGlyph::kSpeakerHigh },
-		IconGlyphMapping{ "gameplay", PhosphorGlyph::kGameController },
-		IconGlyphMapping{ "interface", PhosphorGlyph::kMonitor },
-		IconGlyphMapping{ "lighting", PhosphorGlyph::kSun },
-		IconGlyphMapping{ "misc", PhosphorGlyph::kDotsThreeCircle },
-		IconGlyphMapping{ "other", PhosphorGlyph::kDotsThreeCircle },
-		IconGlyphMapping{ "overlay", PhosphorGlyph::kAppWindow },
-		IconGlyphMapping{ "performance", PhosphorGlyph::kGauge },
-		IconGlyphMapping{ "post-process", PhosphorGlyph::kMagicWand },
-		IconGlyphMapping{ "postprocess", PhosphorGlyph::kMagicWand },
-		IconGlyphMapping{ "stability", PhosphorGlyph::kShieldCheck },
-		IconGlyphMapping{ "visuals", PhosphorGlyph::kPalette },
-		IconGlyphMapping{ "unloaded", PhosphorGlyph::kArchive }
+#include "PhosphorGlyphs.generated.h"
+
+namespace DearModdingUI
+{
+	struct IconConceptMapping
+	{
+		std::string_view slug;
+		std::string_view icon;
 	};
 
-	inline constexpr std::array kClientGlyphs{
-		IconGlyphMapping{ "dearmoddingaddictol", PhosphorGlyph::kPuzzlePiece },
-		IconGlyphMapping{ "dearmoddingcommunityshaders", PhosphorGlyph::kSun }
+	struct IconConceptMatch
+	{
+		std::string_view slug;
+		char32_t glyph{};
+
+		[[nodiscard]] explicit operator bool() const noexcept
+		{
+			return glyph != char32_t{};
+		}
 	};
 
-	inline constexpr std::array kClientIconGlyphs{
-		IconGlyphMapping{ "arrowcounterclockwise", PhosphorGlyph::kArrowCounterClockwise },
-		IconGlyphMapping{ "files", PhosphorGlyph::kFiles },
-		IconGlyphMapping{ "gauge", PhosphorGlyph::kGauge },
-		IconGlyphMapping{ "monitor", PhosphorGlyph::kMonitor },
-		IconGlyphMapping{ "palette", PhosphorGlyph::kPalette },
-		IconGlyphMapping{ "puzzlepiece", PhosphorGlyph::kPuzzlePiece },
-		IconGlyphMapping{ "shieldcheck", PhosphorGlyph::kShieldCheck },
-		IconGlyphMapping{ "squaresfour", PhosphorGlyph::kSquaresFour },
-		IconGlyphMapping{ "sun", PhosphorGlyph::kSun },
-		IconGlyphMapping{ "terminalwindow", PhosphorGlyph::kTerminalWindow }
-	};
-
-	inline constexpr std::array kActionGlyphs{
-		IconGlyphMapping{ "arrowcounterclockwise", PhosphorGlyph::kArrowCounterClockwise },
-		IconGlyphMapping{ "arrow-counter-clockwise", PhosphorGlyph::kArrowCounterClockwise },
-		IconGlyphMapping{ "arrowsclockwise", PhosphorGlyph::kArrowsClockwise },
-		IconGlyphMapping{ "arrows-clockwise", PhosphorGlyph::kArrowsClockwise },
-		IconGlyphMapping{ "clearcache", PhosphorGlyph::kTrash },
-		IconGlyphMapping{ "clear-cache", PhosphorGlyph::kTrash },
-		IconGlyphMapping{ "clipboard", PhosphorGlyph::kClipboardText },
-		IconGlyphMapping{ "clipboardtext", PhosphorGlyph::kClipboardText },
-		IconGlyphMapping{ "clipboard-text", PhosphorGlyph::kClipboardText },
-		IconGlyphMapping{ "floppydisk", PhosphorGlyph::kFloppyDisk },
-		IconGlyphMapping{ "floppy-disk", PhosphorGlyph::kFloppyDisk },
-		IconGlyphMapping{ "restoresettings", PhosphorGlyph::kArrowCounterClockwise },
-		IconGlyphMapping{ "restore-settings", PhosphorGlyph::kArrowCounterClockwise },
-		IconGlyphMapping{ "trash", PhosphorGlyph::kTrash }
+	inline constexpr std::array kIconConcepts{
+		IconConceptMapping{ "ai", "brain" },
+		IconConceptMapping{ "armor", "shield" },
+		IconConceptMapping{ "audio", "speaker-high" },
+		IconConceptMapping{ "building", "buildings" },
+		IconConceptMapping{ "camera", "camera" },
+		IconConceptMapping{ "combat", "sword" },
+		IconConceptMapping{ "compatibility", "puzzle-piece" },
+		IconConceptMapping{ "controls", "sliders-horizontal" },
+		IconConceptMapping{ "crafting", "hammer" },
+		IconConceptMapping{ "debug", "bug" },
+		IconConceptMapping{ "dev-tools", "terminal-window" },
+		IconConceptMapping{ "diagnostics", "stethoscope" },
+		IconConceptMapping{ "dialogue", "chat-circle-text" },
+		IconConceptMapping{ "difficulty", "gauge" },
+		IconConceptMapping{ "economy", "coins" },
+		IconConceptMapping{ "gameplay", "game-controller" },
+		IconConceptMapping{ "general", "gear" },
+		IconConceptMapping{ "graphics", "image" },
+		IconConceptMapping{ "hud", "crosshair-simple" },
+		IconConceptMapping{ "input", "keyboard" },
+		IconConceptMapping{ "interface", "monitor" },
+		IconConceptMapping{ "inventory", "backpack" },
+		IconConceptMapping{ "leveling", "trend-up" },
+		IconConceptMapping{ "lighting", "lightbulb" },
+		IconConceptMapping{ "logging", "file-text" },
+		IconConceptMapping{ "map", "map-trifold" },
+		IconConceptMapping{ "memory", "memory" },
+		IconConceptMapping{ "misc", "dots-three-circle" },
+		IconConceptMapping{ "network", "wifi-high" },
+		IconConceptMapping{ "npc", "user" },
+		IconConceptMapping{ "other", "dots-three-circle" },
+		IconConceptMapping{ "overlay", "app-window" },
+		IconConceptMapping{ "performance", "speedometer" },
+		IconConceptMapping{ "perks", "medal" },
+		IconConceptMapping{ "physics", "atom" },
+		IconConceptMapping{ "post-process", "magic-wand" },
+		IconConceptMapping{ "power-armor", "robot" },
+		IconConceptMapping{ "quest", "scroll" },
+		IconConceptMapping{ "radio", "radio" },
+		IconConceptMapping{ "save", "floppy-disk" },
+		IconConceptMapping{ "settlement", "house" },
+		IconConceptMapping{ "skills", "student" },
+		IconConceptMapping{ "stability", "shield-check" },
+		IconConceptMapping{ "stealth", "eye-slash" },
+		IconConceptMapping{ "survival", "campfire" },
+		IconConceptMapping{ "ui", "layout" },
+		IconConceptMapping{ "unloaded", "archive" },
+		IconConceptMapping{ "vats", "crosshair" },
+		IconConceptMapping{ "video", "video-camera" },
+		IconConceptMapping{ "visuals", "palette" },
+		IconConceptMapping{ "weapons", "crosshair" },
+		IconConceptMapping{ "weather", "cloud-sun" }
 	};
 
 	[[nodiscard]] inline std::string SlugifyIconName(std::string_view a_name)
@@ -110,9 +131,15 @@ namespace DearModdingUI
 		std::string slug;
 		slug.reserve(a_name.size());
 		bool separatorPending = false;
-		for (const auto value : a_name)
+		bool previousLowerOrDigit = false;
+		bool previousUpper = false;
+		for (size_t index = 0; index < a_name.size(); ++index)
 		{
-			const auto character = static_cast<unsigned char>(value);
+			const auto character = static_cast<unsigned char>(a_name[index]);
+			const auto next = index + 1 < a_name.size() ?
+				static_cast<unsigned char>(a_name[index + 1]) :
+				static_cast<unsigned char>(0);
+			const auto nextLower = next >= 'a' && next <= 'z';
 			if ((character >= 'a' && character <= 'z') ||
 				(character >= '0' && character <= '9'))
 			{
@@ -120,17 +147,25 @@ namespace DearModdingUI
 					slug.push_back('-');
 				slug.push_back(static_cast<char>(character));
 				separatorPending = false;
+				previousLowerOrDigit = true;
+				previousUpper = false;
 			}
 			else if (character >= 'A' && character <= 'Z')
 			{
-				if (separatorPending && !slug.empty())
+				if ((separatorPending || previousLowerOrDigit ||
+						(previousUpper && nextLower)) &&
+					!slug.empty() && slug.back() != '-')
 					slug.push_back('-');
 				slug.push_back(static_cast<char>(character - 'A' + 'a'));
 				separatorPending = false;
+				previousLowerOrDigit = false;
+				previousUpper = true;
 			}
-			else if (character == ' ' || character == '_')
+			else
 			{
 				separatorPending = !slug.empty();
+				previousLowerOrDigit = false;
+				previousUpper = false;
 			}
 		}
 		return slug;
@@ -156,43 +191,129 @@ namespace DearModdingUI
 		return normalized;
 	}
 
-	template <std::size_t Size>
-	[[nodiscard]] inline char32_t FindIconGlyphOrZero(
-		const std::array<IconGlyphMapping, Size>& a_mappings,
-		std::string_view a_name)
+	[[nodiscard]] inline char32_t FindPhosphorSlugGlyphOrZero(
+		std::string_view a_slug) noexcept
 	{
-		const auto slug = SlugifyIconName(a_name);
-		for (const auto& mapping : a_mappings)
+		size_t first{};
+		size_t last = kPhosphorIconGlyphs.size();
+		while (first < last)
 		{
-			if (mapping.slug == slug)
-				return mapping.glyph;
+			const auto middle = first + (last - first) / 2;
+			if (kPhosphorIconGlyphs[middle].slug < a_slug)
+				first = middle + 1;
+			else
+				last = middle;
 		}
+		if (first < kPhosphorIconGlyphs.size() &&
+			kPhosphorIconGlyphs[first].slug == a_slug)
+			return kPhosphorIconGlyphs[first].glyph;
 		return {};
 	}
 
-	template <std::size_t Size>
-	[[nodiscard]] inline char32_t FindIconGlyph(
-		const std::array<IconGlyphMapping, Size>& a_mappings,
+	[[nodiscard]] inline char32_t FindPhosphorIconGlyphOrZero(
 		std::string_view a_name)
 	{
-		if (const auto glyph = FindIconGlyphOrZero(a_mappings, a_name))
+		return FindPhosphorSlugGlyphOrZero(SlugifyIconName(a_name));
+	}
+
+	[[nodiscard]] inline bool PreferIconConceptMatch(
+		const IconConceptMatch& a_candidate,
+		const IconConceptMatch& a_current) noexcept
+	{
+		if (!a_candidate)
+			return false;
+		if (!a_current)
+			return true;
+		if (a_candidate.slug.size() != a_current.slug.size())
+			return a_candidate.slug.size() > a_current.slug.size();
+		return a_candidate.slug < a_current.slug;
+	}
+
+	[[nodiscard]] inline bool ContainsWholeIconConcept(
+		std::string_view a_name,
+		std::string_view a_conceptSlug) noexcept
+	{
+		size_t position{};
+		while ((position = a_name.find(a_conceptSlug, position)) !=
+			std::string_view::npos)
+		{
+			const auto startsOnBoundary =
+				position == 0 || a_name[position - 1] == '-';
+			const auto end = position + a_conceptSlug.size();
+			const auto endsOnBoundary =
+				end == a_name.size() || a_name[end] == '-';
+			if (startsOnBoundary && endsOnBoundary)
+				return true;
+			++position;
+		}
+		return false;
+	}
+
+	[[nodiscard]] inline IconConceptMatch FindIconConceptMatch(
+		std::string_view a_name,
+		bool a_wholeWords)
+	{
+		const auto slug = SlugifyIconName(a_name);
+		IconConceptMatch best;
+		for (const auto& mapping : kIconConcepts)
+		{
+			const auto matches = a_wholeWords ?
+				ContainsWholeIconConcept(slug, mapping.slug) :
+				slug == mapping.slug;
+			if (!matches)
+				continue;
+			const IconConceptMatch candidate{
+				mapping.slug,
+				FindPhosphorSlugGlyphOrZero(mapping.icon)
+			};
+			if (PreferIconConceptMatch(candidate, best))
+				best = candidate;
+		}
+		return best;
+	}
+
+	[[nodiscard]] inline char32_t ResolveNamedIconGlyphOrZero(
+		std::string_view a_name)
+	{
+		if (const auto glyph = FindPhosphorIconGlyphOrZero(a_name))
 			return glyph;
-		return PhosphorGlyph::kQuestion;
+		return FindIconConceptMatch(a_name, false).glyph;
 	}
 
 	[[nodiscard]] inline char32_t ResolveIconGlyph(
-		IconKind a_kind,
+		IconKind,
 		std::string_view a_name) noexcept
 	{
 		try
 		{
-			return a_kind == IconKind::kCategory ?
-				FindIconGlyph(kCategoryGlyphs, a_name) :
-				FindIconGlyph(kClientGlyphs, a_name);
+			if (const auto glyph = ResolveNamedIconGlyphOrZero(a_name))
+				return glyph;
+			return PhosphorGlyph::kQuestion;
 		}
 		catch (...)
 		{
-			return static_cast<char32_t>(PhosphorGlyph::kQuestion);
+			return PhosphorGlyph::kQuestion;
+		}
+	}
+
+	[[nodiscard]] inline char32_t ResolveClientIconGlyph(
+		std::string_view a_iconName,
+		std::string_view a_category,
+		std::string_view a_displayName) noexcept
+	{
+		try
+		{
+			if (const auto glyph = ResolveNamedIconGlyphOrZero(a_iconName))
+				return glyph;
+			if (const auto glyph = ResolveNamedIconGlyphOrZero(a_category))
+				return glyph;
+			if (const auto match = FindIconConceptMatch(a_displayName, true))
+				return match.glyph;
+			return PhosphorGlyph::kQuestion;
+		}
+		catch (...)
+		{
+			return PhosphorGlyph::kQuestion;
 		}
 	}
 
@@ -201,19 +322,9 @@ namespace DearModdingUI
 		std::string_view a_iconName,
 		std::string_view a_fallbackName) noexcept
 	{
-		if (a_kind != IconKind::kClient)
-			return ResolveIconGlyph(a_kind, a_iconName);
-		try
-		{
-			if (const auto glyph =
-					FindIconGlyphOrZero(kClientIconGlyphs, a_iconName))
-				return glyph;
-			return FindIconGlyph(kClientGlyphs, a_fallbackName);
-		}
-		catch (...)
-		{
-			return static_cast<char32_t>(PhosphorGlyph::kQuestion);
-		}
+		if (a_kind == IconKind::kClient)
+			return ResolveClientIconGlyph(a_iconName, {}, a_fallbackName);
+		return ResolveIconGlyph(a_kind, a_iconName);
 	}
 
 	[[nodiscard]] inline char32_t ResolveCategoryIconGlyph(
@@ -228,15 +339,15 @@ namespace DearModdingUI
 			if (!category.empty() &&
 				(category == NormalizeIconOwnerName(a_clientDisplayName) ||
 					category == NormalizeIconOwnerName(a_clientId)))
-				return ResolveIconGlyph(
-					IconKind::kClient,
+				return ResolveClientIconGlyph(
 					a_clientIconName,
-					a_clientId);
-			return FindIconGlyph(kCategoryGlyphs, a_category);
+					a_category,
+					a_clientDisplayName);
+			return ResolveIconGlyph(IconKind::kCategory, a_category);
 		}
 		catch (...)
 		{
-			return static_cast<char32_t>(PhosphorGlyph::kQuestion);
+			return PhosphorGlyph::kQuestion;
 		}
 	}
 
@@ -245,13 +356,7 @@ namespace DearModdingUI
 	{
 		try
 		{
-			const auto slug = SlugifyIconName(a_name);
-			for (const auto& mapping : kActionGlyphs)
-			{
-				if (mapping.slug == slug)
-					return mapping.glyph;
-			}
-			return {};
+			return ResolveNamedIconGlyphOrZero(a_name);
 		}
 		catch (...)
 		{
