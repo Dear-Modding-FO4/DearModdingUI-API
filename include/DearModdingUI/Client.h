@@ -503,6 +503,51 @@ namespace dmui
 		std::string noteId;
 	};
 
+	[[nodiscard]] inline bool ContainsFolded(
+		std::string_view a_text,
+		std::string_view a_search) noexcept
+	{
+		if (a_search.size() > a_text.size())
+			return false;
+		const auto fold = [](unsigned char a_character) noexcept {
+			return a_character >= 'A' && a_character <= 'Z' ?
+				static_cast<unsigned char>(a_character - 'A' + 'a') :
+				a_character;
+		};
+		for (size_t offset = 0;
+			 offset + a_search.size() <= a_text.size();
+			 ++offset)
+		{
+			auto matches = true;
+			for (size_t index = 0; index < a_search.size(); ++index)
+			{
+				if (fold(static_cast<unsigned char>(a_text[offset + index])) !=
+					fold(static_cast<unsigned char>(a_search[index])))
+				{
+					matches = false;
+					break;
+				}
+			}
+			if (matches)
+				return true;
+		}
+		return false;
+	}
+
+	[[nodiscard]] inline std::string ResolveSettingDescription(
+		const SettingDescriptor& a_setting)
+	{
+		auto description = a_setting.resolveDescription ?
+			a_setting.resolveDescription() :
+			a_setting.description;
+		if (a_setting.applyTiming != SettingApplyTiming::kImmediate)
+			return description;
+		if (!description.empty())
+			description.push_back('\n');
+		description += "Applies now.";
+		return description;
+	}
+
 	[[nodiscard]] inline bool MatchesSettingFilter(
 		const SettingDescriptor& a_setting,
 		std::string_view a_label,
@@ -514,37 +559,9 @@ namespace dmui
 		if (a_filter.search.empty())
 			return true;
 
-		const auto contains = [&](std::string_view a_text) noexcept {
-			if (a_filter.search.size() > a_text.size())
-				return false;
-			const auto fold = [](unsigned char a_character) noexcept {
-				return a_character >= 'A' && a_character <= 'Z' ?
-					static_cast<unsigned char>(a_character - 'A' + 'a') :
-					a_character;
-			};
-			for (size_t offset = 0;
-				 offset + a_filter.search.size() <= a_text.size();
-				 ++offset)
-			{
-				auto matches = true;
-				for (size_t index = 0; index < a_filter.search.size(); ++index)
-				{
-					if (fold(static_cast<unsigned char>(a_text[offset + index])) !=
-						fold(static_cast<unsigned char>(a_filter.search[index])))
-					{
-						matches = false;
-						break;
-					}
-				}
-				if (matches)
-					return true;
-			}
-			return false;
-		};
-
-		return contains(a_setting.id) ||
-			contains(a_label) ||
-			contains(a_setting.description);
+		return ContainsFolded(a_setting.id, a_filter.search) ||
+			ContainsFolded(a_label, a_filter.search) ||
+			ContainsFolded(a_setting.description, a_filter.search);
 	}
 
 	[[nodiscard]] inline bool MatchesActionFilter(
@@ -557,38 +574,10 @@ namespace dmui
 		if (a_filter.search.empty())
 			return true;
 
-		const auto contains = [&](std::string_view a_text) noexcept {
-			if (a_filter.search.size() > a_text.size())
-				return false;
-			const auto fold = [](unsigned char a_character) noexcept {
-				return a_character >= 'A' && a_character <= 'Z' ?
-					static_cast<unsigned char>(a_character - 'A' + 'a') :
-					a_character;
-			};
-			for (size_t offset = 0;
-				 offset + a_filter.search.size() <= a_text.size();
-				 ++offset)
-			{
-				auto matches = true;
-				for (size_t index = 0; index < a_filter.search.size(); ++index)
-				{
-					if (fold(static_cast<unsigned char>(a_text[offset + index])) !=
-						fold(static_cast<unsigned char>(a_filter.search[index])))
-					{
-						matches = false;
-						break;
-					}
-				}
-				if (matches)
-					return true;
-			}
-			return false;
-		};
-
-		return contains(a_action.id) ||
-			contains(a_label) ||
-			contains(a_action.buttonLabel) ||
-			contains(a_action.description);
+		return ContainsFolded(a_action.id, a_filter.search) ||
+			ContainsFolded(a_label, a_filter.search) ||
+			ContainsFolded(a_action.buttonLabel, a_filter.search) ||
+			ContainsFolded(a_action.description, a_filter.search);
 	}
 
 	[[nodiscard]] inline bool IsSettingDefault(
@@ -2036,20 +2025,6 @@ namespace dmui
 					return label;
 			}
 			return a_setting.label.empty() ? a_setting.id : a_setting.label;
-		}
-
-		[[nodiscard]] inline std::string ResolveSettingDescription(
-			const SettingDescriptor& a_setting)
-		{
-			auto description = a_setting.resolveDescription ?
-				a_setting.resolveDescription() :
-				a_setting.description;
-			if (a_setting.applyTiming != SettingApplyTiming::kImmediate)
-				return description;
-			if (!description.empty())
-				description.push_back('\n');
-			description += "Applies now.";
-			return description;
 		}
 
 		struct EvaluatedSetting
