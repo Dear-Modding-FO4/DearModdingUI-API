@@ -393,6 +393,41 @@ typedef struct DMUI_HotkeyActionDescriptor
 #define DMUI_HOTKEY_ACTION_DESCRIPTOR_0_1_SIZE \
 	((uint32_t)(offsetof(DMUI_HotkeyActionDescriptor, userData) + sizeof(void*)))
 
+typedef struct DMUI_LinkDescriptor
+{
+	uint32_t structSize;
+	const char* label;
+	const char* url;
+	const char* note;
+	uint32_t glyph;
+	uint32_t enabled;
+} DMUI_LinkDescriptor;
+
+#define DMUI_LINK_DESCRIPTOR_0_1_SIZE \
+	((uint32_t)(offsetof(DMUI_LinkDescriptor, enabled) + sizeof(uint32_t)))
+
+typedef struct DMUI_FaqEntry
+{
+	uint32_t structSize;
+	const char* question;
+	const char* answer;
+} DMUI_FaqEntry;
+
+#define DMUI_FAQ_ENTRY_0_1_SIZE \
+	((uint32_t)(offsetof(DMUI_FaqEntry, answer) + sizeof(const char*)))
+
+typedef struct DMUI_DiagnosticDescriptor
+{
+	uint32_t structSize;
+	DMUI_StatusSeverity severity;
+	const char* scope;
+	const char* summary;
+	const char* detail;
+} DMUI_DiagnosticDescriptor;
+
+#define DMUI_DIAGNOSTIC_DESCRIPTOR_0_1_SIZE \
+	((uint32_t)(offsetof(DMUI_DiagnosticDescriptor, detail) + sizeof(const char*)))
+
 typedef struct DMUI_PageActivityInfo
 {
 	uint32_t structSize;
@@ -565,6 +600,31 @@ typedef DMUI_Result (DMUI_CALL *DMUI_DrawCollapsingSectionHeaderFn)(
 	uint32_t glyph,
 	uint32_t* expanded,
 	size_t count) DMUI_NOEXCEPT;
+// Link rows are render-thread-only and valid only inside page draw callbacks.
+// Buttons share the available width; enabled clicks copy the URL without launching a browser.
+// Tooltips use a non-empty note when present, otherwise the URL, including for disabled links.
+// A zero count succeeds without drawing.
+// Null required values, empty labels or enabled URLs, and short descriptors are invalid.
+typedef DMUI_Result (DMUI_CALL *DMUI_DrawLinkRowFn)(
+	DMUI_ClientHandle client,
+	const char* id,
+	const DMUI_LinkDescriptor* links,
+	size_t count) DMUI_NOEXCEPT;
+// FAQ rows are render-thread-only and valid only inside page draw callbacks.
+// The host owns presentation and expansion state, keyed by the row ID and question.
+// A zero count succeeds without drawing; null, empty, and short entries are invalid.
+typedef DMUI_Result (DMUI_CALL *DMUI_DrawFaqFn)(
+	DMUI_ClientHandle client,
+	const char* id,
+	const DMUI_FaqEntry* entries,
+	size_t count) DMUI_NOEXCEPT;
+// Diagnostics may be reported from any thread, including during client loading.
+// The host copies descriptor strings before returning and aggregates matching reports.
+// Scope and detail are optional; null descriptors, empty summaries, unknown severities,
+// and short descriptors are invalid.
+typedef DMUI_Result (DMUI_CALL *DMUI_ReportDiagnosticFn)(
+	DMUI_ClientHandle client,
+	const DMUI_DiagnosticDescriptor* diagnostic) DMUI_NOEXCEPT;
 typedef DMUI_Result (DMUI_CALL *DMUI_DrawSettingsActionButtonFn)(
 	DMUI_ClientHandle client,
 	const char* id,
@@ -678,6 +738,9 @@ typedef struct DMUI_HostAPI
 	DMUI_EndSettingsTableFn endSettingsTable;
 	DMUI_BeginSettingsRowExFn beginSettingsRowEx;
 	DMUI_RegisterPageActivityObserverFn registerPageActivityObserver;
+	DMUI_DrawLinkRowFn drawLinkRow;
+	DMUI_DrawFaqFn drawFaq;
+	DMUI_ReportDiagnosticFn reportDiagnostic;
 } DMUI_HostAPI;
 
 #define DMUI_HOST_API_SELECT_PAGE_SIZE \
@@ -730,6 +793,12 @@ typedef struct DMUI_HostAPI
 	((uint32_t)(offsetof(DMUI_HostAPI, beginSettingsRowEx) + sizeof(DMUI_BeginSettingsRowExFn)))
 #define DMUI_HOST_API_REGISTER_PAGE_ACTIVITY_OBSERVER_SIZE \
 	((uint32_t)(offsetof(DMUI_HostAPI, registerPageActivityObserver) + sizeof(DMUI_RegisterPageActivityObserverFn)))
+#define DMUI_HOST_API_DRAW_LINK_ROW_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, drawLinkRow) + sizeof(DMUI_DrawLinkRowFn)))
+#define DMUI_HOST_API_DRAW_FAQ_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, drawFaq) + sizeof(DMUI_DrawFaqFn)))
+#define DMUI_HOST_API_REPORT_DIAGNOSTIC_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, reportDiagnostic) + sizeof(DMUI_ReportDiagnosticFn)))
 
 #if defined(_MSC_VER)
 #pragma pack(pop)

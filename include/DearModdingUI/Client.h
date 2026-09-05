@@ -25,6 +25,7 @@
 #include <memory>
 #include <new>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -65,6 +66,29 @@ namespace dmui
 		const char* summary{};
 		int32_t sortKey{};
 		DMUI_PageKind kind{ DMUI_PAGE_KIND_SETTINGS };
+	};
+
+	struct Link
+	{
+		const char* label{};
+		const char* url{};
+		const char* note{};
+		char32_t glyph{};
+		bool enabled{ true };
+	};
+
+	struct FaqEntry
+	{
+		const char* question{};
+		const char* answer{};
+	};
+
+	struct Diagnostic
+	{
+		DMUI_StatusSeverity severity{ DMUI_STATUS_SEVERITY_INFO };
+		const char* scope{};
+		const char* summary{};
+		const char* detail{};
 	};
 
 	enum class PageActivityKind : uint32_t
@@ -1229,6 +1253,26 @@ namespace dmui
 			return lastResult_ == DMUI_RESULT_OK;
 		}
 
+		bool ReportDiagnostic(const Diagnostic& a_diagnostic) noexcept
+		{
+			if (!IsConnected())
+				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			if (api_->structSize < DMUI_HOST_API_REPORT_DIAGNOSTIC_SIZE ||
+				!api_->reportDiagnostic)
+				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
+
+			const DMUI_DiagnosticDescriptor descriptor{
+				DMUI_DIAGNOSTIC_DESCRIPTOR_0_1_SIZE,
+				a_diagnostic.severity,
+				a_diagnostic.scope,
+				a_diagnostic.summary,
+				a_diagnostic.detail
+			};
+			lastResult_ =
+				api_->reportDiagnostic(clientHandle_, &descriptor);
+			return lastResult_ == DMUI_RESULT_OK;
+		}
+
 		[[nodiscard]] std::optional<DMUI_ThemeColors> GetThemeColors() noexcept
 		{
 			if (!IsConnected())
@@ -1372,6 +1416,87 @@ namespace dmui
 				return false;
 			a_expanded = expanded != 0;
 			return true;
+		}
+
+		[[nodiscard]] bool DrawLinkRow(
+			const char* a_id,
+			std::span<const Link> a_links) noexcept
+		{
+			if (!IsConnected())
+				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			if (api_->structSize < DMUI_HOST_API_DRAW_LINK_ROW_SIZE ||
+				!api_->drawLinkRow)
+				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
+
+			try
+			{
+				std::vector<DMUI_LinkDescriptor> descriptors;
+				descriptors.reserve(a_links.size());
+				for (const auto& link : a_links)
+				{
+					descriptors.push_back({
+						DMUI_LINK_DESCRIPTOR_0_1_SIZE,
+						link.label,
+						link.url,
+						link.note,
+						static_cast<uint32_t>(link.glyph),
+						link.enabled ? 1u : 0u
+					});
+				}
+				lastResult_ = api_->drawLinkRow(
+					clientHandle_,
+					a_id,
+					descriptors.empty() ? nullptr : descriptors.data(),
+					descriptors.size());
+				return lastResult_ == DMUI_RESULT_OK;
+			}
+			catch (const std::bad_alloc&)
+			{
+				return Fail(DMUI_RESULT_RESOURCE_EXHAUSTED);
+			}
+			catch (...)
+			{
+				return Fail(DMUI_RESULT_CALLBACK_FAILED);
+			}
+		}
+
+		[[nodiscard]] bool DrawFaq(
+			const char* a_id,
+			std::span<const FaqEntry> a_entries) noexcept
+		{
+			if (!IsConnected())
+				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			if (api_->structSize < DMUI_HOST_API_DRAW_FAQ_SIZE ||
+				!api_->drawFaq)
+				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
+
+			try
+			{
+				std::vector<DMUI_FaqEntry> entries;
+				entries.reserve(a_entries.size());
+				for (const auto& entry : a_entries)
+				{
+					entries.push_back({
+						DMUI_FAQ_ENTRY_0_1_SIZE,
+						entry.question,
+						entry.answer
+					});
+				}
+				lastResult_ = api_->drawFaq(
+					clientHandle_,
+					a_id,
+					entries.empty() ? nullptr : entries.data(),
+					entries.size());
+				return lastResult_ == DMUI_RESULT_OK;
+			}
+			catch (const std::bad_alloc&)
+			{
+				return Fail(DMUI_RESULT_RESOURCE_EXHAUSTED);
+			}
+			catch (...)
+			{
+				return Fail(DMUI_RESULT_CALLBACK_FAILED);
+			}
 		}
 
 		[[nodiscard]] std::optional<bool> DrawSettingsActionButton(
