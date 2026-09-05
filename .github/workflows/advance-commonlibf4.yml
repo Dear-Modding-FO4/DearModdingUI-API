@@ -1,0 +1,62 @@
+name: advance commonlibf4
+
+on:
+  workflow_run:
+    workflows: ["xmake"]
+    types: [completed]
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  advance:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Verify credentials
+      id: creds
+      env:
+        TOKEN: ${{ secrets.COMMONLIBF4_TOKEN }}
+      run: |
+        if [ -z "$TOKEN" ]; then
+          echo "COMMONLIBF4_TOKEN is not set; skipping the pointer advance."
+          echo "ready=false" >> "$GITHUB_OUTPUT"
+        else
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Check out commonlibf4
+      if: steps.creds.outputs.ready == 'true'
+      uses: actions/checkout@v6
+      with:
+        repository: Dear-Modding-FO4/commonlibf4
+        token: ${{ secrets.COMMONLIBF4_TOKEN }}
+        fetch-depth: 0
+
+    - name: Advance the dearmoddingui-api pointer
+      if: steps.creds.outputs.ready == 'true'
+      env:
+        API_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+      run: |
+        git config user.name 'github-actions[bot]'
+        git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+        for attempt in 1 2 3; do
+          git fetch origin main
+          git checkout -B main origin/main
+          git update-index --cacheinfo "160000,$API_SHA,lib/dearmoddingui-api"
+          if git diff --cached --quiet; then
+            echo "pointer already at $API_SHA"
+            exit 0
+          fi
+          git commit -m 'chore(api): advance dearmoddingui-api pointer'
+          if git push origin main; then
+            exit 0
+          fi
+          echo "push rejected on attempt $attempt, retrying against new origin/main"
+        done
+        echo "could not advance the pointer after 3 attempts"
+        exit 1
