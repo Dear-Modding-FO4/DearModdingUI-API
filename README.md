@@ -23,6 +23,14 @@ The C++ client supports lockstep Dear ImGui and layout-independent forwarding mo
 
 See the [ABI and lifecycle documentation](https://github.com/Dear-Modding-FO4/DearModdingUI/blob/main/include/DearModdingUI/README.md) for discovery, registration, compatibility, callback, and example details.
 
+## Continuous integration
+
+The `xmake` workflow compiles the public headers and runs the commonlibf4 sync integration tests for pushes and pull requests targeting `main`, as well as manual runs. Pull request jobs only build and test; they never receive the publishing credential.
+
+After a successful build of `main` in the canonical API repository, the workflow advances `lib/dearmoddingui-api` on `Dear-Modding-FO4/commonlibf4` to the exact API commit built by that run. The sync is an explicit no-op when the pointer already matches and an explicit successful skip when a newer API commit is already published. Invalid gitlinks, candidates outside API `main`, divergent history, credential failures, and non-race push failures stop the job. Concurrent non-fast-forward updates are retried at most three times from the latest commonlibf4 `main`, preserving unrelated changes.
+
+Publishing requires a fine-grained personal access token stored as the `COMMONLIBF4_TOKEN` Actions secret. Grant the token access only to `Dear-Modding-FO4/commonlibf4` with repository **Contents: Read and write** permission. To retry or intentionally publish the current API `main`, run the `xmake` workflow manually from the Actions tab on the `main` branch; the same build, provenance, ancestry, and push checks apply.
+
 ## License
 
 DearModdingUI API is licensed under GPL-3.0. Including these headers makes the consuming plugin a derivative work and requires the plugin to comply with GPL-3.0, including its source-distribution requirements when conveyed.

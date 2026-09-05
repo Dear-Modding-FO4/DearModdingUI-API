@@ -7,6 +7,9 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: windows-latest
@@ -26,5 +29,54 @@ jobs:
     - name: Configure
       run: xmake config --yes
 
+    - name: Test commonlibf4 sync
+      run: python Tests/test-sync-commonlibf4.py -v
+
     - name: Build header checks
       run: xmake build --yes -vD api-header-checks
+
+  sync-commonlibf4:
+    needs: build
+    if: >-
+      needs.build.result == 'success' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'Dear-Modding-FO4/DearModdingUI-API'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Verify credentials
+      env:
+        COMMONLIBF4_TOKEN: ${{ secrets.COMMONLIBF4_TOKEN }}
+      run: |
+        if [ -z "$COMMONLIBF4_TOKEN" ]; then
+          echo "::error title=Missing COMMONLIBF4_TOKEN::The commonlibf4 sync requires the COMMONLIBF4_TOKEN Actions secret."
+          exit 1
+        fi
+
+    - name: Check out built API commit
+      uses: actions/checkout@v6
+      with:
+        path: source
+        ref: ${{ github.sha }}
+        fetch-depth: 0
+        persist-credentials: false
+
+    - name: Check out commonlibf4 main
+      uses: actions/checkout@v6
+      with:
+        repository: Dear-Modding-FO4/commonlibf4
+        ref: main
+        path: target
+        fetch-depth: 0
+        persist-credentials: true
+        submodules: false
+        token: ${{ secrets.COMMONLIBF4_TOKEN }}
+
+    - name: Advance commonlibf4 API pointer
+      run: >-
+        python3 source/Tools/sync-commonlibf4.py
+        --source source
+        --target target
+        --candidate "${GITHUB_SHA}"
