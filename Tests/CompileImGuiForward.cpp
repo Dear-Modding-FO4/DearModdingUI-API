@@ -1,4 +1,7 @@
+#define ImGui DMUICompileImGuiForward
+#define dmui DMUICompileForwardingClient
 #include <DearModdingUI/Client.h>
+#undef dmui
 
 #include <type_traits>
 
@@ -10,13 +13,14 @@ static_assert(ImGui::kForwardImGuiVersionNum == DMUI_IMGUI_VERSION_NUM);
 
 void CompileImGuiForward()
 {
-	static dmui::Client client{
+	static DMUICompileForwardingClient::Client client{
 		"example.forward.mod",
 		"Forward Example",
-		dmui::Version{ 1, 0 },
-		dmui::kForwardingClient
+		DMUICompileForwardingClient::Version{ 1, 0 },
+		DMUICompileForwardingClient::kForwardingClient
 	};
 	bool selected{};
+	char multiline[128]{};
 	const float values[]{ 1.0f, 2.0f };
 	DMUI_StyleMetrics metrics{};
 
@@ -27,6 +31,12 @@ void CompileImGuiForward()
 	(void) ImGui::BeginCombo("combo", "preview");
 	ImGui::EndCombo();
 	(void) ImGui::Button("button");
+	(void) ImGui::InputTextMultiline(
+		"comments",
+		multiline,
+		sizeof(multiline),
+		{ 320.0f, ImGui::GetTextLineHeightWithSpacing() * 3.0f });
+	(void) ImGui::IsItemDeactivatedAfterEdit();
 	(void) ImGui::CollapsingHeader("header");
 	(void) ImGui::CollapsingHeader("header", &selected);
 	ImGui::PlotLines("plot", values, 2);

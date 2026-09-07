@@ -576,6 +576,15 @@ namespace ImGui
 		return function(label, buf, buf_size, flags, callback, user_data);
 	}
 
+	[[nodiscard]] inline bool InputTextMultiline(const char* label, char* buf, std::size_t buf_size, const ImVec2& size = ImVec2(0,0), ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = nullptr, void* user_data = nullptr) noexcept
+	{
+		using Function = bool (*)(const char*, char*, std::size_t, const ImVec2, ImGuiInputTextFlags, ImGuiInputTextCallback, void*);
+		static const Function function = detail::Resolve<Function>("igInputTextMultiline");
+		if (!function)
+			return false;
+		return function(label, buf, buf_size, size, flags, callback, user_data);
+	}
+
 	[[nodiscard]] inline bool InputTextWithHint(const char* label, const char* hint, char* buf, std::size_t buf_size, ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = nullptr, void* user_data = nullptr) noexcept
 	{
 		using Function = bool (*)(const char*, const char*, char*, std::size_t, ImGuiInputTextFlags, ImGuiInputTextCallback, void*);
@@ -583,6 +592,15 @@ namespace ImGui
 		if (!function)
 			return false;
 		return function(label, hint, buf, buf_size, flags, callback, user_data);
+	}
+
+	[[nodiscard]] inline bool IsItemDeactivatedAfterEdit() noexcept
+	{
+		using Function = bool (*)(void);
+		static const Function function = detail::Resolve<Function>("igIsItemDeactivatedAfterEdit");
+		if (!function)
+			return false;
+		return function();
 	}
 
 	[[nodiscard]] inline bool IsItemHovered(ImGuiHoveredFlags flags = 0) noexcept

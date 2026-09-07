@@ -77,6 +77,15 @@ typedef uint32_t DMUI_Result;
 #define DMUI_RESULT_UNKNOWN_CHORD 25u
 #define DMUI_RESULT_WRONG_THREAD 26u
 #define DMUI_RESULT_UNBALANCED_BRACKET 27u
+#define DMUI_RESULT_SERVICE_UNAVAILABLE 28u
+#define DMUI_RESULT_FORWARDING_VERSION_MISMATCH 29u
+#define DMUI_RESULT_UNSUPPORTED_RESOURCE 30u
+#define DMUI_RESULT_STALE_HANDLE 31u
+#define DMUI_RESULT_BUSY 32u
+#define DMUI_RESULT_BUFFER_TOO_SMALL 33u
+#define DMUI_RESULT_NOT_VISIBLE 34u
+#define DMUI_RESULT_STALE_SUBMISSION 35u
+#define DMUI_RESULT_IMGUI_FORWARDING_VERSION_MISMATCH 36u
 
 static inline const char* DMUI_ResultToString(DMUI_Result result) DMUI_NOEXCEPT
 {
@@ -138,6 +147,24 @@ static inline const char* DMUI_ResultToString(DMUI_Result result) DMUI_NOEXCEPT
 		return "WRONG_THREAD";
 	case DMUI_RESULT_UNBALANCED_BRACKET:
 		return "UNBALANCED_BRACKET";
+	case DMUI_RESULT_SERVICE_UNAVAILABLE:
+		return "SERVICE_UNAVAILABLE";
+	case DMUI_RESULT_FORWARDING_VERSION_MISMATCH:
+		return "FORWARDING_VERSION_MISMATCH";
+	case DMUI_RESULT_UNSUPPORTED_RESOURCE:
+		return "UNSUPPORTED_RESOURCE";
+	case DMUI_RESULT_STALE_HANDLE:
+		return "STALE_HANDLE";
+	case DMUI_RESULT_BUSY:
+		return "BUSY";
+	case DMUI_RESULT_BUFFER_TOO_SMALL:
+		return "BUFFER_TOO_SMALL";
+	case DMUI_RESULT_NOT_VISIBLE:
+		return "NOT_VISIBLE";
+	case DMUI_RESULT_STALE_SUBMISSION:
+		return "STALE_SUBMISSION";
+	case DMUI_RESULT_IMGUI_FORWARDING_VERSION_MISMATCH:
+		return "IMGUI_FORWARDING_VERSION_MISMATCH";
 	default:
 		return "UNKNOWN";
 	}
@@ -198,6 +225,22 @@ typedef uint32_t DMUI_ClientCapabilities;
 #define DMUI_CLIENT_CAPABILITY_NONE 0u
 #define DMUI_CLIENT_CAPABILITY_RENDERER_REPLACEMENT 0x00000001u
 
+typedef uint64_t DMUI_HostServices;
+
+#define DMUI_HOST_SERVICE_NONE UINT64_C(0)
+#define DMUI_HOST_SERVICE_FRAME_CONTROL (UINT64_C(1) << 0u)
+#define DMUI_HOST_SERVICE_EDIT_LIFECYCLE (UINT64_C(1) << 1u)
+#define DMUI_HOST_SERVICE_CONTEXTUAL_HOTKEYS (UINT64_C(1) << 2u)
+#define DMUI_HOST_SERVICE_IMAGE_RESOURCES (UINT64_C(1) << 3u)
+#define DMUI_HOST_SERVICE_MANAGED_OVERLAYS (UINT64_C(1) << 4u)
+#define DMUI_HOST_SERVICE_NOTIFICATIONS (UINT64_C(1) << 5u)
+#define DMUI_HOST_SERVICE_ANNOTATED_PLOTS (UINT64_C(1) << 6u)
+#define DMUI_HOST_SERVICE_DIALOGS (UINT64_C(1) << 7u)
+
+#define DMUI_FORWARDING_VERSION_1_0 DMUI_MAKE_VERSION(1u, 0u)
+#define DMUI_FORWARDING_VERSION_1_1 DMUI_MAKE_VERSION(1u, 1u)
+#define DMUI_FORWARDING_VERSION_CURRENT DMUI_FORWARDING_VERSION_1_1
+
 typedef uint32_t DMUI_ClientOrigin;
 
 #define DMUI_CLIENT_ORIGIN_NATIVE 0u
@@ -209,6 +252,8 @@ typedef uint64_t DMUI_ActionHandle;
 typedef uint64_t DMUI_FrameObserverHandle;
 typedef uint64_t DMUI_HotkeyActionHandle;
 typedef uint64_t DMUI_PageActivityObserverHandle;
+typedef uint64_t DMUI_ImageHandle;
+typedef uint64_t DMUI_DialogHandle;
 
 #define DMUI_INVALID_CLIENT_HANDLE ((DMUI_ClientHandle)0u)
 #define DMUI_INVALID_PAGE_HANDLE ((DMUI_PageHandle)0u)
@@ -216,6 +261,8 @@ typedef uint64_t DMUI_PageActivityObserverHandle;
 #define DMUI_INVALID_FRAME_OBSERVER_HANDLE ((DMUI_FrameObserverHandle)0u)
 #define DMUI_INVALID_HOTKEY_ACTION_HANDLE ((DMUI_HotkeyActionHandle)0u)
 #define DMUI_INVALID_PAGE_ACTIVITY_OBSERVER_HANDLE ((DMUI_PageActivityObserverHandle)0u)
+#define DMUI_INVALID_IMAGE_HANDLE ((DMUI_ImageHandle)0u)
+#define DMUI_INVALID_DIALOG_HANDLE ((DMUI_DialogHandle)0u)
 
 typedef uint32_t DMUI_PageActivityKind;
 
@@ -227,6 +274,38 @@ typedef uint32_t DMUI_SettingsRowLayout;
 
 #define DMUI_SETTINGS_ROW_LAYOUT_LABEL_VALUE 0u
 #define DMUI_SETTINGS_ROW_LAYOUT_FULL_SPAN 1u
+
+typedef uint32_t DMUI_HotkeyContextPolicy;
+
+#define DMUI_HOTKEY_CONTEXT_ALWAYS 0u
+#define DMUI_HOTKEY_CONTEXT_HOST_INPUT_INACTIVE 1u
+#define DMUI_HOTKEY_CONTEXT_GAMEPLAY_UNOBSTRUCTED 2u
+
+typedef uint32_t DMUI_ImageStatus;
+
+#define DMUI_IMAGE_STATUS_READY 0u
+#define DMUI_IMAGE_STATUS_INVALIDATED 1u
+#define DMUI_IMAGE_STATUS_RELEASED 2u
+
+typedef uint32_t DMUI_OverlayAnchor;
+
+#define DMUI_OVERLAY_ANCHOR_TOP_LEFT 0u
+#define DMUI_OVERLAY_ANCHOR_TOP_RIGHT 1u
+#define DMUI_OVERLAY_ANCHOR_BOTTOM_LEFT 2u
+#define DMUI_OVERLAY_ANCHOR_BOTTOM_RIGHT 3u
+#define DMUI_OVERLAY_ANCHOR_FREE 4u
+
+typedef uint32_t DMUI_DialogKind;
+
+#define DMUI_DIALOG_KIND_CONFIRM 0u
+#define DMUI_DIALOG_KIND_TEXT_ENTRY 1u
+
+typedef uint32_t DMUI_DialogEventKind;
+
+#define DMUI_DIALOG_EVENT_PENDING 0u
+#define DMUI_DIALOG_EVENT_SUBMITTED 1u
+#define DMUI_DIALOG_EVENT_CANCELLED 2u
+#define DMUI_DIALOG_EVENT_COMPLETED 3u
 
 #if defined(_MSC_VER)
 #pragma pack(push, 8)
@@ -334,10 +413,17 @@ typedef struct DMUI_ClientDescriptor
 	const char* iconName;
 	DMUI_ClientOrigin origin;
 	const char* bridgeSourceLabel;
+	// Optional appended preflight requirements. A host must reject registration
+	// before assigning a handle when either requirement cannot be met.
+	DMUI_HostServices requiredServices;
+	uint32_t minimumForwardingVersion;
+	uint32_t reserved;
 } DMUI_ClientDescriptor;
 
 #define DMUI_CLIENT_DESCRIPTOR_0_1_SIZE \
 	((uint32_t)(offsetof(DMUI_ClientDescriptor, bridgeSourceLabel) + sizeof(const char*)))
+#define DMUI_CLIENT_DESCRIPTOR_SERVICES_SIZE \
+	((uint32_t)(offsetof(DMUI_ClientDescriptor, reserved) + sizeof(uint32_t)))
 
 typedef struct DMUI_PageDescriptor
 {
@@ -388,10 +474,15 @@ typedef struct DMUI_HotkeyActionDescriptor
 	const char* suggestedDefaultChord;
 	DMUI_HotkeyCallback callback;
 	void* userData;
+	// Appended policy. Old descriptors default to ALWAYS.
+	DMUI_HotkeyContextPolicy contextPolicy;
+	uint32_t reserved;
 } DMUI_HotkeyActionDescriptor;
 
 #define DMUI_HOTKEY_ACTION_DESCRIPTOR_0_1_SIZE \
 	((uint32_t)(offsetof(DMUI_HotkeyActionDescriptor, userData) + sizeof(void*)))
+#define DMUI_HOTKEY_ACTION_DESCRIPTOR_CONTEXT_SIZE \
+	((uint32_t)(offsetof(DMUI_HotkeyActionDescriptor, reserved) + sizeof(uint32_t)))
 
 typedef struct DMUI_LinkDescriptor
 {
@@ -536,6 +627,149 @@ typedef struct DMUI_ThemeColors
 
 #define DMUI_THEME_COLORS_0_1_SIZE \
 	((uint32_t)(offsetof(DMUI_ThemeColors, statusInfo) + sizeof(DMUI_Vec4)))
+
+typedef struct DMUI_HostServicesInfo
+{
+	uint32_t structSize;
+	uint32_t forwardingVersion;
+	DMUI_HostServices supportedServices;
+} DMUI_HostServicesInfo;
+
+#define DMUI_HOST_SERVICES_INFO_0_1_SIZE \
+	((uint32_t)(offsetof(DMUI_HostServicesInfo, supportedServices) + sizeof(DMUI_HostServices)))
+
+// The source pointer must be a live ID3D11ShaderResourceView for the duration
+// of this call. The host retains its own COM reference on success.
+typedef struct DMUI_D3D11ImageDescriptor
+{
+	uint32_t structSize;
+	void* shaderResourceView;
+	uint32_t contentWidth;
+	uint32_t contentHeight;
+} DMUI_D3D11ImageDescriptor;
+
+#define DMUI_D3D11_IMAGE_DESCRIPTOR_0_1_SIZE \
+	((uint32_t)(offsetof(DMUI_D3D11ImageDescriptor, contentHeight) + sizeof(uint32_t)))
+
+typedef struct DMUI_ImageDrawOptions
+{
+	uint32_t structSize;
+	DMUI_Vec2 size;
+	DMUI_Vec2 uv0;
+	DMUI_Vec2 uv1;
+	DMUI_Vec4 tint;
+	uint32_t preserveAspect;
+	uint32_t reserved;
+} DMUI_ImageDrawOptions;
+
+#define DMUI_IMAGE_DRAW_OPTIONS_0_1_SIZE \
+	((uint32_t)(offsetof(DMUI_ImageDrawOptions, reserved) + sizeof(uint32_t)))
+
+typedef struct DMUI_ImageInfo
+{
+	uint32_t structSize;
+	DMUI_ImageStatus status;
+	uint32_t contentWidth;
+	uint32_t contentHeight;
+	uint64_t deviceGeneration;
+} DMUI_ImageInfo;
+
+#define DMUI_IMAGE_INFO_0_1_SIZE \
+	((uint32_t)(offsetof(DMUI_ImageInfo, deviceGeneration) + sizeof(uint64_t)))
+
+typedef struct DMUI_ManagedOverlayOptions
+{
+	uint32_t structSize;
+	DMUI_OverlayAnchor anchor;
+	DMUI_Vec2 offset;
+	DMUI_Vec2 minimumSize;
+	DMUI_Vec2 maximumSize;
+	float opacity;
+	float contentScale;
+	uint32_t backgroundVisible;
+	uint32_t borderVisible;
+	uint32_t allowArrangement;
+	uint32_t reserved;
+} DMUI_ManagedOverlayOptions;
+
+#define DMUI_MANAGED_OVERLAY_OPTIONS_0_1_SIZE \
+	((uint32_t)(offsetof(DMUI_ManagedOverlayOptions, reserved) + sizeof(uint32_t)))
+
+typedef struct DMUI_ManagedOverlayPlacement
+{
+	uint32_t structSize;
+	DMUI_OverlayAnchor anchor;
+	DMUI_Vec2 offset;
+	DMUI_Vec2 position;
+	DMUI_Vec2 size;
+	uint64_t changeGeneration;
+	uint32_t arrangementCompleted;
+	uint32_t visible;
+} DMUI_ManagedOverlayPlacement;
+
+#define DMUI_MANAGED_OVERLAY_PLACEMENT_0_1_SIZE \
+	((uint32_t)(offsetof(DMUI_ManagedOverlayPlacement, visible) + sizeof(uint32_t)))
+
+typedef struct DMUI_NotificationDescriptor
+{
+	uint32_t structSize;
+	DMUI_StatusSeverity severity;
+	const char* message;
+	uint32_t durationMilliseconds;
+} DMUI_NotificationDescriptor;
+
+#define DMUI_NOTIFICATION_DESCRIPTOR_0_1_SIZE \
+	((uint32_t)(offsetof(DMUI_NotificationDescriptor, durationMilliseconds) + sizeof(uint32_t)))
+
+typedef struct DMUI_PlotReferenceLine
+{
+	float value;
+	DMUI_Vec4 color;
+} DMUI_PlotReferenceLine;
+
+typedef struct DMUI_AnnotatedPlotDescriptor
+{
+	uint32_t structSize;
+	const float* samples;
+	uint32_t sampleCount;
+	uint32_t sampleOffset;
+	float scaleMinimum;
+	float scaleMaximum;
+	DMUI_Vec2 size;
+	const char* overlayText;
+	const DMUI_PlotReferenceLine* referenceLines;
+	uint32_t referenceLineCount;
+} DMUI_AnnotatedPlotDescriptor;
+
+#define DMUI_ANNOTATED_PLOT_DESCRIPTOR_0_1_SIZE \
+	((uint32_t)(offsetof(DMUI_AnnotatedPlotDescriptor, referenceLineCount) + sizeof(uint32_t)))
+
+typedef struct DMUI_DialogDescriptor
+{
+	uint32_t structSize;
+	DMUI_DialogKind kind;
+	const char* title;
+	const char* body;
+	const char* acceptLabel;
+	const char* cancelLabel;
+	const char* hint;
+	const char* initialText;
+	uint32_t maximumTextBytes;
+} DMUI_DialogDescriptor;
+
+#define DMUI_DIALOG_DESCRIPTOR_0_1_SIZE \
+	((uint32_t)(offsetof(DMUI_DialogDescriptor, maximumTextBytes) + sizeof(uint32_t)))
+
+typedef struct DMUI_DialogEvent
+{
+	uint32_t structSize;
+	DMUI_DialogEventKind kind;
+	uint64_t submissionId;
+	uint32_t requiredTextCapacity;
+} DMUI_DialogEvent;
+
+#define DMUI_DIALOG_EVENT_0_1_SIZE \
+	((uint32_t)(offsetof(DMUI_DialogEvent, requiredTextCapacity) + sizeof(uint32_t)))
 
 typedef DMUI_Result (DMUI_CALL *DMUI_RegisterClientFn)(
 	const DMUI_ClientDescriptor* descriptor,
@@ -701,6 +935,66 @@ typedef DMUI_Result (DMUI_CALL *DMUI_RegisterPageActivityObserverFn)(
 	DMUI_ClientHandle client,
 	const DMUI_PageActivityObserverDescriptor* descriptor,
 	DMUI_PageActivityObserverHandle* observer) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_QueryServicesFn)(
+	DMUI_HostServicesInfo* services) DMUI_NOEXCEPT;
+// Enabled state is thread-safe. Disabling a held action preserves its owned key-up.
+typedef DMUI_Result (DMUI_CALL *DMUI_SetHotkeyActionEnabledFn)(
+	DMUI_ClientHandle client,
+	DMUI_HotkeyActionHandle action,
+	uint32_t enabled) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_ImportD3D11ImageFn)(
+	DMUI_ClientHandle client,
+	const DMUI_D3D11ImageDescriptor* descriptor,
+	DMUI_ImageHandle* image) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_DrawImageFn)(
+	DMUI_ClientHandle client,
+	DMUI_ImageHandle image,
+	const DMUI_ImageDrawOptions* options) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_ReleaseImageFn)(
+	DMUI_ClientHandle client,
+	DMUI_ImageHandle image) DMUI_NOEXCEPT;
+// Released/invalidated status remains queryable only until the slot is reused.
+// Reuse advances the opaque handle generation; older handles then return STALE_HANDLE.
+typedef DMUI_Result (DMUI_CALL *DMUI_QueryImageFn)(
+	DMUI_ClientHandle client,
+	DMUI_ImageHandle image,
+	DMUI_ImageInfo* info) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_ConfigureOverlayFn)(
+	DMUI_ClientHandle client,
+	DMUI_PageHandle page,
+	const DMUI_ManagedOverlayOptions* options) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_QueryOverlayFn)(
+	DMUI_ClientHandle client,
+	DMUI_PageHandle page,
+	DMUI_ManagedOverlayPlacement* placement) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_PostNotificationFn)(
+	DMUI_ClientHandle client,
+	const DMUI_NotificationDescriptor* descriptor) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_DrawAnnotatedPlotFn)(
+	DMUI_ClientHandle client,
+	const char* id,
+	const DMUI_AnnotatedPlotDescriptor* descriptor) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_RequestDialogFn)(
+	DMUI_ClientHandle client,
+	const DMUI_DialogDescriptor* descriptor,
+	DMUI_DialogHandle* dialog) DMUI_NOEXCEPT;
+// BUFFER_TOO_SMALL leaves the event pending and reports requiredTextCapacity.
+typedef DMUI_Result (DMUI_CALL *DMUI_PollDialogEventFn)(
+	DMUI_ClientHandle client,
+	DMUI_DialogHandle dialog,
+	DMUI_DialogEvent* event,
+	char* textBuffer,
+	uint32_t textCapacity) DMUI_NOEXCEPT;
+// accepted != 0 closes the dialog. Rejection optionally copies error and keeps text open.
+typedef DMUI_Result (DMUI_CALL *DMUI_ResolveDialogSubmissionFn)(
+	DMUI_ClientHandle client,
+	DMUI_DialogHandle dialog,
+	uint64_t submissionId,
+	uint32_t accepted,
+	const char* error) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_CancelDialogFn)(
+	DMUI_ClientHandle client,
+	DMUI_DialogHandle dialog) DMUI_NOEXCEPT;
 
 typedef struct DMUI_HostAPI
 {
@@ -741,6 +1035,20 @@ typedef struct DMUI_HostAPI
 	DMUI_DrawLinkRowFn drawLinkRow;
 	DMUI_DrawFaqFn drawFaq;
 	DMUI_ReportDiagnosticFn reportDiagnostic;
+	DMUI_QueryServicesFn queryServices;
+	DMUI_SetHotkeyActionEnabledFn setHotkeyActionEnabled;
+	DMUI_ImportD3D11ImageFn importD3D11Image;
+	DMUI_DrawImageFn drawImage;
+	DMUI_ReleaseImageFn releaseImage;
+	DMUI_QueryImageFn queryImage;
+	DMUI_ConfigureOverlayFn configureOverlay;
+	DMUI_QueryOverlayFn queryOverlay;
+	DMUI_PostNotificationFn postNotification;
+	DMUI_DrawAnnotatedPlotFn drawAnnotatedPlot;
+	DMUI_RequestDialogFn requestDialog;
+	DMUI_PollDialogEventFn pollDialogEvent;
+	DMUI_ResolveDialogSubmissionFn resolveDialogSubmission;
+	DMUI_CancelDialogFn cancelDialog;
 } DMUI_HostAPI;
 
 #define DMUI_HOST_API_SELECT_PAGE_SIZE \
@@ -799,6 +1107,34 @@ typedef struct DMUI_HostAPI
 	((uint32_t)(offsetof(DMUI_HostAPI, drawFaq) + sizeof(DMUI_DrawFaqFn)))
 #define DMUI_HOST_API_REPORT_DIAGNOSTIC_SIZE \
 	((uint32_t)(offsetof(DMUI_HostAPI, reportDiagnostic) + sizeof(DMUI_ReportDiagnosticFn)))
+#define DMUI_HOST_API_QUERY_SERVICES_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, queryServices) + sizeof(DMUI_QueryServicesFn)))
+#define DMUI_HOST_API_SET_HOTKEY_ACTION_ENABLED_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, setHotkeyActionEnabled) + sizeof(DMUI_SetHotkeyActionEnabledFn)))
+#define DMUI_HOST_API_IMPORT_D3D11_IMAGE_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, importD3D11Image) + sizeof(DMUI_ImportD3D11ImageFn)))
+#define DMUI_HOST_API_DRAW_IMAGE_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, drawImage) + sizeof(DMUI_DrawImageFn)))
+#define DMUI_HOST_API_RELEASE_IMAGE_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, releaseImage) + sizeof(DMUI_ReleaseImageFn)))
+#define DMUI_HOST_API_QUERY_IMAGE_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, queryImage) + sizeof(DMUI_QueryImageFn)))
+#define DMUI_HOST_API_CONFIGURE_OVERLAY_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, configureOverlay) + sizeof(DMUI_ConfigureOverlayFn)))
+#define DMUI_HOST_API_QUERY_OVERLAY_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, queryOverlay) + sizeof(DMUI_QueryOverlayFn)))
+#define DMUI_HOST_API_POST_NOTIFICATION_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, postNotification) + sizeof(DMUI_PostNotificationFn)))
+#define DMUI_HOST_API_DRAW_ANNOTATED_PLOT_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, drawAnnotatedPlot) + sizeof(DMUI_DrawAnnotatedPlotFn)))
+#define DMUI_HOST_API_REQUEST_DIALOG_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, requestDialog) + sizeof(DMUI_RequestDialogFn)))
+#define DMUI_HOST_API_POLL_DIALOG_EVENT_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, pollDialogEvent) + sizeof(DMUI_PollDialogEventFn)))
+#define DMUI_HOST_API_RESOLVE_DIALOG_SUBMISSION_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, resolveDialogSubmission) + sizeof(DMUI_ResolveDialogSubmissionFn)))
+#define DMUI_HOST_API_CANCEL_DIALOG_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, cancelDialog) + sizeof(DMUI_CancelDialogFn)))
 
 #if defined(_MSC_VER)
 #pragma pack(pop)

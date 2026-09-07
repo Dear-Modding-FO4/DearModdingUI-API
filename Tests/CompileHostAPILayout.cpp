@@ -5,7 +5,7 @@
 
 // The single ABI layout guard for DMUI_HostAPI; the host compiles this file too.
 #if UINTPTR_MAX == UINT64_MAX
-static_assert(sizeof(DMUI_HostAPI) == 288);
+static_assert(sizeof(DMUI_HostAPI) == 400);
 static_assert(offsetof(DMUI_HostAPI, structSize) == 0);
 static_assert(offsetof(DMUI_HostAPI, apiVersion) == 4);
 static_assert(offsetof(DMUI_HostAPI, imguiFingerprint) == 8);
@@ -43,6 +43,20 @@ static_assert(offsetof(DMUI_HostAPI, registerPageActivityObserver) == 256);
 static_assert(offsetof(DMUI_HostAPI, drawLinkRow) == 264);
 static_assert(offsetof(DMUI_HostAPI, drawFaq) == 272);
 static_assert(offsetof(DMUI_HostAPI, reportDiagnostic) == 280);
+static_assert(offsetof(DMUI_HostAPI, queryServices) == 288);
+static_assert(offsetof(DMUI_HostAPI, setHotkeyActionEnabled) == 296);
+static_assert(offsetof(DMUI_HostAPI, importD3D11Image) == 304);
+static_assert(offsetof(DMUI_HostAPI, drawImage) == 312);
+static_assert(offsetof(DMUI_HostAPI, releaseImage) == 320);
+static_assert(offsetof(DMUI_HostAPI, queryImage) == 328);
+static_assert(offsetof(DMUI_HostAPI, configureOverlay) == 336);
+static_assert(offsetof(DMUI_HostAPI, queryOverlay) == 344);
+static_assert(offsetof(DMUI_HostAPI, postNotification) == 352);
+static_assert(offsetof(DMUI_HostAPI, drawAnnotatedPlot) == 360);
+static_assert(offsetof(DMUI_HostAPI, requestDialog) == 368);
+static_assert(offsetof(DMUI_HostAPI, pollDialogEvent) == 376);
+static_assert(offsetof(DMUI_HostAPI, resolveDialogSubmission) == 384);
+static_assert(offsetof(DMUI_HostAPI, cancelDialog) == 392);
 static_assert(DMUI_HOST_API_SELECT_PAGE_SIZE == 72);
 static_assert(DMUI_HOST_API_ATTACH_SWAP_CHAIN_SIZE == 80);
 static_assert(DMUI_HOST_API_REGISTER_ACTION_SIZE == 88);
@@ -70,6 +84,27 @@ static_assert(DMUI_HOST_API_BEGIN_SETTINGS_ROW_EX_SIZE == 256);
 static_assert(DMUI_HOST_API_REGISTER_PAGE_ACTIVITY_OBSERVER_SIZE == 264);
 static_assert(DMUI_HOST_API_DRAW_LINK_ROW_SIZE == 272);
 static_assert(DMUI_HOST_API_DRAW_FAQ_SIZE == 280);
-static_assert(DMUI_HOST_API_REPORT_DIAGNOSTIC_SIZE ==
-	sizeof(DMUI_HostAPI));
+static_assert(DMUI_HOST_API_REPORT_DIAGNOSTIC_SIZE == 288);
+static_assert(DMUI_HOST_API_QUERY_SERVICES_SIZE == 296);
+static_assert(DMUI_HOST_API_SET_HOTKEY_ACTION_ENABLED_SIZE == 304);
+static_assert(DMUI_HOST_API_IMPORT_D3D11_IMAGE_SIZE == 312);
+static_assert(DMUI_HOST_API_DRAW_IMAGE_SIZE == 320);
+static_assert(DMUI_HOST_API_RELEASE_IMAGE_SIZE == 328);
+static_assert(DMUI_HOST_API_QUERY_IMAGE_SIZE == 336);
+static_assert(DMUI_HOST_API_CONFIGURE_OVERLAY_SIZE == 344);
+static_assert(DMUI_HOST_API_QUERY_OVERLAY_SIZE == 352);
+static_assert(DMUI_HOST_API_POST_NOTIFICATION_SIZE == 360);
+static_assert(DMUI_HOST_API_DRAW_ANNOTATED_PLOT_SIZE == 368);
+static_assert(DMUI_HOST_API_REQUEST_DIALOG_SIZE == 376);
+static_assert(DMUI_HOST_API_POLL_DIALOG_EVENT_SIZE == 384);
+static_assert(DMUI_HOST_API_RESOLVE_DIALOG_SUBMISSION_SIZE == 392);
+static_assert(DMUI_HOST_API_CANCEL_DIALOG_SIZE == sizeof(DMUI_HostAPI));
+static_assert(sizeof(DMUI_AnnotatedPlotDescriptor) == 64);
+static_assert(offsetof(DMUI_AnnotatedPlotDescriptor, sampleCount) == 16);
+static_assert(offsetof(DMUI_AnnotatedPlotDescriptor, sampleOffset) == 20);
+static_assert(offsetof(DMUI_AnnotatedPlotDescriptor, referenceLineCount) == 56);
+static_assert(DMUI_ANNOTATED_PLOT_DESCRIPTOR_0_1_SIZE == 60);
+static_assert(sizeof(DMUI_DialogEvent) == 24);
+static_assert(offsetof(DMUI_DialogEvent, requiredTextCapacity) == 16);
+static_assert(DMUI_DIALOG_EVENT_0_1_SIZE == 20);
 #endif

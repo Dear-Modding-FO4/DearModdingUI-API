@@ -21,6 +21,93 @@ add_deps("dearmoddingui-api", { public = true })
 
 The C++ client supports lockstep Dear ImGui and layout-independent forwarding modes on Windows. The fingerprint builder requires Dear ImGui headers; forwarding mode compiles without Dear ImGui and calls the loaded host DLL through `ImGuiForward.h`. Host discovery uses matching narrow Win32 declarations in `Win32Discovery.h`, so public headers do not include `Windows.h` or leak its macros. The C ABI in `API.h` is independent of commonlibf4 and the host binary.
 
+## Forwarding-only services
+
+Forwarding clients can declare `dmui::ClientOptions::requiredServices` and
+`minimumForwardingVersion`. `Client::Connect` calls `queryServices` before
+registration and returns `SERVICE_UNAVAILABLE` or
+`FORWARDING_VERSION_MISMATCH` without creating a partial client. Host service
+flags are availability promises and are separate from client capability
+permissions such as `RENDERER_REPLACEMENT`. Callers that do not opt into
+requirements retain the original 0.1 registration behavior.
+
+The additive 0.1 table supplies official wrappers for frame demand
+(`RequestFrame`/`ReleaseFrame`), swapchain attachment, contextual hotkey
+enablement, D3D11 images, managed overlays, notifications, annotated plots,
+and submission-aware dialogs. Every prior table offset and every `_0_1_SIZE`
+boundary remains frozen.
+
+New drawing calls are valid only on the render thread while the owning page
+callback is active. Image import instead requires a ready backend and the bound
+render thread, so it is valid from a frame observer without forcing a UI draw.
+Image queries require no draw phase. Image release and notification posting are
+thread-safe. Dialog request and polling run in an owning render-thread callback;
+submission resolution and cancellation may be
+returned from another thread. Registered callbacks and their user data remain
+process-lifetime except for hotkeys, which retain their documented explicit
+unregister operation.
+
+`DMUI_D3D11ImageDescriptor::shaderResourceView` must point to a live
+`ID3D11ShaderResourceView` during import. The host accepts same-device,
+single-sample Texture2D views with one array slice and normalized or floating
+sampleable formats. It retains a COM reference and a separate lease for every
+queued draw through `RenderDrawData`. A handle is owner-scoped and carries the
+device generation; device replacement invalidates it, while ordinary
+same-device backbuffer resize does not. Releasing a handle does not invalidate
+an already queued draw. Released and invalidated handles remain queryable only
+until their storage slot is reused; reuse advances a per-slot generation, so an
+older handle returns `STALE_HANDLE` and never aliases the replacement. A slot
+whose generation is exhausted is retired rather than wrapped. Pixels are not
+copied, decoded, normalized, or
+tonemapped, so producers must order GPU writes before sampling and supply any
+required conversion.
+
+Managed overlays are opt-in per existing overlay page. Coordinates, offsets,
+and constraints are logical ImGui/backbuffer coordinates and are scaled by
+the host scale; `contentScale` is a continuous multiplier in the inclusive
+0.5..3 range. Anchored overlays are host-positioned. Free overlays can move
+only while the host menu owns input and `allowArrangement` is set. Outside
+that mode they use `NoInputs`, never request a cursor, and never consume
+gameplay input. `queryOverlay` reports position, size, change generation, and
+an arrangement-completed edge so the client remains the sole persistence
+owner.
+
+Notifications copy at most 1024 message bytes, use a clamped 250..30000 ms
+duration (zero means 4000 ms), and use one latest-message-wins slot. They
+independently demand frames and render without input outside the modal menu.
+Annotated plots consume the sample and reference arrays during the call,
+accept at most 1,000,000 samples and 64 reference lines, and reject non-finite
+samples, lines, sizes, or ranges. Empty plots are valid. New array counts,
+offsets, and dialog buffer capacities use fixed-width `uint32_t` ABI fields.
+
+Dialogs copy all descriptor strings and permit one active request. Requests
+require a visible host menu. Text capacity is bytes including the NUL, from 1
+through 4096; the current contract does not split or validate UTF-8
+codepoints. `SUBMITTED` carries a monotonic submission ID. Resolving success
+produces `COMPLETED`; rejection copies an error, preserves the entered text,
+and returns to `PENDING`. The rejection error is optional, so `nullptr` and an
+empty string both mean no displayed error. A small poll buffer reports the required capacity
+without truncating or consuming the event. Escape/menu close cancels only a
+not-yet-submitted dialog; submitted work remains pending until resolved.
+
+Hotkey chords additionally accept ASCII A-Z and 0-9, canonically uppercased.
+`HOST_INPUT_INACTIVE` yields while the host menu, its dialogs, or text editing
+owns input. `GAMEPLAY_UNOBSTRUCTED` additionally requires the current input
+message's safe engine UI snapshot to report no active menu mode; an unavailable
+snapshot yields to the game. Dynamic
+enablement is thread-safe and checked before a press is consumed. Once a
+press is owned, its release remains owned across policy/enable changes.
+Focus loss synthesizes the queued release before forgetting ownership.
+
+Declarative settings continue calling `binding.set` for every live edit.
+`SettingDescriptor::onEdit` separately reports `changed` and `completed`
+immediately after the value widget. Checkbox and choice edits complete
+immediately; scalar/text controls use `IsItemDeactivatedAfterEdit`. An effective
+reset is one discrete edit with both flags set, while disabled and already
+default settings do not write or emit an edit event.
+`TextSettingControl::multiline` uses an ordinary stable client-owned string
+buffer and a three-line editor; completion does not imply persistence.
+
 See the [ABI and lifecycle documentation](https://github.com/Dear-Modding-FO4/DearModdingUI/blob/main/include/DearModdingUI/README.md) for discovery, registration, compatibility, callback, and example details.
 
 ## Continuous integration

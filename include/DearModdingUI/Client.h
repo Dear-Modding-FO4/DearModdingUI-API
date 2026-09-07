@@ -58,6 +58,207 @@ namespace dmui
 		std::string_view sourceLabel;
 	};
 
+	struct ClientOptions
+	{
+		DMUI_ClientCapabilities capabilities{ DMUI_CLIENT_CAPABILITY_NONE };
+		DMUI_HostServices requiredServices{ DMUI_HOST_SERVICE_NONE };
+		uint32_t minimumForwardingVersion{};
+	};
+
+	struct HostServices
+	{
+		uint32_t forwardingVersion{};
+		DMUI_HostServices supported{};
+	};
+
+	[[nodiscard]] inline DMUI_Result PreflightHostAPI(
+		const DMUI_HostAPI* a_api,
+		const ClientOptions& a_options,
+		HostServices* a_services = nullptr) noexcept
+	{
+		if (a_services)
+			*a_services = {};
+		if (!a_api)
+			return DMUI_RESULT_UNSUPPORTED_ABI;
+		constexpr auto registerClientSize =
+			offsetof(DMUI_HostAPI, registerClient) +
+			sizeof(DMUI_RegisterClientFn);
+		if (a_api->structSize < registerClientSize || !a_api->registerClient)
+			return DMUI_RESULT_STRUCT_TOO_SMALL;
+		if ((a_options.capabilities &
+				~DMUI_CLIENT_CAPABILITY_RENDERER_REPLACEMENT) != 0)
+			return DMUI_RESULT_INVALID_DESCRIPTOR;
+		constexpr DMUI_HostServices knownServices{
+			DMUI_HOST_SERVICE_FRAME_CONTROL |
+			DMUI_HOST_SERVICE_EDIT_LIFECYCLE |
+			DMUI_HOST_SERVICE_CONTEXTUAL_HOTKEYS |
+			DMUI_HOST_SERVICE_IMAGE_RESOURCES |
+			DMUI_HOST_SERVICE_MANAGED_OVERLAYS |
+			DMUI_HOST_SERVICE_NOTIFICATIONS |
+			DMUI_HOST_SERVICE_ANNOTATED_PLOTS |
+			DMUI_HOST_SERVICE_DIALOGS
+		};
+		if ((a_options.requiredServices & ~knownServices) != 0)
+			return DMUI_RESULT_SERVICE_UNAVAILABLE;
+		if (a_options.requiredServices == DMUI_HOST_SERVICE_NONE &&
+			a_options.minimumForwardingVersion == 0)
+			return DMUI_RESULT_OK;
+		if (a_api->structSize < DMUI_HOST_API_QUERY_SERVICES_SIZE ||
+			!a_api->queryServices)
+			return DMUI_RESULT_SERVICE_UNAVAILABLE;
+
+		DMUI_HostServicesInfo services{};
+		services.structSize = sizeof(services);
+		const auto queryResult = a_api->queryServices(&services);
+		if (queryResult != DMUI_RESULT_OK)
+			return queryResult;
+		if ((services.supportedServices & a_options.requiredServices) !=
+			a_options.requiredServices)
+			return DMUI_RESULT_SERVICE_UNAVAILABLE;
+		if (services.forwardingVersion < a_options.minimumForwardingVersion)
+			return DMUI_RESULT_FORWARDING_VERSION_MISMATCH;
+
+		const auto required = a_options.requiredServices;
+		const auto frameControlAvailable =
+			a_api->structSize >=
+				offsetof(DMUI_HostAPI, releaseFrame) +
+					sizeof(DMUI_ReleaseFrameFn) &&
+			a_api->requestFrame &&
+			a_api->releaseFrame;
+		const auto contextualHotkeysAvailable =
+			a_api->structSize >= DMUI_HOST_API_SET_HOTKEY_ACTION_ENABLED_SIZE &&
+			a_api->registerHotkeyAction &&
+			a_api->setHotkeyActionEnabled;
+		const auto imagesAvailable =
+			a_api->structSize >= DMUI_HOST_API_QUERY_IMAGE_SIZE &&
+			a_api->importD3D11Image &&
+			a_api->drawImage &&
+			a_api->releaseImage &&
+			a_api->queryImage;
+		const auto overlaysAvailable =
+			a_api->structSize >= DMUI_HOST_API_QUERY_OVERLAY_SIZE &&
+			a_api->configureOverlay &&
+			a_api->queryOverlay;
+		const auto notificationsAvailable =
+			a_api->structSize >= DMUI_HOST_API_POST_NOTIFICATION_SIZE &&
+			a_api->postNotification;
+		const auto plotsAvailable =
+			a_api->structSize >= DMUI_HOST_API_DRAW_ANNOTATED_PLOT_SIZE &&
+			a_api->drawAnnotatedPlot;
+		const auto dialogsAvailable =
+			a_api->structSize >= DMUI_HOST_API_CANCEL_DIALOG_SIZE &&
+			a_api->requestDialog &&
+			a_api->pollDialogEvent &&
+			a_api->resolveDialogSubmission &&
+			a_api->cancelDialog;
+		if (((required & DMUI_HOST_SERVICE_FRAME_CONTROL) != 0 &&
+				!frameControlAvailable) ||
+			((required & DMUI_HOST_SERVICE_CONTEXTUAL_HOTKEYS) != 0 &&
+				!contextualHotkeysAvailable) ||
+			((required & DMUI_HOST_SERVICE_IMAGE_RESOURCES) != 0 &&
+				!imagesAvailable) ||
+			((required & DMUI_HOST_SERVICE_MANAGED_OVERLAYS) != 0 &&
+				!overlaysAvailable) ||
+			((required & DMUI_HOST_SERVICE_NOTIFICATIONS) != 0 &&
+				!notificationsAvailable) ||
+			((required & DMUI_HOST_SERVICE_ANNOTATED_PLOTS) != 0 &&
+				!plotsAvailable) ||
+			((required & DMUI_HOST_SERVICE_DIALOGS) != 0 &&
+				!dialogsAvailable))
+			return DMUI_RESULT_SERVICE_UNAVAILABLE;
+		if (a_services)
+		{
+			a_services->forwardingVersion = services.forwardingVersion;
+			a_services->supported = services.supportedServices;
+		}
+		return DMUI_RESULT_OK;
+	}
+
+	struct ImageHandle
+	{
+		DMUI_ImageHandle value{ DMUI_INVALID_IMAGE_HANDLE };
+
+		[[nodiscard]] explicit operator bool() const noexcept
+		{
+			return value != DMUI_INVALID_IMAGE_HANDLE;
+		}
+	};
+
+	class ImageResource
+	{
+	public:
+		ImageResource() = default;
+		~ImageResource() noexcept
+		{
+			(void)Release();
+		}
+
+		ImageResource(const ImageResource&) = delete;
+		ImageResource& operator=(const ImageResource&) = delete;
+
+		ImageResource(ImageResource&& a_other) noexcept :
+			release_(std::exchange(a_other.release_, nullptr)),
+			client_(std::exchange(
+				a_other.client_,
+				DMUI_INVALID_CLIENT_HANDLE)),
+			handle_(std::exchange(
+				a_other.handle_,
+				DMUI_INVALID_IMAGE_HANDLE))
+		{}
+
+		ImageResource& operator=(ImageResource&& a_other) noexcept
+		{
+			if (this == std::addressof(a_other))
+				return *this;
+			(void)Release();
+			release_ = std::exchange(a_other.release_, nullptr);
+			client_ = std::exchange(
+				a_other.client_,
+				DMUI_INVALID_CLIENT_HANDLE);
+			handle_ = std::exchange(
+				a_other.handle_,
+				DMUI_INVALID_IMAGE_HANDLE);
+			return *this;
+		}
+
+		[[nodiscard]] ImageHandle Handle() const noexcept
+		{
+			return { handle_ };
+		}
+
+		[[nodiscard]] DMUI_Result Release() noexcept
+		{
+			if (!release_ || handle_ == DMUI_INVALID_IMAGE_HANDLE)
+				return DMUI_RESULT_OK;
+			const auto result = release_(client_, handle_);
+			if (result == DMUI_RESULT_OK ||
+				result == DMUI_RESULT_STALE_HANDLE ||
+				result == DMUI_RESULT_CLIENT_NOT_FOUND)
+			{
+				release_ = nullptr;
+				client_ = DMUI_INVALID_CLIENT_HANDLE;
+				handle_ = DMUI_INVALID_IMAGE_HANDLE;
+			}
+			return result;
+		}
+
+	private:
+		friend class Client;
+
+		ImageResource(
+			DMUI_ReleaseImageFn a_release,
+			DMUI_ClientHandle a_client,
+			DMUI_ImageHandle a_handle) noexcept :
+			release_(a_release),
+			client_(a_client),
+			handle_(a_handle)
+		{}
+
+		DMUI_ReleaseImageFn release_{};
+		DMUI_ClientHandle client_{ DMUI_INVALID_CLIENT_HANDLE };
+		DMUI_ImageHandle handle_{ DMUI_INVALID_IMAGE_HANDLE };
+	};
+
 	struct PageDescriptor
 	{
 		const char* id{};
@@ -118,6 +319,13 @@ namespace dmui
 
 	using SettingValue = std::variant<bool, double, int64_t, uint64_t, std::string>;
 
+	struct SettingEditEvent
+	{
+		SettingValue value;
+		bool changed{};
+		bool completed{};
+	};
+
 	template <class T>
 	concept SettingValueAlternative =
 		std::same_as<std::remove_cvref_t<T>, bool> ||
@@ -171,6 +379,7 @@ namespace dmui
 	struct TextSettingControl
 	{
 		size_t bufferCapacity{ 512 };
+		bool multiline{};
 	};
 
 	struct ChoiceSettingOption
@@ -467,6 +676,9 @@ namespace dmui
 		std::function<std::string()> resolveLabel;
 		std::function<bool()> isDirty;
 		std::function<bool()> isModified;
+		// Runs immediately after the value widget. binding.set remains live;
+		// completed is a separate persistence signal, not a deferred write.
+		std::function<void(const SettingEditEvent&)> onEdit;
 		bool showReset{ true };
 		RowPresentation presentation;
 		std::function<std::string()> resolveDescription;
@@ -681,16 +893,32 @@ namespace dmui
 		const auto presentation =
 			ResolveSettingControlPresentation(a_setting.control);
 		if (!presentation.editable ||
+			(a_setting.isEnabled && !a_setting.isEnabled()) ||
 			!a_setting.binding.set ||
 			!SettingValueMatchesControl(
 				a_setting.control,
 				a_setting.defaultValue))
 			return std::nullopt;
 
+		std::optional<SettingValue> previous;
+		if (a_setting.binding.get)
+		{
+			previous = a_setting.binding.get();
+			if (!SettingValueMatchesControl(a_setting.control, *previous))
+				throw std::bad_variant_access{};
+			if (IsSettingDefault(a_setting, *previous))
+				return previous;
+		}
+		else if (a_setting.isModified && !a_setting.isModified())
+			return std::nullopt;
+
 		auto effective = a_setting.binding.set(
 			NormalizeSettingValue(a_setting, a_setting.defaultValue));
 		if (!SettingValueMatchesControl(a_setting.control, effective))
 			throw std::bad_variant_access{};
+		const auto changed = !previous || *previous != effective;
+		if (changed && a_setting.onEdit)
+			a_setting.onEdit({ effective, true, true });
 		return effective;
 	}
 
@@ -761,13 +989,15 @@ namespace dmui
 			std::string_view a_displayName,
 			Version a_version,
 			std::string_view a_iconName = {},
-			ClientOrigin a_origin = {}) :
+			ClientOrigin a_origin = {},
+			ClientOptions a_options = {}) :
 			id_(a_id),
 			displayName_(a_displayName),
 			iconName_(a_iconName),
 			origin_(a_origin.kind),
 			bridgeSourceLabel_(a_origin.sourceLabel),
 			version_(a_version),
+			options_(a_options),
 			fingerprint_(DMUI_MakeImGuiFingerprint())
 		{}
 #endif
@@ -778,13 +1008,15 @@ namespace dmui
 			Version a_version,
 			ForwardingClientTag,
 			std::string_view a_iconName = {},
-			ClientOrigin a_origin = {}) :
+			ClientOrigin a_origin = {},
+			ClientOptions a_options = {}) :
 			id_(a_id),
 			displayName_(a_displayName),
 			iconName_(a_iconName),
 			origin_(a_origin.kind),
 			bridgeSourceLabel_(a_origin.sourceLabel),
-			version_(a_version)
+			version_(a_version),
+			options_(a_options)
 		{}
 
 		~Client() = default;
@@ -810,6 +1042,15 @@ namespace dmui
 				lastResult_ = DMUI_RESULT_OK;
 				return false;
 			}
+#if !defined(IMGUI_VERSION) || !defined(IMGUI_VERSION_NUM)
+			if (!ImGui::IsForwardVersionCompatible())
+			{
+				api_ = nullptr;
+				lastResult_ =
+					DMUI_RESULT_IMGUI_FORWARDING_VERSION_MISMATCH;
+				return false;
+			}
+#endif
 
 			api_ = getHostAPI(DMUI_API_VERSION_CURRENT);
 			if (!api_)
@@ -817,11 +1058,9 @@ namespace dmui
 				lastResult_ = DMUI_RESULT_UNSUPPORTED_ABI;
 				return false;
 			}
-			if (api_->structSize < kRegisterClientSize || !api_->registerClient)
-			{
-				lastResult_ = DMUI_RESULT_STRUCT_TOO_SMALL;
+			lastResult_ = PreflightHostAPI(api_, options_);
+			if (lastResult_ != DMUI_RESULT_OK)
 				return false;
-			}
 
 			DMUI_ClientDescriptor descriptor{};
 			descriptor.structSize = sizeof(descriptor);
@@ -833,12 +1072,15 @@ namespace dmui
 			descriptor.onHostReady = &OnHostReady;
 			descriptor.onHostUnavailable = &OnHostUnavailable;
 			descriptor.userData = this;
-			descriptor.capabilities = DMUI_CLIENT_CAPABILITY_NONE;
+			descriptor.capabilities = options_.capabilities;
 			descriptor.iconName =
 				iconName_.empty() ? nullptr : iconName_.c_str();
 			descriptor.origin = static_cast<DMUI_ClientOrigin>(origin_);
 			descriptor.bridgeSourceLabel =
 				bridgeSourceLabel_.empty() ? nullptr : bridgeSourceLabel_.c_str();
+			descriptor.requiredServices = options_.requiredServices;
+			descriptor.minimumForwardingVersion =
+				options_.minimumForwardingVersion;
 
 			DMUI_ClientHandle handle{ DMUI_INVALID_CLIENT_HANDLE };
 			lastResult_ = api_->registerClient(&descriptor, &handle);
@@ -938,7 +1180,9 @@ namespace dmui
 			const char* a_id,
 			const char* a_displayName,
 			const char* a_suggestedDefaultChord,
-			Callable&& a_callback) noexcept
+			Callable&& a_callback,
+			DMUI_HotkeyContextPolicy a_contextPolicy =
+				DMUI_HOTKEY_CONTEXT_ALWAYS) noexcept
 		{
 			if (!IsConnected())
 			{
@@ -973,6 +1217,7 @@ namespace dmui
 				descriptor.suggestedDefaultChord = a_suggestedDefaultChord;
 				descriptor.callback = &InvokeHotkey;
 				descriptor.userData = registration.callback.get();
+				descriptor.contextPolicy = a_contextPolicy;
 
 				DMUI_HotkeyActionHandle handle{ DMUI_INVALID_HOTKEY_ACTION_HANDLE };
 				lastResult_ = api_->registerHotkeyAction(
@@ -1240,6 +1485,337 @@ namespace dmui
 			if (lastResult_ != DMUI_RESULT_OK)
 				return std::nullopt;
 			return info;
+		}
+
+		[[nodiscard]] std::optional<HostServices> QueryServices() noexcept
+		{
+			if (!api_)
+			{
+				Fail(DMUI_RESULT_HOST_NOT_INITIALIZED);
+				return std::nullopt;
+			}
+			if (api_->structSize < DMUI_HOST_API_QUERY_SERVICES_SIZE ||
+				!api_->queryServices)
+			{
+				Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
+				return std::nullopt;
+			}
+			DMUI_HostServicesInfo services{};
+			services.structSize = sizeof(services);
+			lastResult_ = api_->queryServices(&services);
+			if (lastResult_ != DMUI_RESULT_OK)
+				return std::nullopt;
+			return HostServices{
+				services.forwardingVersion,
+				services.supportedServices
+			};
+		}
+
+		[[nodiscard]] bool RequestFrame(DMUI_PageHandle a_page) noexcept
+		{
+			if (!IsConnected())
+				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			if (api_->structSize <
+					static_cast<uint32_t>(
+						offsetof(DMUI_HostAPI, requestFrame) +
+						sizeof(DMUI_RequestFrameFn)) ||
+				!api_->requestFrame)
+				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
+			lastResult_ = api_->requestFrame(clientHandle_, a_page);
+			return lastResult_ == DMUI_RESULT_OK;
+		}
+
+		[[nodiscard]] bool ReleaseFrame(DMUI_PageHandle a_page) noexcept
+		{
+			if (!IsConnected())
+				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			if (api_->structSize <
+					static_cast<uint32_t>(
+						offsetof(DMUI_HostAPI, releaseFrame) +
+						sizeof(DMUI_ReleaseFrameFn)) ||
+				!api_->releaseFrame)
+				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
+			lastResult_ = api_->releaseFrame(clientHandle_, a_page);
+			return lastResult_ == DMUI_RESULT_OK;
+		}
+
+		[[nodiscard]] bool AttachSwapChain(void* a_nativeSwapChain) noexcept
+		{
+			if (!IsConnected())
+				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			if (api_->structSize < DMUI_HOST_API_ATTACH_SWAP_CHAIN_SIZE ||
+				!api_->attachSwapChain)
+				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
+			lastResult_ =
+				api_->attachSwapChain(clientHandle_, a_nativeSwapChain);
+			return lastResult_ == DMUI_RESULT_OK;
+		}
+
+		[[nodiscard]] bool SetHotkeyActionEnabled(
+			DMUI_HotkeyActionHandle a_action,
+			bool a_enabled) noexcept
+		{
+			if (!IsConnected())
+				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			if (api_->structSize <
+					DMUI_HOST_API_SET_HOTKEY_ACTION_ENABLED_SIZE ||
+				!api_->setHotkeyActionEnabled)
+				return Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
+			lastResult_ = api_->setHotkeyActionEnabled(
+				clientHandle_, a_action, a_enabled ? 1u : 0u);
+			return lastResult_ == DMUI_RESULT_OK;
+		}
+
+		[[nodiscard]] std::optional<ImageResource> ImportD3D11Image(
+			void* a_shaderResourceView,
+			uint32_t a_contentWidth = 0,
+			uint32_t a_contentHeight = 0) noexcept
+		{
+			if (!IsConnected())
+			{
+				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+				return std::nullopt;
+			}
+			if (api_->structSize < DMUI_HOST_API_QUERY_IMAGE_SIZE ||
+				!api_->importD3D11Image ||
+				!api_->releaseImage)
+			{
+				Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
+				return std::nullopt;
+			}
+			const DMUI_D3D11ImageDescriptor descriptor{
+				sizeof(DMUI_D3D11ImageDescriptor),
+				a_shaderResourceView,
+				a_contentWidth,
+				a_contentHeight
+			};
+			DMUI_ImageHandle handle{};
+			lastResult_ = api_->importD3D11Image(
+				clientHandle_, &descriptor, &handle);
+			if (lastResult_ != DMUI_RESULT_OK)
+				return std::nullopt;
+			return ImageResource{
+				api_->releaseImage,
+				clientHandle_,
+				handle
+			};
+		}
+
+		[[nodiscard]] bool DrawImage(
+			ImageHandle a_image,
+			const DMUI_ImageDrawOptions& a_options) noexcept
+		{
+			if (!IsConnected())
+				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			if (api_->structSize < DMUI_HOST_API_DRAW_IMAGE_SIZE ||
+				!api_->drawImage)
+				return Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
+			lastResult_ = api_->drawImage(
+				clientHandle_, a_image.value, &a_options);
+			return lastResult_ == DMUI_RESULT_OK;
+		}
+
+		[[nodiscard]] std::optional<DMUI_ImageInfo> QueryImage(
+			ImageHandle a_image) noexcept
+		{
+			if (!IsConnected())
+			{
+				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+				return std::nullopt;
+			}
+			if (api_->structSize < DMUI_HOST_API_QUERY_IMAGE_SIZE ||
+				!api_->queryImage)
+			{
+				Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
+				return std::nullopt;
+			}
+			DMUI_ImageInfo info{};
+			info.structSize = sizeof(info);
+			lastResult_ = api_->queryImage(
+				clientHandle_, a_image.value, &info);
+			if (lastResult_ != DMUI_RESULT_OK)
+				return std::nullopt;
+			return info;
+		}
+
+		[[nodiscard]] bool ConfigureOverlay(
+			DMUI_PageHandle a_page,
+			const DMUI_ManagedOverlayOptions& a_options) noexcept
+		{
+			if (!IsConnected())
+				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			if (api_->structSize < DMUI_HOST_API_CONFIGURE_OVERLAY_SIZE ||
+				!api_->configureOverlay)
+				return Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
+			lastResult_ = api_->configureOverlay(
+				clientHandle_, a_page, &a_options);
+			return lastResult_ == DMUI_RESULT_OK;
+		}
+
+		[[nodiscard]] std::optional<DMUI_ManagedOverlayPlacement>
+			QueryOverlay(DMUI_PageHandle a_page) noexcept
+		{
+			if (!IsConnected())
+			{
+				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+				return std::nullopt;
+			}
+			if (api_->structSize < DMUI_HOST_API_QUERY_OVERLAY_SIZE ||
+				!api_->queryOverlay)
+			{
+				Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
+				return std::nullopt;
+			}
+			DMUI_ManagedOverlayPlacement placement{};
+			placement.structSize = sizeof(placement);
+			lastResult_ = api_->queryOverlay(
+				clientHandle_, a_page, &placement);
+			if (lastResult_ != DMUI_RESULT_OK)
+				return std::nullopt;
+			return placement;
+		}
+
+		[[nodiscard]] bool PostNotification(
+			DMUI_StatusSeverity a_severity,
+			const char* a_message,
+			uint32_t a_durationMilliseconds = 4000) noexcept
+		{
+			if (!IsConnected())
+				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			if (api_->structSize < DMUI_HOST_API_POST_NOTIFICATION_SIZE ||
+				!api_->postNotification)
+				return Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
+			const DMUI_NotificationDescriptor descriptor{
+				sizeof(DMUI_NotificationDescriptor),
+				a_severity,
+				a_message,
+				a_durationMilliseconds
+			};
+			lastResult_ = api_->postNotification(clientHandle_, &descriptor);
+			return lastResult_ == DMUI_RESULT_OK;
+		}
+
+		[[nodiscard]] bool DrawAnnotatedPlot(
+			const char* a_id,
+			const DMUI_AnnotatedPlotDescriptor& a_descriptor) noexcept
+		{
+			if (!IsConnected())
+				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			if (api_->structSize < DMUI_HOST_API_DRAW_ANNOTATED_PLOT_SIZE ||
+				!api_->drawAnnotatedPlot)
+				return Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
+			lastResult_ = api_->drawAnnotatedPlot(
+				clientHandle_, a_id, &a_descriptor);
+			return lastResult_ == DMUI_RESULT_OK;
+		}
+
+		[[nodiscard]] std::optional<DMUI_DialogHandle> RequestDialog(
+			const DMUI_DialogDescriptor& a_descriptor) noexcept
+		{
+			if (!IsConnected())
+			{
+				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+				return std::nullopt;
+			}
+			if (api_->structSize < DMUI_HOST_API_REQUEST_DIALOG_SIZE ||
+				!api_->requestDialog)
+			{
+				Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
+				return std::nullopt;
+			}
+			DMUI_DialogHandle dialog{};
+			lastResult_ = api_->requestDialog(
+				clientHandle_, &a_descriptor, &dialog);
+			if (lastResult_ != DMUI_RESULT_OK)
+				return std::nullopt;
+			return dialog;
+		}
+
+		[[nodiscard]] std::optional<DMUI_DialogEvent> PollDialogEvent(
+			DMUI_DialogHandle a_dialog,
+			std::string& a_text) noexcept
+		{
+			if (!IsConnected())
+			{
+				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+				return std::nullopt;
+			}
+			if (api_->structSize < DMUI_HOST_API_POLL_DIALOG_EVENT_SIZE ||
+				!api_->pollDialogEvent)
+			{
+				Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
+				return std::nullopt;
+			}
+			DMUI_DialogEvent event{};
+			event.structSize = sizeof(event);
+			if (a_text.size() >=
+				static_cast<size_t>((std::numeric_limits<uint32_t>::max)()))
+			{
+				Fail(DMUI_RESULT_RESOURCE_EXHAUSTED);
+				return std::nullopt;
+			}
+			std::vector<char> text((std::max)(a_text.size() + 1, size_t{ 65 }));
+			lastResult_ = api_->pollDialogEvent(
+				clientHandle_,
+				a_dialog,
+				&event,
+				text.data(),
+				static_cast<uint32_t>(text.size()));
+			if (lastResult_ == DMUI_RESULT_BUFFER_TOO_SMALL)
+			{
+				try
+				{
+					text.resize(event.requiredTextCapacity);
+				}
+				catch (...)
+				{
+					Fail(DMUI_RESULT_RESOURCE_EXHAUSTED);
+					return std::nullopt;
+				}
+				lastResult_ = api_->pollDialogEvent(
+					clientHandle_,
+					a_dialog,
+					&event,
+					text.data(),
+					static_cast<uint32_t>(text.size()));
+			}
+			if (lastResult_ != DMUI_RESULT_OK)
+				return std::nullopt;
+			a_text.assign(text.data());
+			return event;
+		}
+
+		[[nodiscard]] bool ResolveDialogSubmission(
+			DMUI_DialogHandle a_dialog,
+			uint64_t a_submissionId,
+			bool a_accepted,
+			const char* a_error = nullptr) noexcept
+		{
+			if (!IsConnected())
+				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			if (api_->structSize <
+					DMUI_HOST_API_RESOLVE_DIALOG_SUBMISSION_SIZE ||
+				!api_->resolveDialogSubmission)
+				return Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
+			lastResult_ = api_->resolveDialogSubmission(
+				clientHandle_,
+				a_dialog,
+				a_submissionId,
+				a_accepted ? 1u : 0u,
+				a_error);
+			return lastResult_ == DMUI_RESULT_OK;
+		}
+
+		[[nodiscard]] bool CancelDialog(
+			DMUI_DialogHandle a_dialog) noexcept
+		{
+			if (!IsConnected())
+				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			if (api_->structSize < DMUI_HOST_API_CANCEL_DIALOG_SIZE ||
+				!api_->cancelDialog)
+				return Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
+			lastResult_ = api_->cancelDialog(clientHandle_, a_dialog);
+			return lastResult_ == DMUI_RESULT_OK;
 		}
 
 		bool SetStatus(DMUI_StatusSeverity a_severity, const char* a_message) noexcept
@@ -1818,8 +2394,6 @@ namespace dmui
 			std::unique_ptr<HotkeyCallbackState> callback;
 		};
 
-		static constexpr uint32_t kRegisterClientSize =
-			static_cast<uint32_t>(offsetof(DMUI_HostAPI, registerClient) + sizeof(DMUI_RegisterClientFn));
 		static constexpr uint32_t kRegisterPageSize =
 			static_cast<uint32_t>(offsetof(DMUI_HostAPI, registerPage) + sizeof(DMUI_RegisterPageFn));
 		static constexpr uint32_t kQueryStateSize =
@@ -1939,6 +2513,7 @@ namespace dmui
 		ClientOriginKind origin_{ ClientOriginKind::kNative };
 		std::string bridgeSourceLabel_;
 		Version version_;
+		ClientOptions options_;
 		std::optional<DMUI_ImGuiFingerprint> fingerprint_;
 		const DMUI_HostAPI* api_{};
 		DMUI_ClientHandle clientHandle_{ DMUI_INVALID_CLIENT_HANDLE };
@@ -2062,11 +2637,33 @@ namespace dmui
 			return effective;
 		}
 
-		[[nodiscard]] inline SettingValue DrawBoundSetting(
+		struct BoundSettingDrawResult
+		{
+			SettingValue value;
+			bool changed{};
+			bool completed{};
+		};
+
+		inline void NotifySettingEdit(
+			const SettingDescriptor& a_setting,
+			const BoundSettingDrawResult& a_draw)
+		{
+			if (a_setting.onEdit && (a_draw.changed || a_draw.completed))
+			{
+				a_setting.onEdit({
+					a_draw.value,
+					a_draw.changed,
+					a_draw.completed
+				});
+			}
+		}
+
+		[[nodiscard]] inline BoundSettingDrawResult DrawBoundSetting(
 			const SettingDescriptor& a_setting,
 			SettingValue a_value)
 		{
 			auto changed = false;
+			auto completed = false;
 			SettingValue edited = a_value;
 			switch (ResolveSettingControlPresentation(a_setting.control).kind)
 			{
@@ -2074,6 +2671,7 @@ namespace dmui
 			{
 				auto value = std::get<bool>(a_value);
 				changed = ImGui::Checkbox("##Value", &value);
+				completed = changed;
 				edited = value;
 				break;
 			}
@@ -2083,6 +2681,7 @@ namespace dmui
 					std::get<double>(a_value),
 					std::get<double>(a_setting.defaultValue),
 					changed);
+				completed = ImGui::IsItemDeactivatedAfterEdit();
 				break;
 			case SettingControlKind::kSigned:
 				edited = DrawNumericSetting(
@@ -2090,6 +2689,7 @@ namespace dmui
 					std::get<int64_t>(a_value),
 					std::get<int64_t>(a_setting.defaultValue),
 					changed);
+				completed = ImGui::IsItemDeactivatedAfterEdit();
 				break;
 			case SettingControlKind::kUnsigned:
 				edited = DrawNumericSetting(
@@ -2097,6 +2697,7 @@ namespace dmui
 					std::get<uint64_t>(a_value),
 					std::get<uint64_t>(a_setting.defaultValue),
 					changed);
+				completed = ImGui::IsItemDeactivatedAfterEdit();
 				break;
 			case SettingControlKind::kText:
 			{
@@ -2108,10 +2709,20 @@ namespace dmui
 					value.size() + 1);
 				std::vector<char> buffer(capacity);
 				std::copy(value.begin(), value.end(), buffer.begin());
-				changed = ImGui::InputText(
-					"##Value",
-					buffer.data(),
-					buffer.size());
+				changed = control.multiline ?
+					ImGui::InputTextMultiline(
+						"##Value",
+						buffer.data(),
+						buffer.size(),
+						{
+							0.0f,
+							ImGui::GetTextLineHeightWithSpacing() * 3.0f
+						}) :
+					ImGui::InputText(
+						"##Value",
+						buffer.data(),
+						buffer.size());
+				completed = ImGui::IsItemDeactivatedAfterEdit();
 				if (changed)
 					edited = std::string{ buffer.data() };
 				break;
@@ -2141,6 +2752,7 @@ namespace dmui
 						{
 							edited = option.value;
 							changed = option.value != value;
+							completed = changed;
 						}
 						if (selected)
 							ImGui::SetItemDefaultFocus();
@@ -2152,9 +2764,14 @@ namespace dmui
 			default:
 				break;
 			}
-			return changed ?
+			auto result = changed ?
 				AcceptSettingValue(a_setting, std::move(edited)) :
-				a_value;
+				std::move(a_value);
+			return {
+				std::move(result),
+				changed,
+				completed
+			};
 		}
 
 		[[nodiscard]] inline std::string ResolveSettingLabel(
@@ -2433,7 +3050,9 @@ namespace dmui
 				throw std::bad_variant_access{};
 			{
 				const DisabledScope disabled{ !enabled };
-				value = DrawBoundSetting(setting, std::move(value));
+				auto draw = DrawBoundSetting(setting, std::move(value));
+				setting_detail::NotifySettingEdit(setting, draw);
+				value = std::move(draw.value);
 			}
 
 			const auto resetVisible =
