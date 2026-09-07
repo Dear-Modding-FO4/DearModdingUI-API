@@ -5,7 +5,7 @@
 
 // The single ABI layout guard for DMUI_HostAPI; the host compiles this file too.
 #if UINTPTR_MAX == UINT64_MAX
-static_assert(sizeof(DMUI_HostAPI) == 400);
+static_assert(sizeof(DMUI_HostAPI) == 416);
 static_assert(offsetof(DMUI_HostAPI, structSize) == 0);
 static_assert(offsetof(DMUI_HostAPI, apiVersion) == 4);
 static_assert(offsetof(DMUI_HostAPI, imguiFingerprint) == 8);
@@ -57,6 +57,8 @@ static_assert(offsetof(DMUI_HostAPI, requestDialog) == 368);
 static_assert(offsetof(DMUI_HostAPI, pollDialogEvent) == 376);
 static_assert(offsetof(DMUI_HostAPI, resolveDialogSubmission) == 384);
 static_assert(offsetof(DMUI_HostAPI, cancelDialog) == 392);
+static_assert(offsetof(DMUI_HostAPI, createImage) == 400);
+static_assert(offsetof(DMUI_HostAPI, updateImage) == 408);
 static_assert(DMUI_HOST_API_SELECT_PAGE_SIZE == 72);
 static_assert(DMUI_HOST_API_ATTACH_SWAP_CHAIN_SIZE == 80);
 static_assert(DMUI_HOST_API_REGISTER_ACTION_SIZE == 88);
@@ -98,7 +100,14 @@ static_assert(DMUI_HOST_API_DRAW_ANNOTATED_PLOT_SIZE == 368);
 static_assert(DMUI_HOST_API_REQUEST_DIALOG_SIZE == 376);
 static_assert(DMUI_HOST_API_POLL_DIALOG_EVENT_SIZE == 384);
 static_assert(DMUI_HOST_API_RESOLVE_DIALOG_SUBMISSION_SIZE == 392);
-static_assert(DMUI_HOST_API_CANCEL_DIALOG_SIZE == sizeof(DMUI_HostAPI));
+static_assert(DMUI_HOST_API_CANCEL_DIALOG_SIZE == 400);
+static_assert(DMUI_HOST_API_CREATE_IMAGE_SIZE == 408);
+static_assert(DMUI_HOST_API_UPDATE_IMAGE_SIZE == sizeof(DMUI_HostAPI));
+static_assert(sizeof(DMUI_ImageDescriptor) == 48);
+static_assert(offsetof(DMUI_ImageDescriptor, rowPitch) == 24);
+static_assert(offsetof(DMUI_ImageDescriptor, accessibleByteCount) == 32);
+static_assert(offsetof(DMUI_ImageDescriptor, pixels) == 40);
+static_assert(DMUI_IMAGE_DESCRIPTOR_0_1_SIZE == 48);
 static_assert(sizeof(DMUI_AnnotatedPlotDescriptor) == 64);
 static_assert(offsetof(DMUI_AnnotatedPlotDescriptor, sampleCount) == 16);
 static_assert(offsetof(DMUI_AnnotatedPlotDescriptor, sampleOffset) == 20);

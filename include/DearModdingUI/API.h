@@ -236,6 +236,7 @@ typedef uint64_t DMUI_HostServices;
 #define DMUI_HOST_SERVICE_NOTIFICATIONS (UINT64_C(1) << 5u)
 #define DMUI_HOST_SERVICE_ANNOTATED_PLOTS (UINT64_C(1) << 6u)
 #define DMUI_HOST_SERVICE_DIALOGS (UINT64_C(1) << 7u)
+#define DMUI_HOST_SERVICE_PIXEL_IMAGES (UINT64_C(1) << 8u)
 
 #define DMUI_FORWARDING_VERSION_1_0 DMUI_MAKE_VERSION(1u, 0u)
 #define DMUI_FORWARDING_VERSION_1_1 DMUI_MAKE_VERSION(1u, 1u)
@@ -286,6 +287,11 @@ typedef uint32_t DMUI_ImageStatus;
 #define DMUI_IMAGE_STATUS_READY 0u
 #define DMUI_IMAGE_STATUS_INVALIDATED 1u
 #define DMUI_IMAGE_STATUS_RELEASED 2u
+
+typedef uint32_t DMUI_PixelFormat;
+
+// Bytes are ordered R, G, B, A. Alpha is straight, not premultiplied.
+#define DMUI_PIXEL_FORMAT_RGBA8_UNORM 1u
 
 typedef uint32_t DMUI_OverlayAnchor;
 
@@ -651,6 +657,25 @@ typedef struct DMUI_D3D11ImageDescriptor
 #define DMUI_D3D11_IMAGE_DESCRIPTOR_0_1_SIZE \
 	((uint32_t)(offsetof(DMUI_D3D11ImageDescriptor, contentHeight) + sizeof(uint32_t)))
 
+// The host synchronously consumes every referenced pixel byte before returning.
+// It performs no alpha premultiplication or color-space conversion. rowPitch must
+// cover width * 4 bytes. accessibleByteCount must cover
+// (height - 1) * rowPitch + width * 4; final-row padding need not be accessible.
+typedef struct DMUI_ImageDescriptor
+{
+	uint32_t structSize;
+	uint32_t width;
+	uint32_t height;
+	DMUI_PixelFormat pixelFormat;
+	uint32_t reserved;
+	uint64_t rowPitch;
+	uint64_t accessibleByteCount;
+	const void* pixels;
+} DMUI_ImageDescriptor;
+
+#define DMUI_IMAGE_DESCRIPTOR_0_1_SIZE \
+	((uint32_t)(offsetof(DMUI_ImageDescriptor, pixels) + sizeof(const void*)))
+
 typedef struct DMUI_ImageDrawOptions
 {
 	uint32_t structSize;
@@ -995,6 +1020,14 @@ typedef DMUI_Result (DMUI_CALL *DMUI_ResolveDialogSubmissionFn)(
 typedef DMUI_Result (DMUI_CALL *DMUI_CancelDialogFn)(
 	DMUI_ClientHandle client,
 	DMUI_DialogHandle dialog) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_CreateImageFn)(
+	DMUI_ClientHandle client,
+	const DMUI_ImageDescriptor* descriptor,
+	DMUI_ImageHandle* image) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UpdateImageFn)(
+	DMUI_ClientHandle client,
+	DMUI_ImageHandle image,
+	const DMUI_ImageDescriptor* descriptor) DMUI_NOEXCEPT;
 
 typedef struct DMUI_HostAPI
 {
@@ -1049,6 +1082,8 @@ typedef struct DMUI_HostAPI
 	DMUI_PollDialogEventFn pollDialogEvent;
 	DMUI_ResolveDialogSubmissionFn resolveDialogSubmission;
 	DMUI_CancelDialogFn cancelDialog;
+	DMUI_CreateImageFn createImage;
+	DMUI_UpdateImageFn updateImage;
 } DMUI_HostAPI;
 
 #define DMUI_HOST_API_SELECT_PAGE_SIZE \
@@ -1135,6 +1170,10 @@ typedef struct DMUI_HostAPI
 	((uint32_t)(offsetof(DMUI_HostAPI, resolveDialogSubmission) + sizeof(DMUI_ResolveDialogSubmissionFn)))
 #define DMUI_HOST_API_CANCEL_DIALOG_SIZE \
 	((uint32_t)(offsetof(DMUI_HostAPI, cancelDialog) + sizeof(DMUI_CancelDialogFn)))
+#define DMUI_HOST_API_CREATE_IMAGE_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, createImage) + sizeof(DMUI_CreateImageFn)))
+#define DMUI_HOST_API_UPDATE_IMAGE_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, updateImage) + sizeof(DMUI_UpdateImageFn)))
 
 #if defined(_MSC_VER)
 #pragma pack(pop)

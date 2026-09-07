@@ -96,7 +96,8 @@ namespace dmui
 			DMUI_HOST_SERVICE_MANAGED_OVERLAYS |
 			DMUI_HOST_SERVICE_NOTIFICATIONS |
 			DMUI_HOST_SERVICE_ANNOTATED_PLOTS |
-			DMUI_HOST_SERVICE_DIALOGS
+			DMUI_HOST_SERVICE_DIALOGS |
+			DMUI_HOST_SERVICE_PIXEL_IMAGES
 		};
 		if ((a_options.requiredServices & ~knownServices) != 0)
 			return DMUI_RESULT_SERVICE_UNAVAILABLE;
@@ -135,6 +136,13 @@ namespace dmui
 			a_api->drawImage &&
 			a_api->releaseImage &&
 			a_api->queryImage;
+		const auto pixelImagesAvailable =
+			a_api->structSize >= DMUI_HOST_API_UPDATE_IMAGE_SIZE &&
+			a_api->createImage &&
+			a_api->updateImage &&
+			a_api->drawImage &&
+			a_api->releaseImage &&
+			a_api->queryImage;
 		const auto overlaysAvailable =
 			a_api->structSize >= DMUI_HOST_API_QUERY_OVERLAY_SIZE &&
 			a_api->configureOverlay &&
@@ -157,6 +165,8 @@ namespace dmui
 				!contextualHotkeysAvailable) ||
 			((required & DMUI_HOST_SERVICE_IMAGE_RESOURCES) != 0 &&
 				!imagesAvailable) ||
+			((required & DMUI_HOST_SERVICE_PIXEL_IMAGES) != 0 &&
+				!pixelImagesAvailable) ||
 			((required & DMUI_HOST_SERVICE_MANAGED_OVERLAYS) != 0 &&
 				!overlaysAvailable) ||
 			((required & DMUI_HOST_SERVICE_NOTIFICATIONS) != 0 &&
@@ -1599,6 +1609,47 @@ namespace dmui
 				clientHandle_,
 				handle
 			};
+		}
+
+		[[nodiscard]] std::optional<ImageResource> CreateImage(
+			const DMUI_ImageDescriptor& a_descriptor) noexcept
+		{
+			if (!IsConnected())
+			{
+				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+				return std::nullopt;
+			}
+			if (api_->structSize < DMUI_HOST_API_CREATE_IMAGE_SIZE ||
+				!api_->createImage ||
+				!api_->releaseImage)
+			{
+				Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
+				return std::nullopt;
+			}
+			DMUI_ImageHandle handle{};
+			lastResult_ = api_->createImage(
+				clientHandle_, &a_descriptor, &handle);
+			if (lastResult_ != DMUI_RESULT_OK)
+				return std::nullopt;
+			return ImageResource{
+				api_->releaseImage,
+				clientHandle_,
+				handle
+			};
+		}
+
+		[[nodiscard]] bool UpdateImage(
+			ImageHandle a_image,
+			const DMUI_ImageDescriptor& a_descriptor) noexcept
+		{
+			if (!IsConnected())
+				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			if (api_->structSize < DMUI_HOST_API_UPDATE_IMAGE_SIZE ||
+				!api_->updateImage)
+				return Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
+			lastResult_ = api_->updateImage(
+				clientHandle_, a_image.value, &a_descriptor);
+			return lastResult_ == DMUI_RESULT_OK;
 		}
 
 		[[nodiscard]] bool DrawImage(

@@ -34,14 +34,18 @@ requirements retain the original 0.1 registration behavior.
 The additive 0.1 table supplies official wrappers for frame demand
 (`RequestFrame`/`ReleaseFrame`), swapchain attachment, contextual hotkey
 enablement, D3D11 images, managed overlays, notifications, annotated plots,
-and submission-aware dialogs. Every prior table offset and every `_0_1_SIZE`
-boundary remains frozen.
+submission-aware dialogs, and generic CPU-pixel images. Every prior table
+offset, the original 400-byte host table prefix, and every existing
+`_0_1_SIZE` boundary remain frozen. CPU producers require the separate
+`DMUI_HOST_SERVICE_PIXEL_IMAGES` bit; imported-SRV availability remains
+`DMUI_HOST_SERVICE_IMAGE_RESOURCES`.
 
 New drawing calls are valid only on the render thread while the owning page
-callback is active. Image import instead requires a ready backend and the bound
-render thread, so it is valid from a frame observer without forcing a UI draw.
-Image queries require no draw phase. Image release and notification posting are
-thread-safe. Dialog request and polling run in an owning render-thread callback;
+callback is active. Image import, CPU creation, and CPU update instead require
+a ready backend and the bound render thread, so they are valid from a frame
+observer without forcing a UI draw or frame demand. Image queries require no
+draw phase. Image release and notification posting are thread-safe. Dialog
+request and polling run in an owning render-thread callback;
 submission resolution and cancellation may be
 returned from another thread. Registered callbacks and their user data remain
 process-lifetime except for hotkeys, which retain their documented explicit
@@ -57,10 +61,32 @@ same-device backbuffer resize does not. Releasing a handle does not invalidate
 an already queued draw. Released and invalidated handles remain queryable only
 until their storage slot is reused; reuse advances a per-slot generation, so an
 older handle returns `STALE_HANDLE` and never aliases the replacement. A slot
-whose generation is exhausted is retired rather than wrapped. Pixels are not
-copied, decoded, normalized, or
-tonemapped, so producers must order GPU writes before sampling and supply any
-required conversion.
+whose generation is exhausted is retired rather than wrapped.
+
+`DMUI_ImageDescriptor` supplies decoded ordinary pixels without exposing D3D
+or ImGui types. The initial format is `DMUI_PIXEL_FORMAT_RGBA8_UNORM`, with
+bytes ordered R, G, B, A. Alpha is straight, not premultiplied. The host does
+no alpha premultiplication, color-space conversion, decoding, or tonemapping.
+`rowPitch` must be at least `width * 4` and fit the D3D11 pitch field.
+`accessibleByteCount` must cover exactly the bytes the host may read:
+`(height - 1) * rowPitch + width * 4`; padding after the final row is not
+required, including the one-row case. Arithmetic, format, reserved fields,
+dimensions, device state, thread, owner, handle generation, and provenance
+are validated before pixel memory or GPU creation. The caller keeps `pixels`
+valid only for the call; the host synchronously copies all referenced pixel
+bytes before returning and never retains the pointer.
+
+`createImage` publishes a new ordinary image handle. `updateImage` accepts only
+handles created from CPU pixels; imported SRVs return `UNSUPPORTED_RESOURCE`.
+An update creates a replacement Texture2D/SRV first and commits it to the same
+handle only after rechecking owner, handle, device, and generation. Width and
+height may change. Validation or allocation failure leaves the old view,
+dimensions, status, and generation unchanged. Draws queued before the commit
+retain the old SRV through submission, while later draws use the replacement.
+Device replacement invalidates CPU and imported handles alike; rebinding the
+same device for a backbuffer resize preserves them. Imported pixels remain
+producer-owned and are not copied, so imported producers must order GPU writes
+before sampling and supply any required conversion.
 
 Managed overlays are opt-in per existing overlay page. Coordinates, offsets,
 and constraints are logical ImGui/backbuffer coordinates and are scaled by
