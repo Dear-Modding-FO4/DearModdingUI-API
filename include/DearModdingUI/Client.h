@@ -99,7 +99,8 @@ namespace dmui
 			DMUI_HOST_SERVICE_DIALOGS |
 			DMUI_HOST_SERVICE_PIXEL_IMAGES |
 			DMUI_HOST_SERVICE_EXTERNAL_OPEN |
-			DMUI_HOST_SERVICE_VIRTUAL_FILE_TARGETS
+			DMUI_HOST_SERVICE_VIRTUAL_FILE_TARGETS |
+			DMUI_HOST_SERVICE_NAVIGATION_ICONS
 		};
 		if ((a_options.requiredServices & ~knownServices) != 0)
 			return DMUI_RESULT_SERVICE_UNAVAILABLE;
@@ -164,6 +165,14 @@ namespace dmui
 		const auto externalOpenAvailable =
 			a_api->structSize >= DMUI_HOST_API_OPEN_EXTERNAL_SIZE &&
 			a_api->openExternal;
+		constexpr auto registerPageSize =
+			offsetof(DMUI_HostAPI, registerPage) +
+			sizeof(DMUI_RegisterPageFn);
+		const auto navigationIconsAvailable =
+			a_api->structSize >= registerPageSize &&
+			a_api->structSize >= DMUI_HOST_API_REGISTER_CATEGORY_SIZE &&
+			a_api->registerPage &&
+			a_api->registerCategory;
 		if (((required & DMUI_HOST_SERVICE_FRAME_CONTROL) != 0 &&
 				!frameControlAvailable) ||
 			((required & DMUI_HOST_SERVICE_CONTEXTUAL_HOTKEYS) != 0 &&
@@ -182,7 +191,9 @@ namespace dmui
 				!dialogsAvailable) ||
 			((required & (DMUI_HOST_SERVICE_EXTERNAL_OPEN |
 							 DMUI_HOST_SERVICE_VIRTUAL_FILE_TARGETS)) != 0 &&
-				!externalOpenAvailable))
+				!externalOpenAvailable) ||
+			((required & DMUI_HOST_SERVICE_NAVIGATION_ICONS) != 0 &&
+				!navigationIconsAvailable))
 			return DMUI_RESULT_SERVICE_UNAVAILABLE;
 		if (a_services)
 		{
@@ -285,6 +296,7 @@ namespace dmui
 		const char* summary{};
 		int32_t sortKey{};
 		DMUI_PageKind kind{ DMUI_PAGE_KIND_SETTINGS };
+		const char* iconName{};
 	};
 
 	struct CategoryDescriptor
@@ -292,6 +304,7 @@ namespace dmui
 		const char* id{};
 		const char* displayName{};
 		int32_t sortKey{};
+		const char* iconName{};
 	};
 
 	struct ExternalOpen
@@ -1163,6 +1176,7 @@ namespace dmui
 				descriptor.kind = a_page.kind;
 				descriptor.draw = &Invoke;
 				descriptor.userData = &registration.callback;
+				descriptor.iconName = a_page.iconName;
 
 				DMUI_PageHandle handle{ DMUI_INVALID_PAGE_HANDLE };
 				lastResult_ = api_->registerPage(clientHandle_, &descriptor, &handle);
@@ -1201,6 +1215,7 @@ namespace dmui
 			descriptor.id = a_category.id;
 			descriptor.displayName = a_category.displayName;
 			descriptor.sortKey = a_category.sortKey;
+			descriptor.iconName = a_category.iconName;
 			lastResult_ = api_->registerCategory(clientHandle_, &descriptor);
 			return lastResult_ == DMUI_RESULT_OK;
 		}

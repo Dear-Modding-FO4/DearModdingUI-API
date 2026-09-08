@@ -2,8 +2,11 @@
 
 #include <array>
 #include <cstdint>
+#include <limits>
+#include <new>
 #include <string>
 #include <string_view>
+#include <type_traits>
 
 namespace DearModdingUI
 {
@@ -280,6 +283,59 @@ namespace DearModdingUI
 		return FindIconConceptMatch(a_name, false).glyph;
 	}
 
+	[[nodiscard]] inline char32_t ResolveInferredIconGlyphOrZero(
+		std::string_view a_name)
+	{
+		if (const auto glyph = ResolveNamedIconGlyphOrZero(a_name))
+			return glyph;
+		return FindIconConceptMatch(a_name, true).glyph;
+	}
+
+	[[nodiscard]] constexpr bool IsValidUnicodeScalar(
+		char32_t a_glyph) noexcept
+	{
+		return a_glyph != char32_t{} &&
+			a_glyph <= char32_t{ 0x10FFFF } &&
+			(a_glyph < char32_t{ 0xD800 } ||
+				a_glyph > char32_t{ 0xDFFF });
+	}
+
+	template <class Character>
+	[[nodiscard]] constexpr bool IsRepresentableIconGlyph(
+		char32_t a_glyph) noexcept
+	{
+		using Value = std::remove_cv_t<Character>;
+		static_assert(std::is_integral_v<Value>);
+		return IsValidUnicodeScalar(a_glyph) &&
+			a_glyph <= static_cast<char32_t>(
+				(std::numeric_limits<Value>::max)());
+	}
+
+	[[nodiscard]] inline char32_t ResolveSemanticIconGlyph(
+		std::string_view a_explicitName,
+		std::string_view a_primaryMetadata,
+		std::string_view a_secondaryMetadata,
+		char32_t a_fallback) noexcept
+	{
+		try
+		{
+			if (const auto glyph =
+					ResolveNamedIconGlyphOrZero(a_explicitName))
+				return glyph;
+			if (const auto glyph =
+					ResolveInferredIconGlyphOrZero(a_primaryMetadata))
+				return glyph;
+			if (const auto glyph =
+					ResolveInferredIconGlyphOrZero(a_secondaryMetadata))
+				return glyph;
+			return a_fallback;
+		}
+		catch (const std::bad_alloc&)
+		{
+			return a_fallback;
+		}
+	}
+
 	[[nodiscard]] inline char32_t ResolveIconGlyph(
 		IconKind,
 		std::string_view a_name) noexcept
@@ -324,17 +380,25 @@ namespace DearModdingUI
 	{
 		if (a_kind == IconKind::kClient)
 			return ResolveClientIconGlyph(a_iconName, {}, a_fallbackName);
-		return ResolveIconGlyph(a_kind, a_iconName);
+		return ResolveSemanticIconGlyph(
+			a_iconName,
+			a_fallbackName,
+			{},
+			PhosphorGlyph::kQuestion);
 	}
 
 	[[nodiscard]] inline char32_t ResolveCategoryIconGlyph(
 		std::string_view a_category,
 		std::string_view a_clientDisplayName,
 		std::string_view a_clientId,
-		std::string_view a_clientIconName = {}) noexcept
+		std::string_view a_clientIconName = {},
+		std::string_view a_categoryIconName = {}) noexcept
 	{
 		try
 		{
+			if (const auto glyph =
+					ResolveNamedIconGlyphOrZero(a_categoryIconName))
+				return glyph;
 			const auto category = NormalizeIconOwnerName(a_category);
 			if (!category.empty() &&
 				(category == NormalizeIconOwnerName(a_clientDisplayName) ||
@@ -343,7 +407,10 @@ namespace DearModdingUI
 					a_clientIconName,
 					a_category,
 					a_clientDisplayName);
-			return ResolveIconGlyph(IconKind::kCategory, a_category);
+			return ResolveIconGlyph(
+				IconKind::kCategory,
+				{},
+				a_category);
 		}
 		catch (...)
 		{

@@ -30,6 +30,9 @@ registration and returns `SERVICE_UNAVAILABLE` or
 flags are availability promises and are separate from client capability
 permissions such as `RENDERER_REPLACEMENT`. Callers that do not opt into
 requirements use the current 0.1 registration contract.
+Require `DMUI_HOST_SERVICE_NAVIGATION_ICONS` when category-heading and
+page-palette icon names are required presentation behavior. The preflight
+checks both page and category registration entries.
 
 The 0.1 table supplies official wrappers for frame demand
 (`RequestFrame`/`ReleaseFrame`), swapchain attachment, contextual hotkey
@@ -47,6 +50,37 @@ Register each client category once with `Client::AddCategory` before adding a
 page that references its stable `categoryId`. Category display names and sort
 keys are independent of page metadata; all-zero category sort keys order by
 display name and then stable ID. Empty category IDs remain ungrouped.
+`CategoryDescriptor::iconName` and `PageDescriptor::iconName` are optional
+trailing fields forwarded with the current structure size. The C ABI retains
+the old 32-byte category and 64-byte page prefixes; hosts read the appended
+pointers only at `DMUI_CATEGORY_DESCRIPTOR_ICON_SIZE` and
+`DMUI_PAGE_DESCRIPTOR_ICON_SIZE`.
+
+Named navigation icons use this precedence:
+
+| Source | Precedence |
+| --- | --- |
+| Client | valid explicit name, category metadata, whole-word display-name concept, question |
+| Category heading | valid explicit name, existing client-category rule, category concept, question |
+| Page in command palette | valid explicit name, page-name concept, category concept, Files |
+| Action in command palette | valid explicit name, action-label concept, Terminal Window |
+
+Canonical Phosphor names and normalized spellings are accepted. Unknown or
+blank well-formed names fall through instead of rejecting registration;
+malformed or oversized strings reject the descriptor. Page icons are not
+drawn in plain sidebar or title rows. Toolbar/header actions intentionally
+remain text-only when their icon is absent or unknown.
+
+For example, a Community Shaders client may keep `iconName = "cloud-sun"`
+while registering `{ .id = "lighting", .displayName = "Lighting",
+.iconName = "sun-horizon" }`; the category selection is independent of the
+client selection. There is no icon-name editor, curated mod table, API version
+bump, or product version bump for this appended 0.1 extension.
+
+Links and section headers already take a raw glyph: zero means no icon, and an
+unavailable glyph keeps the existing text fallback. `SettingGroup::glyph`
+similarly uses a chosen nonzero glyph or automatic label inference, while
+`HeadingMode::kDivider` remains explicitly iconless.
 
 `Client::OpenExternal` accepts a URI, absolute file, or absolute directory for
 the OS-associated handler. Supplying an absolute application path overrides

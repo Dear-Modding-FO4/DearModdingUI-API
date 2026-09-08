@@ -254,6 +254,7 @@ typedef uint64_t DMUI_HostServices;
 #define DMUI_HOST_SERVICE_PIXEL_IMAGES (UINT64_C(1) << 8u)
 #define DMUI_HOST_SERVICE_EXTERNAL_OPEN (UINT64_C(1) << 9u)
 #define DMUI_HOST_SERVICE_VIRTUAL_FILE_TARGETS (UINT64_C(1) << 10u)
+#define DMUI_HOST_SERVICE_NAVIGATION_ICONS (UINT64_C(1) << 11u)
 
 #define DMUI_FORWARDING_VERSION_1_0 DMUI_MAKE_VERSION(1u, 0u)
 #define DMUI_FORWARDING_VERSION_1_1 DMUI_MAKE_VERSION(1u, 1u)
@@ -475,10 +476,14 @@ typedef struct DMUI_PageDescriptor
 	DMUI_PageKind kind;
 	DMUI_PageDrawCallback draw;
 	void* userData;
+	// Optional appended palette icon name. Unknown names use semantic fallback.
+	const char* iconName;
 } DMUI_PageDescriptor;
 
 #define DMUI_PAGE_DESCRIPTOR_0_1_SIZE \
 	((uint32_t)(offsetof(DMUI_PageDescriptor, userData) + sizeof(void*)))
+#define DMUI_PAGE_DESCRIPTOR_ICON_SIZE \
+	((uint32_t)(offsetof(DMUI_PageDescriptor, iconName) + sizeof(const char*)))
 
 typedef struct DMUI_CategoryDescriptor
 {
@@ -487,10 +492,14 @@ typedef struct DMUI_CategoryDescriptor
 	const char* displayName;
 	int32_t sortKey;
 	uint32_t reserved;
+	// Optional appended category-heading icon name. Unknown names use semantic fallback.
+	const char* iconName;
 } DMUI_CategoryDescriptor;
 
 #define DMUI_CATEGORY_DESCRIPTOR_0_1_SIZE \
 	((uint32_t)(offsetof(DMUI_CategoryDescriptor, reserved) + sizeof(uint32_t)))
+#define DMUI_CATEGORY_DESCRIPTOR_ICON_SIZE \
+	((uint32_t)(offsetof(DMUI_CategoryDescriptor, iconName) + sizeof(const char*)))
 
 typedef struct DMUI_ActionDescriptor
 {
