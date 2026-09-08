@@ -659,10 +659,11 @@ typedef struct DMUI_StyleMetrics
 	DMUI_Vec2 windowPadding;
 	float indentSpacing;
 	float scrollbarSize;
+	float fontSizeBase;
 } DMUI_StyleMetrics;
 
 #define DMUI_STYLE_METRICS_0_1_SIZE \
-	((uint32_t)(offsetof(DMUI_StyleMetrics, scrollbarSize) + sizeof(float)))
+	((uint32_t)(offsetof(DMUI_StyleMetrics, fontSizeBase) + sizeof(float)))
 
 typedef struct DMUI_SettingsRowOptions
 {

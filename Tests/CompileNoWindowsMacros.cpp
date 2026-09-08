@@ -10,5 +10,12 @@
 
 #include <Windows.h>
 
+static_assert(std::is_same_v<
+	decltype(dmui::DrawStyledText(
+		std::declval<dmui::Client&>(),
+		std::string_view{},
+		dmui::TextStyle{})),
+	bool>);
+
 void CompileNoWindowsMacros()
 {}

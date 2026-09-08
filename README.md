@@ -21,6 +21,138 @@ add_deps("dearmoddingui-api", { public = true })
 
 The C++ client supports lockstep Dear ImGui and layout-independent forwarding modes on Windows. The fingerprint builder requires Dear ImGui headers; forwarding mode compiles without Dear ImGui and calls the loaded host DLL through `ImGuiForward.h`. Host discovery uses matching narrow Win32 declarations in `Win32Discovery.h`, so public headers do not include `Windows.h` or leak its macros. The C ABI in `API.h` is independent of commonlibf4 and the host binary.
 
+## Shared C++ presentation helpers
+
+`Presentation.h` contains the ImGui-facing helpers that do not require a
+registered client. `Client.h` includes it and adds helpers that use client
+theme, font, and settings-table services.
+
+```cpp
+dmui::DrawStyledText(
+	client,
+	"Restart required: 100% ## is ordinary text",
+	{
+		.fontRole = DMUI_FONT_ROLE_SUBTEXT,
+		.tone = dmui::TextTone::kStatusRestartNeeded,
+		.wrapped = true
+	});
+
+dmui::DrawLabeledValue(
+	client,
+	"Backend",
+	"Available",
+	{
+		.valueStyle = { .tone = dmui::TextTone::kSuccess },
+		.spacingScale = 2.0f
+	});
+```
+
+`TextStyle` fields are `fontRole`, `tone`, and `wrapped`, in that order.
+Omitting `fontRole` inherits the current font. `TextTone::kInherit` preserves
+the current ImGui text color. The other tones map directly to
+`DMUI_ThemeColors`: `kAccent`, `kAccentMuted`, `kMuted`, `kSuccess`,
+`kWarning`, `kError`, `kInfo`, `kStatusDisable`, `kStatusError`,
+`kStatusWarning`, `kStatusRestartNeeded`, `kStatusCurrentHotkey`,
+`kStatusSuccess`, and `kStatusInfo`.
+
+`ResolveTextColor` returns both a `DMUI_Result` and an optional color pointer;
+the successful inherit result intentionally has no override. `ThemeToneColor`
+is the pointer-only convenience for callers that already validated their
+snapshot. `DrawStyledText(text, snapshot, style)` is the client-independent
+core; it rejects a non-inherited font role because no client font provider is
+available. Both draw functions use length-delimited `TextUnformatted`, so `%`
+and `##` are ordinary text and embedded views need not be NUL-terminated.
+Wrapping uses the current window, column, or table-cell width.
+
+The client overload of `DrawStyledText` returns false and leaves the exact failure in
+`Client::LastResult()` when theme or font acquisition fails. Every successful
+font, color, and wrap push is balanced. `FontGuard` exposes `Pushed()`,
+`Result()`, and idempotent `End()`; destructor cleanup does not replace a
+pre-existing client error with a successful pop.
+
+`DrawLabeledValue` is intentionally an inline label/value layout. It obtains
+live style metrics before drawing, places the value after
+`itemSpacing.x * spacingScale`, resolves the theme once, and acquires the
+requested value font once before drawing either half. While that value font is
+held, the label temporarily uses the caller's original font. A service failure
+therefore does not leave a half-drawn pair. Inside an existing settings row,
+draw only the value with `DrawStyledText`; the row already owns label and value
+geometry.
+
+`DMUI_StyleMetrics` fields are `structSize`, `itemSpacing`, `framePadding`,
+`itemInnerSpacing`, `cellPadding`, `windowPadding`, `indentSpacing`,
+`scrollbarSize`, and `fontSizeBase`, in that order. Forwarding clients obtain
+the current unscaled base font size through the existing
+`DMUI_GetStyleMetrics` export; there is no separate font-metrics export.
+
+```cpp
+dmui::SettingsTableScope table{ client, "rendering" };
+if (table.Result() != DMUI_RESULT_OK)
+	return;
+if (table.Visible())
+{
+	dmui::SettingsRowScope row{
+		client, "quality", "Quality", "Rendering quality."
+	};
+	if (row.Result() != DMUI_RESULT_OK)
+		return;
+	if (row.Visible())
+	{
+		// Draw the value control.
+		const auto reset = row.End(true, canReset);
+		if (!reset)
+			return;
+	}
+	if (!table.End())
+		return;
+}
+```
+
+`SettingsTableScope` and `SettingsRowScope` own their successful visible
+begin calls, are non-copyable and non-movable, and end only brackets they
+opened. `Result()` distinguishes failure from clipping, while `Visible()`
+preserves the existing clipping contract. Explicit `End()` is idempotent and
+never retries a failed end. Row `End(resetVisible, resetEnabled)` returns the
+cached `std::optional<bool>` reset result on repeated calls. Destructor cleanup
+preserves an earlier client failure.
+
+`DisabledScope` balances `BeginDisabled` for both true and false arguments.
+`TooltipScope` checks the caller's hover flags, owns only a successful
+`BeginTooltip`, exposes `Hovered()` and `Visible()`, and has idempotent
+`End()`. It is suitable for multi-widget tooltip content and does not impose a
+title, color, or mod-specific tooltip system.
+
+The generic choice primitive uses an allocation-free span at draw time:
+
+```cpp
+const std::array options{
+	dmui::ChoiceOption<int>{ 0, "Low", "low", true },
+	dmui::ChoiceOption<int>{ 1, "High", "high", false }
+};
+const auto choice = dmui::DrawChoice(
+	"quality",
+	current,
+	options,
+	"Unavailable",
+	"Quality mode");
+if (choice.changed)
+	current = *choice.selected;
+```
+
+`ChoiceOption<Value>` fields are `value`, `label`, `key`, and `enabled`.
+The stable value and key are independent of the visible label. Duplicate
+labels, `%`, and `##` are safe. Empty option spans draw a disabled combo.
+Unknown current values show the explicit unavailable preview and are never
+clamped or mutated merely by drawing. `changed` and `completed` become true
+together only when the user selects a different enabled value.
+`Value` is deduced from the current-value argument; arrays and vectors of
+matching options convert to the non-deduced span parameter without an explicit
+template argument. The optional final display-label argument is drawn
+unformatted beside the combo and is independent of `id`; omit it inside an
+existing settings-row label/value layout.
+`ChoiceSettingOption` is now an alias of `ChoiceOption<std::string>`; aggregate
+initializers that need a key or disabled state must use the new field order.
+
 ## Forwarding-only services
 
 Forwarding clients can declare `dmui::ClientOptions::requiredServices` and

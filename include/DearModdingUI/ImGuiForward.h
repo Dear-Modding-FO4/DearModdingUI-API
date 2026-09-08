@@ -28,6 +28,8 @@ typedef struct ImVec4_c
 using ImVec2 = ImVec2_c;
 using ImVec4 = ImVec4_c;
 
+struct ImFont;
+
 using ImU32 = unsigned int;
 using ImGuiID = unsigned int;
 using ImGuiCol = int;
@@ -512,6 +514,15 @@ namespace ImGui
 		return function();
 	}
 
+	[[nodiscard]] inline ImFont* GetFont() noexcept
+	{
+		using Function = ImFont* (*)(void);
+		static const Function function = detail::Resolve<Function>("igGetFont");
+		if (!function)
+			return nullptr;
+		return function();
+	}
+
 	[[nodiscard]] inline float GetFontSize() noexcept
 	{
 		using Function = float (*)(void);
@@ -628,6 +639,14 @@ namespace ImGui
 			function(label, values_getter, data, values_count, values_offset, overlay_text, scale_min, scale_max, graph_size);
 	}
 
+	inline void PopFont() noexcept
+	{
+		using Function = void (*)(void);
+		static const Function function = detail::Resolve<Function>("igPopFont");
+		if (function)
+			function();
+	}
+
 	inline void PopID() noexcept
 	{
 		using Function = void (*)(void);
@@ -644,12 +663,28 @@ namespace ImGui
 			function(count);
 	}
 
+	inline void PopTextWrapPos() noexcept
+	{
+		using Function = void (*)(void);
+		static const Function function = detail::Resolve<Function>("igPopTextWrapPos");
+		if (function)
+			function();
+	}
+
 	inline void ProgressBar(float fraction, const ImVec2& size_arg = ImVec2(-FLT_MIN,0), const char* overlay = nullptr) noexcept
 	{
 		using Function = void (*)(float, const ImVec2, const char*);
 		static const Function function = detail::Resolve<Function>("igProgressBar");
 		if (function)
 			function(fraction, size_arg, overlay);
+	}
+
+	inline void PushFont(ImFont* font, float font_size_base_unscaled) noexcept
+	{
+		using Function = void (*)(ImFont*, float);
+		static const Function function = detail::Resolve<Function>("igPushFont");
+		if (function)
+			function(font, font_size_base_unscaled);
 	}
 
 	inline void PushID(const char* str_id) noexcept
@@ -698,6 +733,14 @@ namespace ImGui
 		static const Function function = detail::Resolve<Function>("igPushStyleColor_Vec4");
 		if (function)
 			function(idx, col);
+	}
+
+	inline void PushTextWrapPos(float wrap_local_pos_x = 0.0f) noexcept
+	{
+		using Function = void (*)(float);
+		static const Function function = detail::Resolve<Function>("igPushTextWrapPos");
+		if (function)
+			function(wrap_local_pos_x);
 	}
 
 	inline void SameLine(float offset_from_start_x = 0.0f, float spacing = -1.0f) noexcept

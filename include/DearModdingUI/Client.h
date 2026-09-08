@@ -9,6 +9,7 @@
 #endif
 
 #include <DearModdingUI/SettingsActions.h>
+#include <DearModdingUI/Presentation.h>
 #include <DearModdingUI/VisualDecisions.h>
 #include <DearModdingUI/Win32Discovery.h>
 
@@ -436,11 +437,7 @@ namespace dmui
 		bool multiline{};
 	};
 
-	struct ChoiceSettingOption
-	{
-		std::string value;
-		std::string label;
-	};
+	using ChoiceSettingOption = ChoiceOption<std::string>;
 
 	[[nodiscard]] inline const std::string& ResolveChoiceOptionLabel(
 		const ChoiceSettingOption& a_option) noexcept
@@ -1032,6 +1029,26 @@ namespace dmui
 
 		void Draw(Client& a_client);
 	};
+
+	class FontGuard;
+	class SettingsTableScope;
+	class SettingsRowScope;
+
+	struct LabeledValueOptions
+	{
+		TextStyle valueStyle;
+		float spacingScale{ 2.0f };
+	};
+
+	[[nodiscard]] bool DrawStyledText(
+		Client& a_client,
+		std::string_view a_text,
+		TextStyle a_style = {}) noexcept;
+	[[nodiscard]] bool DrawLabeledValue(
+		Client& a_client,
+		std::string_view a_label,
+		std::string_view a_value,
+		LabeledValueOptions a_options = {}) noexcept;
 
 	// IMPORTANT: Client instances must outlive the game session because callbacks cannot be unregistered.
 	class Client
@@ -2014,6 +2031,54 @@ namespace dmui
 			return colors;
 		}
 
+		[[nodiscard]] std::optional<DMUI_StyleMetrics> GetStyleMetrics() noexcept
+		{
+			if (!IsConnected())
+			{
+				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+				return std::nullopt;
+			}
+			DMUI_StyleMetrics metrics{};
+			metrics.structSize = sizeof(metrics);
+#if defined(IMGUI_VERSION) && defined(IMGUI_VERSION_NUM)
+			if (!ImGui::GetCurrentContext())
+			{
+				Fail(DMUI_RESULT_HOST_NOT_READY);
+				return std::nullopt;
+			}
+			const auto& style = ImGui::GetStyle();
+			metrics.itemSpacing = {
+				style.ItemSpacing.x,
+				style.ItemSpacing.y
+			};
+			metrics.framePadding = {
+				style.FramePadding.x,
+				style.FramePadding.y
+			};
+			metrics.itemInnerSpacing = {
+				style.ItemInnerSpacing.x,
+				style.ItemInnerSpacing.y
+			};
+			metrics.cellPadding = {
+				style.CellPadding.x,
+				style.CellPadding.y
+			};
+			metrics.windowPadding = {
+				style.WindowPadding.x,
+				style.WindowPadding.y
+			};
+			metrics.indentSpacing = style.IndentSpacing;
+			metrics.scrollbarSize = style.ScrollbarSize;
+			metrics.fontSizeBase = style.FontSizeBase;
+			lastResult_ = DMUI_RESULT_OK;
+#else
+			lastResult_ = ImGui::GetStyleMetrics(metrics);
+			if (lastResult_ != DMUI_RESULT_OK)
+				return std::nullopt;
+#endif
+			return metrics;
+		}
+
 		[[nodiscard]] bool PushFont(DMUI_FontRole a_role) noexcept
 		{
 			if (!IsConnected())
@@ -2517,6 +2582,19 @@ namespace dmui
 		}
 
 	private:
+		friend class FontGuard;
+		friend class SettingsTableScope;
+		friend class SettingsRowScope;
+		friend bool DrawStyledText(
+			Client&,
+			std::string_view,
+			TextStyle) noexcept;
+		friend bool DrawLabeledValue(
+			Client&,
+			std::string_view,
+			std::string_view,
+			LabeledValueOptions) noexcept;
+
 		using GetHostAPIFn = const DMUI_HostAPI* (DMUI_CALL*)(uint32_t) noexcept;
 
 		struct PageRegistration
@@ -2580,6 +2658,11 @@ namespace dmui
 		{
 			lastResult_ = a_result;
 			return false;
+		}
+
+		void SetPresentationResult(DMUI_Result a_result) noexcept
+		{
+			lastResult_ = a_result;
 		}
 
 		static void DMUI_CALL OnHostReady(
@@ -2687,6 +2770,347 @@ namespace dmui
 		std::deque<PageActivityObserverRegistration> pageActivityObservers_;
 		std::deque<HotkeyActionRegistration> hotkeyActions_;
 	};
+
+	struct ScopeResult
+	{
+		DMUI_Result result{ DMUI_RESULT_OK };
+		bool visible{};
+
+		[[nodiscard]] constexpr explicit operator bool() const noexcept
+		{
+			return result == DMUI_RESULT_OK;
+		}
+	};
+
+	class FontGuard
+	{
+	public:
+		FontGuard(Client& a_client, DMUI_FontRole a_role) noexcept :
+			m_client(&a_client),
+			m_pushed(a_client.PushFont(a_role)),
+			m_result(a_client.LastResult())
+		{}
+
+		~FontGuard() noexcept
+		{
+			if (!m_pushed)
+				return;
+			const auto original = m_client->LastResult();
+			(void)End();
+			if (original != DMUI_RESULT_OK)
+				m_client->SetPresentationResult(original);
+		}
+
+		FontGuard(const FontGuard&) = delete;
+		FontGuard(FontGuard&&) = delete;
+		FontGuard& operator=(const FontGuard&) = delete;
+		FontGuard& operator=(FontGuard&&) = delete;
+
+		[[nodiscard]] bool Pushed() const noexcept
+		{
+			return m_pushed;
+		}
+
+		[[nodiscard]] DMUI_Result Result() const noexcept
+		{
+			return m_result;
+		}
+
+		[[nodiscard]] bool End() noexcept
+		{
+			if (!m_pushed)
+				return m_result == DMUI_RESULT_OK;
+			m_pushed = false;
+			const auto popped = m_client->PopFont();
+			m_result = m_client->LastResult();
+			return popped;
+		}
+
+	private:
+		Client* m_client;
+		bool m_pushed;
+		DMUI_Result m_result;
+	};
+
+	class SettingsTableScope
+	{
+	public:
+		SettingsTableScope(Client& a_client, const char* a_id) noexcept :
+			m_client(&a_client)
+		{
+			const auto begun = a_client.BeginSettingsTable(a_id);
+			m_state.result = begun ?
+				DMUI_RESULT_OK :
+				a_client.LastResult();
+			m_state.visible = begun.value_or(false);
+			m_active = m_state.result == DMUI_RESULT_OK && m_state.visible;
+		}
+
+		~SettingsTableScope() noexcept
+		{
+			if (!m_active)
+				return;
+			const auto original = m_client->LastResult();
+			(void)End();
+			if (original != DMUI_RESULT_OK)
+				m_client->SetPresentationResult(original);
+		}
+
+		SettingsTableScope(const SettingsTableScope&) = delete;
+		SettingsTableScope(SettingsTableScope&&) = delete;
+		SettingsTableScope& operator=(const SettingsTableScope&) = delete;
+		SettingsTableScope& operator=(SettingsTableScope&&) = delete;
+
+		[[nodiscard]] ScopeResult State() const noexcept
+		{
+			return m_state;
+		}
+
+		[[nodiscard]] DMUI_Result Result() const noexcept
+		{
+			return m_state.result;
+		}
+
+		[[nodiscard]] bool Visible() const noexcept
+		{
+			return m_state.visible;
+		}
+
+		[[nodiscard]] bool End() noexcept
+		{
+			if (!m_active)
+				return m_state.result == DMUI_RESULT_OK;
+			m_active = false;
+			const auto ended = m_client->EndSettingsTable();
+			m_state.result = m_client->LastResult();
+			return ended;
+		}
+
+	private:
+		Client* m_client;
+		ScopeResult m_state;
+		bool m_active{};
+	};
+
+	class SettingsRowScope
+	{
+	public:
+		SettingsRowScope(
+			Client& a_client,
+			const char* a_id,
+			const char* a_label,
+			const char* a_description,
+			RowPresentation::Layout a_layout =
+				RowPresentation::Layout::kLabelValue) noexcept :
+			m_client(&a_client)
+		{
+			const auto begun = a_client.BeginSettingsRow(
+				a_id,
+				a_label,
+				a_description,
+				a_layout);
+			m_state.result = begun ?
+				DMUI_RESULT_OK :
+				a_client.LastResult();
+			m_state.visible = begun.value_or(false);
+			m_active = m_state.result == DMUI_RESULT_OK && m_state.visible;
+			if (m_state.result == DMUI_RESULT_OK && !m_state.visible)
+				m_resetPressed = false;
+		}
+
+		~SettingsRowScope() noexcept
+		{
+			if (!m_active)
+				return;
+			const auto original = m_client->LastResult();
+			(void)End();
+			if (original != DMUI_RESULT_OK)
+				m_client->SetPresentationResult(original);
+		}
+
+		SettingsRowScope(const SettingsRowScope&) = delete;
+		SettingsRowScope(SettingsRowScope&&) = delete;
+		SettingsRowScope& operator=(const SettingsRowScope&) = delete;
+		SettingsRowScope& operator=(SettingsRowScope&&) = delete;
+
+		[[nodiscard]] ScopeResult State() const noexcept
+		{
+			return m_state;
+		}
+
+		[[nodiscard]] DMUI_Result Result() const noexcept
+		{
+			return m_state.result;
+		}
+
+		[[nodiscard]] bool Visible() const noexcept
+		{
+			return m_state.visible;
+		}
+
+		[[nodiscard]] std::optional<bool> End(
+			bool a_resetVisible = false,
+			bool a_resetEnabled = false) noexcept
+		{
+			if (!m_active)
+			{
+				if (m_state.result != DMUI_RESULT_OK)
+					return std::nullopt;
+				return m_resetPressed;
+			}
+			m_active = false;
+			m_resetPressed = m_client->EndSettingsRow(
+				a_resetVisible,
+				a_resetEnabled);
+			m_state.result = m_client->LastResult();
+			return m_resetPressed;
+		}
+
+	private:
+		Client* m_client;
+		ScopeResult m_state;
+		bool m_active{};
+		std::optional<bool> m_resetPressed;
+	};
+
+	namespace presentation_detail
+	{
+		struct PreparedClientTextStyle
+		{
+			DMUI_ThemeColors theme{};
+			TextStyle style;
+		};
+
+		[[nodiscard]] inline DMUI_Result PrepareClientTextStyle(
+			Client& a_client,
+			TextStyle a_style,
+			PreparedClientTextStyle& a_prepared) noexcept
+		{
+			a_prepared = {};
+			a_prepared.theme.structSize = sizeof(a_prepared.theme);
+			a_prepared.style = a_style;
+			if (!a_client.IsConnected())
+				return DMUI_RESULT_CLIENT_NOT_FOUND;
+			if (!IsValidTextTone(a_style.tone) ||
+				(a_style.fontRole &&
+					*a_style.fontRole >= DMUI_FONT_ROLE_COUNT))
+				return DMUI_RESULT_INVALID_ARGUMENT;
+			if (a_style.tone == TextTone::kInherit)
+				return DMUI_RESULT_OK;
+			const auto theme = a_client.GetThemeColors();
+			if (!theme)
+				return a_client.LastResult();
+			const auto color = ResolveTextColor(*theme, a_style.tone);
+			if (!color)
+				return color.result;
+			a_prepared.theme = *theme;
+			return DMUI_RESULT_OK;
+		}
+
+		[[nodiscard]] inline DMUI_Result DrawPreparedText(
+			std::string_view a_text,
+			const PreparedClientTextStyle& a_prepared) noexcept
+		{
+			return DrawStyledText(
+				a_text,
+				a_prepared.theme,
+				{
+					.tone = a_prepared.style.tone,
+					.wrapped = a_prepared.style.wrapped
+				});
+		}
+	}
+
+	inline bool DrawStyledText(
+		Client& a_client,
+		std::string_view a_text,
+		TextStyle a_style) noexcept
+	{
+		presentation_detail::PreparedClientTextStyle prepared;
+		const auto preparedResult =
+			presentation_detail::PrepareClientTextStyle(
+				a_client,
+				a_style,
+				prepared);
+		if (preparedResult != DMUI_RESULT_OK)
+			return a_client.Fail(preparedResult);
+
+		std::optional<FontGuard> font;
+		if (a_style.fontRole)
+		{
+			font.emplace(a_client, *a_style.fontRole);
+			if (!font->Pushed())
+				return false;
+		}
+		const auto drawResult = presentation_detail::DrawPreparedText(
+			a_text,
+			prepared);
+		const auto fontEnded = !font || font->End();
+		if (drawResult != DMUI_RESULT_OK)
+			return a_client.Fail(drawResult);
+		if (!fontEnded)
+			return false;
+		a_client.SetPresentationResult(DMUI_RESULT_OK);
+		return true;
+	}
+
+	inline bool DrawLabeledValue(
+		Client& a_client,
+		std::string_view a_label,
+		std::string_view a_value,
+		LabeledValueOptions a_options) noexcept
+	{
+		if (!std::isfinite(a_options.spacingScale) ||
+			a_options.spacingScale < 0.0f)
+			return a_client.Fail(DMUI_RESULT_INVALID_ARGUMENT);
+		presentation_detail::PreparedClientTextStyle prepared;
+		const auto preparedResult =
+			presentation_detail::PrepareClientTextStyle(
+				a_client,
+				a_options.valueStyle,
+				prepared);
+		if (preparedResult != DMUI_RESULT_OK)
+			return a_client.Fail(preparedResult);
+		const auto metrics = a_client.GetStyleMetrics();
+		if (!metrics)
+			return false;
+
+		ImFont* originalFont{};
+		float originalFontSizeBase{};
+		std::optional<FontGuard> valueFont;
+		if (a_options.valueStyle.fontRole)
+		{
+			originalFont = ImGui::GetFont();
+			originalFontSizeBase = metrics->fontSizeBase;
+			if (!originalFont ||
+				!std::isfinite(originalFontSizeBase) ||
+				originalFontSizeBase <= 0.0f)
+				return a_client.Fail(DMUI_RESULT_BACKEND_FAILED);
+			valueFont.emplace(
+				a_client,
+				*a_options.valueStyle.fontRole);
+			if (!valueFont->Pushed())
+				return false;
+			ImGui::PushFont(originalFont, originalFontSizeBase);
+		}
+
+		presentation_detail::DrawUnformatted(a_label, false);
+		ImGui::SameLine(
+			0.0f,
+			metrics->itemSpacing.x * a_options.spacingScale);
+		if (valueFont)
+			ImGui::PopFont();
+		const auto drawResult = presentation_detail::DrawPreparedText(
+			a_value,
+			prepared);
+		const auto fontEnded = !valueFont || valueFont->End();
+		if (drawResult != DMUI_RESULT_OK)
+			return a_client.Fail(drawResult);
+		if (!fontEnded)
+			return false;
+		a_client.SetPresentationResult(DMUI_RESULT_OK);
+		return true;
+	}
 
 	namespace setting_detail
 	{
@@ -2893,32 +3317,16 @@ namespace dmui
 				const auto& control =
 					std::get<ChoiceSettingControl>(a_setting.control);
 				const auto& value = std::get<std::string>(a_value);
-				const auto selectedOption = std::ranges::find(
-					control.options,
+				const auto draw = DrawChoice(
+					"Value",
 					value,
-					&ChoiceSettingOption::value);
-				const auto& previewLabel = selectedOption == control.options.end() ?
-					value :
-					ResolveChoiceOptionLabel(*selectedOption);
-				if (ImGui::BeginCombo("##Value", previewLabel.c_str()))
+					std::span<const ChoiceSettingOption>{ control.options },
+					"Unavailable");
+				if (draw.changed && draw.selected)
 				{
-					for (const auto& option : control.options)
-					{
-						const auto selected = option.value == value;
-						const auto& visibleLabel =
-							ResolveChoiceOptionLabel(option);
-						const auto itemLabel =
-							visibleLabel + "###" + option.value;
-						if (ImGui::Selectable(itemLabel.c_str(), selected))
-						{
-							edited = option.value;
-							changed = option.value != value;
-							completed = changed;
-						}
-						if (selected)
-							ImGui::SetItemDefaultFocus();
-					}
-					ImGui::EndCombo();
+					edited = *draw.selected;
+					changed = true;
+					completed = draw.completed;
 				}
 				break;
 			}
@@ -3077,83 +3485,8 @@ namespace dmui
 				}));
 		}
 
-		class SettingsRowBracket
-		{
-		public:
-			explicit SettingsRowBracket(Client& a_client) noexcept :
-				m_client(a_client)
-			{}
-
-			~SettingsRowBracket() noexcept
-			{
-				if (m_active)
-					(void)m_client.EndSettingsRow(false, false);
-			}
-
-			[[nodiscard]] std::optional<bool> End(
-				bool a_resetVisible,
-				bool a_resetEnabled) noexcept
-			{
-				m_active = false;
-				return m_client.EndSettingsRow(
-					a_resetVisible,
-					a_resetEnabled);
-			}
-
-			SettingsRowBracket(const SettingsRowBracket&) = delete;
-			SettingsRowBracket(SettingsRowBracket&&) = delete;
-
-		private:
-			Client& m_client;
-			bool m_active{ true };
-		};
-
-		class SettingsTableBracket
-		{
-		public:
-			explicit SettingsTableBracket(Client& a_client) noexcept :
-				m_client(a_client)
-			{}
-
-			~SettingsTableBracket() noexcept
-			{
-				if (m_active)
-					(void)m_client.EndSettingsTable();
-			}
-
-			[[nodiscard]] bool End() noexcept
-			{
-				m_active = false;
-				return m_client.EndSettingsTable();
-			}
-
-			SettingsTableBracket(const SettingsTableBracket&) = delete;
-			SettingsTableBracket(SettingsTableBracket&&) = delete;
-
-		private:
-			Client& m_client;
-			bool m_active{ true };
-		};
-
-		class DisabledScope
-		{
-		public:
-			explicit DisabledScope(bool a_disabled = true) noexcept
-			{
-				ImGui::BeginDisabled(a_disabled);
-			}
-
-			~DisabledScope() noexcept
-			{
-				ImGui::EndDisabled();
-			}
-
-			DisabledScope(const DisabledScope&) = delete;
-			DisabledScope(DisabledScope&&) = delete;
-		};
-
 		[[nodiscard]] inline bool EndFallbackRow(
-			SettingsRowBracket& a_row)
+			SettingsRowScope& a_row)
 		{
 			{
 				const DisabledScope disabled;
@@ -3168,21 +3501,22 @@ namespace dmui
 		{
 			const auto& setting = *a_evaluated.setting;
 			const auto description = ResolveSettingDescription(setting);
-			const auto row = a_client.BeginSettingsRow(
+			SettingsRowScope row{
+				a_client,
 				setting.id.c_str(),
 				a_evaluated.label.c_str(),
 				description.c_str(),
-				setting.presentation.layout);
-			if (!row)
+				setting.presentation.layout
+			};
+			if (row.Result() != DMUI_RESULT_OK)
 				return false;
-			if (!*row)
+			if (!row.Visible())
 				return true;
-			SettingsRowBracket rowBracket{ a_client };
 
 			const auto presentation =
 				ResolveSettingControlPresentation(setting.control);
 			if (!presentation.supported)
-				return EndFallbackRow(rowBracket);
+				return EndFallbackRow(row);
 
 			const auto enabled =
 				!setting.isEnabled || setting.isEnabled();
@@ -3191,12 +3525,12 @@ namespace dmui
 				const auto& control =
 					std::get<ReadOnlySettingControl>(setting.control);
 				if (!control.draw)
-					return EndFallbackRow(rowBracket);
+					return EndFallbackRow(row);
 				{
 					const DisabledScope disabled{ !enabled };
 					control.draw();
 				}
-				return rowBracket.End(false, false).has_value();
+				return row.End(false, false).has_value();
 			}
 
 			if (!setting.binding.get ||
@@ -3204,7 +3538,7 @@ namespace dmui
 				!SettingValueMatchesControl(
 					setting.control,
 					setting.defaultValue))
-				return EndFallbackRow(rowBracket);
+				return EndFallbackRow(row);
 
 			auto value = setting.binding.get();
 			if (!SettingValueMatchesControl(setting.control, value))
@@ -3224,7 +3558,7 @@ namespace dmui
 			const auto resetEnabled =
 				resetVisible && enabled && modified;
 			const auto reset =
-				rowBracket.End(resetVisible, resetEnabled);
+				row.End(resetVisible, resetEnabled);
 			if (!reset)
 				return false;
 			if (*reset)
@@ -3237,16 +3571,17 @@ namespace dmui
 			const EvaluatedAction& a_evaluated)
 		{
 			const auto& action = *a_evaluated.action;
-			const auto row = a_client.BeginSettingsRow(
+			SettingsRowScope row{
+				a_client,
 				action.id.c_str(),
 				a_evaluated.label.c_str(),
 				action.description.c_str(),
-				action.presentation.layout);
-			if (!row)
+				action.presentation.layout
+			};
+			if (row.Result() != DMUI_RESULT_OK)
 				return false;
-			if (!*row)
+			if (!row.Visible())
 				return true;
-			SettingsRowBracket rowBracket{ a_client };
 			const auto enabled =
 				action.activate && (!action.isEnabled || action.isEnabled());
 			{
@@ -3264,7 +3599,7 @@ namespace dmui
 					{}
 				}
 			}
-			return rowBracket.End(false, false).has_value();
+			return row.End(false, false).has_value();
 		}
 
 		[[nodiscard]] inline bool DrawSettingGroup(
@@ -3301,12 +3636,11 @@ namespace dmui
 			}
 
 			const auto tableId = "##dmui.settings.table." + key;
-			const auto table = a_client.BeginSettingsTable(tableId.c_str());
-			if (!table)
+			SettingsTableScope table{ a_client, tableId.c_str() };
+			if (table.Result() != DMUI_RESULT_OK)
 				return false;
-			if (!*table)
+			if (!table.Visible())
 				return true;
-			SettingsTableBracket tableBracket{ a_client };
 			for (const auto& row : matches)
 			{
 				const auto drawn = std::visit(
@@ -3328,7 +3662,7 @@ namespace dmui
 				if (!drawn)
 					return false;
 			}
-			if (!tableBracket.End())
+			if (!table.End())
 				return false;
 			ImGui::Spacing();
 			return true;
@@ -3559,17 +3893,26 @@ namespace dmui
 			return true;
 		}
 
-		inline void DrawPageNotes(const SettingsPage& a_page) noexcept
+		[[nodiscard]] inline bool DrawPageNotes(
+			Client& a_client,
+			const SettingsPage& a_page) noexcept
 		{
 			for (const auto& note : a_page.notes)
 			{
-				if (note.muted)
-					ImGui::TextDisabled("%s", note.text.c_str());
-				else
-					ImGui::TextWrapped("%s", note.text.c_str());
+				if (!DrawStyledText(
+						a_client,
+						note.text,
+						{
+							.tone = note.muted ?
+								TextTone::kMuted :
+								TextTone::kInherit,
+							.wrapped = true
+						}))
+					return false;
 			}
 			if (!a_page.notes.empty())
 				ImGui::Spacing();
+			return true;
 		}
 	}
 
@@ -3581,7 +3924,8 @@ namespace dmui
 			prepareView(*this);
 		if (!setting_detail::DrawPageHeader(a_client, *this))
 			return;
-		setting_detail::DrawPageNotes(*this);
+		if (!setting_detail::DrawPageNotes(a_client, *this))
+			return;
 		for (auto& group : groups)
 		{
 			if (!setting_detail::DrawSettingGroup(
@@ -3591,30 +3935,6 @@ namespace dmui
 				return;
 		}
 	}
-
-	class FontGuard
-	{
-	public:
-		FontGuard(Client& a_client, DMUI_FontRole a_role) noexcept :
-			m_client(&a_client),
-			m_pushed(a_client.PushFont(a_role))
-		{}
-
-		~FontGuard() noexcept
-		{
-			if (m_pushed)
-				(void)m_client->PopFont();
-		}
-
-		FontGuard(const FontGuard&) = delete;
-		FontGuard(FontGuard&&) = delete;
-		FontGuard& operator=(const FontGuard&) = delete;
-		FontGuard& operator=(FontGuard&&) = delete;
-
-	private:
-		Client* m_client;
-		bool m_pushed;
-	};
 
 	[[nodiscard]] constexpr ImVec4 ToImVec4(DMUI_Vec4 a_color) noexcept
 	{

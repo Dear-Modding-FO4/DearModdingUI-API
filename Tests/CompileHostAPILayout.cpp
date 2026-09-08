@@ -126,4 +126,8 @@ static_assert(DMUI_ANNOTATED_PLOT_DESCRIPTOR_0_1_SIZE == 60);
 static_assert(sizeof(DMUI_DialogEvent) == 24);
 static_assert(offsetof(DMUI_DialogEvent, requiredTextCapacity) == 16);
 static_assert(DMUI_DIALOG_EVENT_0_1_SIZE == 20);
+static_assert(sizeof(DMUI_StyleMetrics) == 56);
+static_assert(offsetof(DMUI_StyleMetrics, scrollbarSize) == 48);
+static_assert(offsetof(DMUI_StyleMetrics, fontSizeBase) == 52);
+static_assert(DMUI_STYLE_METRICS_0_1_SIZE == sizeof(DMUI_StyleMetrics));
 #endif

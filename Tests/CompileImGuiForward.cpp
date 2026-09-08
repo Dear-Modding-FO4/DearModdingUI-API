@@ -25,6 +25,7 @@ void CompileImGuiForward()
 	DMUI_StyleMetrics metrics{};
 
 	(void)client.HostPresent();
+	(void)ImGui::GetFont();
 	(void)ImGui::GetStyleMetrics(metrics);
 	(void)ImGui::IsForwardVersionCompatible();
 
@@ -43,8 +44,13 @@ void CompileImGuiForward()
 	ImGui::PushID("id");
 	ImGui::PushID(1);
 	ImGui::PopID();
+	ImGui::PushFont(ImGui::GetFont(), metrics.fontSizeBase);
+	ImGui::PopFont();
 	ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ 1.0f, 1.0f, 1.0f, 1.0f });
 	ImGui::PopStyleColor();
+	ImGui::PushTextWrapPos(0.0f);
+	ImGui::TextUnformatted("wrapped");
+	ImGui::PopTextWrapPos();
 	(void) ImGui::Selectable("selectable", &selected);
 	ImGui::Text("value: %d", 1);
 	ImGui::TextColored(ImVec4{ 1.0f, 1.0f, 1.0f, 1.0f }, "text");
