@@ -97,7 +97,8 @@ namespace dmui
 			DMUI_HOST_SERVICE_NOTIFICATIONS |
 			DMUI_HOST_SERVICE_ANNOTATED_PLOTS |
 			DMUI_HOST_SERVICE_DIALOGS |
-			DMUI_HOST_SERVICE_PIXEL_IMAGES
+			DMUI_HOST_SERVICE_PIXEL_IMAGES |
+			DMUI_HOST_SERVICE_EXTERNAL_OPEN
 		};
 		if ((a_options.requiredServices & ~knownServices) != 0)
 			return DMUI_RESULT_SERVICE_UNAVAILABLE;
@@ -159,6 +160,9 @@ namespace dmui
 			a_api->pollDialogEvent &&
 			a_api->resolveDialogSubmission &&
 			a_api->cancelDialog;
+		const auto externalOpenAvailable =
+			a_api->structSize >= DMUI_HOST_API_OPEN_EXTERNAL_SIZE &&
+			a_api->openExternal;
 		if (((required & DMUI_HOST_SERVICE_FRAME_CONTROL) != 0 &&
 				!frameControlAvailable) ||
 			((required & DMUI_HOST_SERVICE_CONTEXTUAL_HOTKEYS) != 0 &&
@@ -174,7 +178,9 @@ namespace dmui
 			((required & DMUI_HOST_SERVICE_ANNOTATED_PLOTS) != 0 &&
 				!plotsAvailable) ||
 			((required & DMUI_HOST_SERVICE_DIALOGS) != 0 &&
-				!dialogsAvailable))
+				!dialogsAvailable) ||
+			((required & DMUI_HOST_SERVICE_EXTERNAL_OPEN) != 0 &&
+				!externalOpenAvailable))
 			return DMUI_RESULT_SERVICE_UNAVAILABLE;
 		if (a_services)
 		{
@@ -273,19 +279,42 @@ namespace dmui
 	{
 		const char* id{};
 		const char* displayName{};
-		const char* category{};
+		const char* categoryId{};
 		const char* summary{};
 		int32_t sortKey{};
 		DMUI_PageKind kind{ DMUI_PAGE_KIND_SETTINGS };
 	};
 
+	struct CategoryDescriptor
+	{
+		const char* id{};
+		const char* displayName{};
+		int32_t sortKey{};
+	};
+
+	struct ExternalOpen
+	{
+		DMUI_ExternalTargetKind targetKind{ DMUI_EXTERNAL_TARGET_NONE };
+		const char* target{};
+		const char* application{};
+		std::span<const char* const> arguments;
+		const char* workingDirectory{};
+	};
+
+	enum class LinkAction : uint32_t
+	{
+		kCopyTarget = DMUI_LINK_ACTION_COPY_TARGET,
+		kOpenExternal = DMUI_LINK_ACTION_OPEN_EXTERNAL
+	};
+
 	struct Link
 	{
 		const char* label{};
-		const char* url{};
+		ExternalOpen external;
 		const char* note{};
 		char32_t glyph{};
 		bool enabled{ true };
+		LinkAction action{ LinkAction::kCopyTarget };
 	};
 
 	struct FaqEntry
@@ -1126,7 +1155,7 @@ namespace dmui
 				descriptor.structSize = sizeof(descriptor);
 				descriptor.id = a_page.id;
 				descriptor.displayName = a_page.displayName;
-				descriptor.category = a_page.category;
+				descriptor.categoryId = a_page.categoryId;
 				descriptor.summary = a_page.summary;
 				descriptor.sortKey = a_page.sortKey;
 				descriptor.kind = a_page.kind;
@@ -1154,6 +1183,53 @@ namespace dmui
 				Fail(DMUI_RESULT_CALLBACK_FAILED);
 				return std::nullopt;
 			}
+		}
+
+		[[nodiscard]] bool AddCategory(
+			const CategoryDescriptor& a_category) noexcept
+		{
+			if (!IsConnected())
+				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			if (api_->structSize < DMUI_HOST_API_REGISTER_CATEGORY_SIZE ||
+				!api_->registerCategory)
+				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
+
+			DMUI_CategoryDescriptor descriptor{};
+			descriptor.structSize = sizeof(descriptor);
+			descriptor.id = a_category.id;
+			descriptor.displayName = a_category.displayName;
+			descriptor.sortKey = a_category.sortKey;
+			lastResult_ = api_->registerCategory(clientHandle_, &descriptor);
+			return lastResult_ == DMUI_RESULT_OK;
+		}
+
+		[[nodiscard]] bool OpenExternal(
+			const ExternalOpen& a_external,
+			uint32_t* a_nativeError = nullptr) noexcept
+		{
+			if (a_nativeError)
+				*a_nativeError = 0;
+			if (!IsConnected())
+				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			if (api_->structSize < DMUI_HOST_API_OPEN_EXTERNAL_SIZE ||
+				!api_->openExternal)
+				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
+			if (a_external.arguments.size() >
+				(static_cast<size_t>((std::numeric_limits<uint32_t>::max)())))
+				return Fail(DMUI_RESULT_INVALID_ARGUMENT);
+
+			DMUI_ExternalOpenDescriptor descriptor{};
+			descriptor.structSize = sizeof(descriptor);
+			descriptor.targetKind = a_external.targetKind;
+			descriptor.target = a_external.target;
+			descriptor.application = a_external.application;
+			descriptor.arguments = a_external.arguments.data();
+			descriptor.argumentCount =
+				static_cast<uint32_t>(a_external.arguments.size());
+			descriptor.workingDirectory = a_external.workingDirectory;
+			lastResult_ =
+				api_->openExternal(clientHandle_, &descriptor, a_nativeError);
+			return lastResult_ == DMUI_RESULT_OK;
 		}
 
 		template <class Page>
@@ -2057,17 +2133,34 @@ namespace dmui
 
 			try
 			{
+				std::vector<DMUI_ExternalOpenDescriptor> external;
 				std::vector<DMUI_LinkDescriptor> descriptors;
+				external.reserve(a_links.size());
 				descriptors.reserve(a_links.size());
 				for (const auto& link : a_links)
 				{
+					if (link.external.arguments.size() >
+						(static_cast<size_t>((std::numeric_limits<uint32_t>::max)())))
+						return Fail(DMUI_RESULT_INVALID_ARGUMENT);
+					external.push_back({
+						sizeof(DMUI_ExternalOpenDescriptor),
+						link.external.targetKind,
+						link.external.target,
+						link.external.application,
+						link.external.arguments.data(),
+						static_cast<uint32_t>(link.external.arguments.size()),
+						0,
+						link.external.workingDirectory
+					});
 					descriptors.push_back({
 						DMUI_LINK_DESCRIPTOR_0_1_SIZE,
 						link.label,
-						link.url,
 						link.note,
 						static_cast<uint32_t>(link.glyph),
-						link.enabled ? 1u : 0u
+						link.enabled ? 1u : 0u,
+						static_cast<DMUI_LinkAction>(link.action),
+						0,
+						&external.back()
 					});
 				}
 				lastResult_ = api_->drawLinkRow(

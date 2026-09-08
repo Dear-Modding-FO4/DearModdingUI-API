@@ -86,6 +86,9 @@ typedef uint32_t DMUI_Result;
 #define DMUI_RESULT_NOT_VISIBLE 34u
 #define DMUI_RESULT_STALE_SUBMISSION 35u
 #define DMUI_RESULT_IMGUI_FORWARDING_VERSION_MISMATCH 36u
+#define DMUI_RESULT_DUPLICATE_CATEGORY_ID 37u
+#define DMUI_RESULT_CATEGORY_NOT_FOUND 38u
+#define DMUI_RESULT_EXTERNAL_OPEN_FAILED 39u
 
 static inline const char* DMUI_ResultToString(DMUI_Result result) DMUI_NOEXCEPT
 {
@@ -165,6 +168,12 @@ static inline const char* DMUI_ResultToString(DMUI_Result result) DMUI_NOEXCEPT
 		return "STALE_SUBMISSION";
 	case DMUI_RESULT_IMGUI_FORWARDING_VERSION_MISMATCH:
 		return "IMGUI_FORWARDING_VERSION_MISMATCH";
+	case DMUI_RESULT_DUPLICATE_CATEGORY_ID:
+		return "DUPLICATE_CATEGORY_ID";
+	case DMUI_RESULT_CATEGORY_NOT_FOUND:
+		return "CATEGORY_NOT_FOUND";
+	case DMUI_RESULT_EXTERNAL_OPEN_FAILED:
+		return "EXTERNAL_OPEN_FAILED";
 	default:
 		return "UNKNOWN";
 	}
@@ -237,6 +246,7 @@ typedef uint64_t DMUI_HostServices;
 #define DMUI_HOST_SERVICE_ANNOTATED_PLOTS (UINT64_C(1) << 6u)
 #define DMUI_HOST_SERVICE_DIALOGS (UINT64_C(1) << 7u)
 #define DMUI_HOST_SERVICE_PIXEL_IMAGES (UINT64_C(1) << 8u)
+#define DMUI_HOST_SERVICE_EXTERNAL_OPEN (UINT64_C(1) << 9u)
 
 #define DMUI_FORWARDING_VERSION_1_0 DMUI_MAKE_VERSION(1u, 0u)
 #define DMUI_FORWARDING_VERSION_1_1 DMUI_MAKE_VERSION(1u, 1u)
@@ -312,6 +322,18 @@ typedef uint32_t DMUI_DialogEventKind;
 #define DMUI_DIALOG_EVENT_SUBMITTED 1u
 #define DMUI_DIALOG_EVENT_CANCELLED 2u
 #define DMUI_DIALOG_EVENT_COMPLETED 3u
+
+typedef uint32_t DMUI_ExternalTargetKind;
+
+#define DMUI_EXTERNAL_TARGET_NONE 0u
+#define DMUI_EXTERNAL_TARGET_URI 1u
+#define DMUI_EXTERNAL_TARGET_FILE 2u
+#define DMUI_EXTERNAL_TARGET_DIRECTORY 3u
+
+typedef uint32_t DMUI_LinkAction;
+
+#define DMUI_LINK_ACTION_COPY_TARGET 0u
+#define DMUI_LINK_ACTION_OPEN_EXTERNAL 1u
 
 #if defined(_MSC_VER)
 #pragma pack(push, 8)
@@ -436,7 +458,9 @@ typedef struct DMUI_PageDescriptor
 	uint32_t structSize;
 	const char* id;
 	const char* displayName;
-	const char* category;
+	// Null or empty leaves the page uncategorized. Non-empty IDs must have
+	// already been registered for this client.
+	const char* categoryId;
 	const char* summary;
 	int32_t sortKey;
 	DMUI_PageKind kind;
@@ -446,6 +470,18 @@ typedef struct DMUI_PageDescriptor
 
 #define DMUI_PAGE_DESCRIPTOR_0_1_SIZE \
 	((uint32_t)(offsetof(DMUI_PageDescriptor, userData) + sizeof(void*)))
+
+typedef struct DMUI_CategoryDescriptor
+{
+	uint32_t structSize;
+	const char* id;
+	const char* displayName;
+	int32_t sortKey;
+	uint32_t reserved;
+} DMUI_CategoryDescriptor;
+
+#define DMUI_CATEGORY_DESCRIPTOR_0_1_SIZE \
+	((uint32_t)(offsetof(DMUI_CategoryDescriptor, reserved) + sizeof(uint32_t)))
 
 typedef struct DMUI_ActionDescriptor
 {
@@ -490,18 +526,35 @@ typedef struct DMUI_HotkeyActionDescriptor
 #define DMUI_HOTKEY_ACTION_DESCRIPTOR_CONTEXT_SIZE \
 	((uint32_t)(offsetof(DMUI_HotkeyActionDescriptor, reserved) + sizeof(uint32_t)))
 
+typedef struct DMUI_ExternalOpenDescriptor
+{
+	uint32_t structSize;
+	DMUI_ExternalTargetKind targetKind;
+	const char* target;
+	const char* application;
+	const char* const* arguments;
+	uint32_t argumentCount;
+	uint32_t reserved;
+	const char* workingDirectory;
+} DMUI_ExternalOpenDescriptor;
+
+#define DMUI_EXTERNAL_OPEN_DESCRIPTOR_0_1_SIZE \
+	((uint32_t)(offsetof(DMUI_ExternalOpenDescriptor, workingDirectory) + sizeof(const char*)))
+
 typedef struct DMUI_LinkDescriptor
 {
 	uint32_t structSize;
 	const char* label;
-	const char* url;
 	const char* note;
 	uint32_t glyph;
 	uint32_t enabled;
+	DMUI_LinkAction action;
+	uint32_t reserved;
+	const DMUI_ExternalOpenDescriptor* external;
 } DMUI_LinkDescriptor;
 
 #define DMUI_LINK_DESCRIPTOR_0_1_SIZE \
-	((uint32_t)(offsetof(DMUI_LinkDescriptor, enabled) + sizeof(uint32_t)))
+	((uint32_t)(offsetof(DMUI_LinkDescriptor, external) + sizeof(const DMUI_ExternalOpenDescriptor*)))
 
 typedef struct DMUI_FaqEntry
 {
@@ -799,6 +852,9 @@ typedef struct DMUI_DialogEvent
 typedef DMUI_Result (DMUI_CALL *DMUI_RegisterClientFn)(
 	const DMUI_ClientDescriptor* descriptor,
 	DMUI_ClientHandle* client) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_RegisterCategoryFn)(
+	DMUI_ClientHandle client,
+	const DMUI_CategoryDescriptor* descriptor) DMUI_NOEXCEPT;
 typedef DMUI_Result (DMUI_CALL *DMUI_RegisterPageFn)(
 	DMUI_ClientHandle client,
 	const DMUI_PageDescriptor* descriptor,
@@ -860,8 +916,9 @@ typedef DMUI_Result (DMUI_CALL *DMUI_DrawCollapsingSectionHeaderFn)(
 	uint32_t* expanded,
 	size_t count) DMUI_NOEXCEPT;
 // Link rows are render-thread-only and valid only inside page draw callbacks.
-// Buttons share the available width; enabled clicks copy the URL without launching a browser.
-// Tooltips use a non-empty note when present, otherwise the URL, including for disabled links.
+// Buttons share the available width. COPY_TARGET copies external.target;
+// OPEN_EXTERNAL dispatches the same descriptor through openExternal.
+// Tooltips use a non-empty note when present, otherwise the target.
 // A zero count succeeds without drawing.
 // Null required values, empty labels or enabled URLs, and short descriptors are invalid.
 typedef DMUI_Result (DMUI_CALL *DMUI_DrawLinkRowFn)(
@@ -1028,6 +1085,15 @@ typedef DMUI_Result (DMUI_CALL *DMUI_UpdateImageFn)(
 	DMUI_ClientHandle client,
 	DMUI_ImageHandle image,
 	const DMUI_ImageDescriptor* descriptor) DMUI_NOEXCEPT;
+// With no application, the OS-associated handler opens target. Arguments and
+// workingDirectory are then invalid. An explicit application must be an absolute
+// executable path. Its argv is application, supplied arguments, then target when
+// targetKind is not NONE. No shell command interpreter or placeholder expansion
+// is performed. Success means process creation or OS dispatch was accepted.
+typedef DMUI_Result (DMUI_CALL *DMUI_OpenExternalFn)(
+	DMUI_ClientHandle client,
+	const DMUI_ExternalOpenDescriptor* descriptor,
+	uint32_t* nativeError) DMUI_NOEXCEPT;
 
 typedef struct DMUI_HostAPI
 {
@@ -1084,6 +1150,8 @@ typedef struct DMUI_HostAPI
 	DMUI_CancelDialogFn cancelDialog;
 	DMUI_CreateImageFn createImage;
 	DMUI_UpdateImageFn updateImage;
+	DMUI_RegisterCategoryFn registerCategory;
+	DMUI_OpenExternalFn openExternal;
 } DMUI_HostAPI;
 
 #define DMUI_HOST_API_SELECT_PAGE_SIZE \
@@ -1174,6 +1242,10 @@ typedef struct DMUI_HostAPI
 	((uint32_t)(offsetof(DMUI_HostAPI, createImage) + sizeof(DMUI_CreateImageFn)))
 #define DMUI_HOST_API_UPDATE_IMAGE_SIZE \
 	((uint32_t)(offsetof(DMUI_HostAPI, updateImage) + sizeof(DMUI_UpdateImageFn)))
+#define DMUI_HOST_API_REGISTER_CATEGORY_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, registerCategory) + sizeof(DMUI_RegisterCategoryFn)))
+#define DMUI_HOST_API_OPEN_EXTERNAL_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, openExternal) + sizeof(DMUI_OpenExternalFn)))
 
 #if defined(_MSC_VER)
 #pragma pack(pop)

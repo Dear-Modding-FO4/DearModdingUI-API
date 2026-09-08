@@ -29,16 +29,33 @@ registration and returns `SERVICE_UNAVAILABLE` or
 `FORWARDING_VERSION_MISMATCH` without creating a partial client. Host service
 flags are availability promises and are separate from client capability
 permissions such as `RENDERER_REPLACEMENT`. Callers that do not opt into
-requirements retain the original 0.1 registration behavior.
+requirements use the current 0.1 registration contract.
 
-The additive 0.1 table supplies official wrappers for frame demand
+The 0.1 table supplies official wrappers for frame demand
 (`RequestFrame`/`ReleaseFrame`), swapchain attachment, contextual hotkey
 enablement, D3D11 images, managed overlays, notifications, annotated plots,
-submission-aware dialogs, and generic CPU-pixel images. Every prior table
-offset, the original 400-byte host table prefix, and every existing
-`_0_1_SIZE` boundary remain frozen. CPU producers require the separate
+submission-aware dialogs, generic CPU-pixel images, first-class categories,
+and generic external opening. DearModdingUI remains pre-release at product
+version 0.1.0 and API version 0.1. The Dear Modding team maintains all consumers,
+so API improvements may break earlier development snapshots without changing
+these versions. Use matching host and client headers; compatibility shims are
+not maintained for superseded development interfaces. CPU producers require the separate
 `DMUI_HOST_SERVICE_PIXEL_IMAGES` bit; imported-SRV availability remains
 `DMUI_HOST_SERVICE_IMAGE_RESOURCES`.
+
+Register each client category once with `Client::AddCategory` before adding a
+page that references its stable `categoryId`. Category display names and sort
+keys are independent of page metadata; all-zero category sort keys order by
+display name and then stable ID. Empty category IDs remain ungrouped.
+
+`Client::OpenExternal` accepts a URI, absolute file, or absolute directory for
+the OS-associated handler. Supplying an absolute application path overrides
+that handler; arguments are an argv array, the target is appended after those
+arguments, and no command shell or placeholder expansion is used. An explicit
+application may launch with `targetKind == NONE`. `dmui::Link` independently
+chooses `kCopyTarget` or `kOpenExternal`, so copy links never become launches
+implicitly. External launch success means Windows accepted the dispatch or
+created the process, not that its window rendered.
 
 New drawing calls are valid only on the render thread while the owning page
 callback is active. Image import, CPU creation, and CPU update instead require
