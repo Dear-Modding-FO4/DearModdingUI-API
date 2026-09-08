@@ -4,6 +4,15 @@
 
 #include <string>
 
+[[nodiscard]] DMUICompileForwardingNoHost::ChoiceSettingControl
+CompileUnmatchedChoiceLabel()
+{
+	return {
+		.options = { { "", "None" }, { "preset.xml", "Preset" } },
+		.unmatchedLabel = "None"
+	};
+}
+
 // This translation unit intentionally includes no Dear ImGui headers or sources.
 // A missing host leaves non-UI configuration and shader work available.
 [[nodiscard]] bool CompileForwardingNoHostExample()

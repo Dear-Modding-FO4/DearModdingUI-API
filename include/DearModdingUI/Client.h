@@ -448,6 +448,7 @@ namespace dmui
 	struct ChoiceSettingControl
 	{
 		std::vector<ChoiceSettingOption> options;
+		std::string unmatchedLabel{ "Unavailable" };
 	};
 
 	struct ReadOnlySettingControl
@@ -3321,7 +3322,7 @@ namespace dmui
 					"Value",
 					value,
 					std::span<const ChoiceSettingOption>{ control.options },
-					"Unavailable");
+					control.unmatchedLabel.c_str());
 				if (draw.changed && draw.selected)
 				{
 					edited = *draw.selected;

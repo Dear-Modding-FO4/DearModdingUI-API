@@ -152,6 +152,22 @@ unformatted beside the combo and is independent of `id`; omit it inside an
 existing settings-row label/value layout.
 `ChoiceSettingOption` is now an alias of `ChoiceOption<std::string>`; aggregate
 initializers that need a key or disabled state must use the new field order.
+Declarative `ChoiceSettingControl` exposes the same unmatched-value presentation
+through its owned `unmatchedLabel`, which defaults to `"Unavailable"`. For example:
+
+```cpp
+dmui::ChoiceSettingControl files{
+	.options = { { "", "None" }, { "preset.xml", "Preset" } },
+	.unmatchedLabel = "None"
+};
+```
+
+This label affects only the combo preview when no option matches. The bound
+value remains unchanged, so selecting the empty option or resetting to an empty
+default can still clear a missing filename and emit the normal change event.
+An empty label is allowed. Existing matched option labels and disabled/empty-list
+behavior are unchanged. This is a C++ descriptor change, not a C ABI or version
+change; rebuild consumers of the descriptor with matching headers.
 
 ## Forwarding-only services
 
