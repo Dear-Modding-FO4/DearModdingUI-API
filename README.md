@@ -57,6 +57,30 @@ chooses `kCopyTarget` or `kOpenExternal`, so copy links never become launches
 implicitly. External launch success means Windows accepted the dispatch or
 created the process, not that its window rendered.
 
+Require `DMUI_HOST_SERVICE_VIRTUAL_FILE_TARGETS` for the explicit
+`VIRTUAL_FILE` and `VIRTUAL_FILE_PARENT` target kinds. Both take an absolute
+path to an existing file visible to the host process. The former opens that
+file's physical backing file; the latter opens its physical containing
+folder. Application overrides and arguments work as above. Ordinary `FILE`
+and `DIRECTORY` targets are never implicitly resolved, and copy links still
+copy the supplied target without resolution.
+
+Resolution is read-only and synchronous. The mapped-file resolver supports
+readable, nonempty loose files, including the winning file exposed through
+MO2/USVFS. Empty files, directories, archive interiors, and backing namespaces
+without a supported external path are not resolved. An unresolved target
+never falls back to its virtual name, an ancestor folder, or a guessed mod
+directory. `EXTERNAL_RESOLUTION_FAILED` reports a resolution failure;
+`EXTERNAL_RESOLUTION_UNSUPPORTED` reports a known unsupported case.
+`EXTERNAL_OPEN_FAILED` means resolution succeeded but Windows rejected the
+launch. `nativeError` preserves the relevant Windows error.
+
+This finds an existing read winner, not a future write or Overwrite
+destination. Opening the backing file may edit an installed mod directly;
+creating a user override remains client policy. Files can change between
+resolution and the external program reopening the path, and launching does
+not opt out of the mod manager's child-process injection.
+
 New drawing calls are valid only on the render thread while the owning page
 callback is active. Image import, CPU creation, and CPU update instead require
 a ready backend and the bound render thread, so they are valid from a frame

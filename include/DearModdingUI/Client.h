@@ -98,7 +98,8 @@ namespace dmui
 			DMUI_HOST_SERVICE_ANNOTATED_PLOTS |
 			DMUI_HOST_SERVICE_DIALOGS |
 			DMUI_HOST_SERVICE_PIXEL_IMAGES |
-			DMUI_HOST_SERVICE_EXTERNAL_OPEN
+			DMUI_HOST_SERVICE_EXTERNAL_OPEN |
+			DMUI_HOST_SERVICE_VIRTUAL_FILE_TARGETS
 		};
 		if ((a_options.requiredServices & ~knownServices) != 0)
 			return DMUI_RESULT_SERVICE_UNAVAILABLE;
@@ -179,7 +180,8 @@ namespace dmui
 				!plotsAvailable) ||
 			((required & DMUI_HOST_SERVICE_DIALOGS) != 0 &&
 				!dialogsAvailable) ||
-			((required & DMUI_HOST_SERVICE_EXTERNAL_OPEN) != 0 &&
+			((required & (DMUI_HOST_SERVICE_EXTERNAL_OPEN |
+							 DMUI_HOST_SERVICE_VIRTUAL_FILE_TARGETS)) != 0 &&
 				!externalOpenAvailable))
 			return DMUI_RESULT_SERVICE_UNAVAILABLE;
 		if (a_services)
