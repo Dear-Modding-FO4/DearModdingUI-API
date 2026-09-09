@@ -5,10 +5,10 @@
 
 // The single ABI layout guard for DMUI_HostAPI; the host compiles this file too.
 #if UINTPTR_MAX == UINT64_MAX
-static_assert(sizeof(DMUI_HostAPI) == 432);
+static_assert(sizeof(DMUI_HostAPI) == 440);
 static_assert(offsetof(DMUI_HostAPI, structSize) == 0);
-static_assert(offsetof(DMUI_HostAPI, apiVersion) == 4);
-static_assert(offsetof(DMUI_HostAPI, imguiFingerprint) == 8);
+static_assert(offsetof(DMUI_HostAPI, hostAbiVersion) == 4);
+static_assert(offsetof(DMUI_HostAPI, apiVersion) == 8);
 static_assert(offsetof(DMUI_HostAPI, registerClient) == 16);
 static_assert(offsetof(DMUI_HostAPI, registerPage) == 24);
 static_assert(offsetof(DMUI_HostAPI, queryState) == 32);
@@ -61,6 +61,8 @@ static_assert(offsetof(DMUI_HostAPI, createImage) == 400);
 static_assert(offsetof(DMUI_HostAPI, updateImage) == 408);
 static_assert(offsetof(DMUI_HostAPI, registerCategory) == 416);
 static_assert(offsetof(DMUI_HostAPI, openExternal) == 424);
+static_assert(offsetof(DMUI_HostAPI, queryUIAPI) == 432);
+static_assert(DMUI_HOST_API_REGISTER_CLIENT_SIZE == 24);
 static_assert(DMUI_HOST_API_SELECT_PAGE_SIZE == 72);
 static_assert(DMUI_HOST_API_ATTACH_SWAP_CHAIN_SIZE == 80);
 static_assert(DMUI_HOST_API_REGISTER_ACTION_SIZE == 88);
@@ -106,7 +108,8 @@ static_assert(DMUI_HOST_API_CANCEL_DIALOG_SIZE == 400);
 static_assert(DMUI_HOST_API_CREATE_IMAGE_SIZE == 408);
 static_assert(DMUI_HOST_API_UPDATE_IMAGE_SIZE == 416);
 static_assert(DMUI_HOST_API_REGISTER_CATEGORY_SIZE == 424);
-static_assert(DMUI_HOST_API_OPEN_EXTERNAL_SIZE == sizeof(DMUI_HostAPI));
+static_assert(DMUI_HOST_API_OPEN_EXTERNAL_SIZE == 432);
+static_assert(DMUI_HOST_API_QUERY_UI_API_SIZE == sizeof(DMUI_HostAPI));
 static_assert(sizeof(DMUI_PageDescriptor) == 72);
 static_assert(DMUI_PAGE_DESCRIPTOR_0_1_SIZE == 64);
 static_assert(DMUI_PAGE_DESCRIPTOR_ICON_SIZE == 72);
@@ -129,5 +132,6 @@ static_assert(DMUI_DIALOG_EVENT_0_1_SIZE == 20);
 static_assert(sizeof(DMUI_StyleMetrics) == 56);
 static_assert(offsetof(DMUI_StyleMetrics, scrollbarSize) == 48);
 static_assert(offsetof(DMUI_StyleMetrics, fontSizeBase) == 52);
-static_assert(DMUI_STYLE_METRICS_0_1_SIZE == sizeof(DMUI_StyleMetrics));
+static_assert(DMUI_STYLE_METRICS_0_1_SIZE == 52);
+static_assert(DMUI_STYLE_METRICS_FONT_SIZE_BASE_SIZE == sizeof(DMUI_StyleMetrics));
 #endif

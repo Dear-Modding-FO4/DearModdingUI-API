@@ -32,6 +32,9 @@ jobs:
     - name: Test commonlibf4 sync
       run: python Tests/test-sync-commonlibf4.py -v
 
+    - name: Test stable UI compatibility baseline
+      run: python Tests/test-ui-contract-generator.py -v
+
     - name: Build header checks
       run: xmake build --yes -vD api-header-checks
 

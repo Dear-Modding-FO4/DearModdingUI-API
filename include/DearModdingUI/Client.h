@@ -1,15 +1,8 @@
 #pragma once
 
-// Include Dear ImGui first for lockstep mode; forwarding mode needs no ImGui sources.
-
-#if defined(IMGUI_VERSION) && defined(IMGUI_VERSION_NUM)
-#include <DearModdingUI/ImGuiFingerprint.h>
-#else
-#include <DearModdingUI/ImGuiForward.h>
-#endif
-
-#include <DearModdingUI/SettingsActions.h>
 #include <DearModdingUI/Presentation.h>
+#include <DearModdingUI/SettingsActions.h>
+#include <DearModdingUI/UI.h>
 #include <DearModdingUI/VisualDecisions.h>
 #include <DearModdingUI/Win32Discovery.h>
 
@@ -63,22 +56,28 @@ namespace dmui
 	{
 		DMUI_ClientCapabilities capabilities{ DMUI_CLIENT_CAPABILITY_NONE };
 		DMUI_HostServices requiredServices{ DMUI_HOST_SERVICE_NONE };
-		uint32_t minimumForwardingVersion{};
+		uint32_t minimumUIRevision{ DMUI_UI_REVISION_1 };
+		uint32_t minimumUIAPISize{ DMUI_UI_API_REQUIRED_SIZE };
 	};
 
 	struct HostServices
 	{
-		uint32_t forwardingVersion{};
 		DMUI_HostServices supported{};
+		uint32_t uiABI{};
+		uint32_t uiRevision{};
+		uint32_t uiTableSize{};
 	};
 
 	[[nodiscard]] inline DMUI_Result PreflightHostAPI(
 		const DMUI_HostAPI* a_api,
 		const ClientOptions& a_options,
-		HostServices* a_services = nullptr) noexcept
+		HostServices* a_services = nullptr,
+		const DMUI_UIAPI** a_uiAPI = nullptr) noexcept
 	{
 		if (a_services)
 			*a_services = {};
+		if (a_uiAPI)
+			*a_uiAPI = nullptr;
 		if (!a_api)
 			return DMUI_RESULT_UNSUPPORTED_ABI;
 		constexpr auto registerClientSize =
@@ -86,6 +85,8 @@ namespace dmui
 			sizeof(DMUI_RegisterClientFn);
 		if (a_api->structSize < registerClientSize || !a_api->registerClient)
 			return DMUI_RESULT_STRUCT_TOO_SMALL;
+		if (a_api->hostAbiVersion != DMUI_HOST_ABI_CURRENT)
+			return DMUI_RESULT_UNSUPPORTED_ABI;
 		if ((a_options.capabilities &
 				~DMUI_CLIENT_CAPABILITY_RENDERER_REPLACEMENT) != 0)
 			return DMUI_RESULT_INVALID_DESCRIPTOR;
@@ -105,23 +106,45 @@ namespace dmui
 		};
 		if ((a_options.requiredServices & ~knownServices) != 0)
 			return DMUI_RESULT_SERVICE_UNAVAILABLE;
-		if (a_options.requiredServices == DMUI_HOST_SERVICE_NONE &&
-			a_options.minimumForwardingVersion == 0)
-			return DMUI_RESULT_OK;
-		if (a_api->structSize < DMUI_HOST_API_QUERY_SERVICES_SIZE ||
-			!a_api->queryServices)
-			return DMUI_RESULT_SERVICE_UNAVAILABLE;
+		DMUI_HostServices supportedServices{ DMUI_HOST_SERVICE_NONE };
+		if (a_options.requiredServices != DMUI_HOST_SERVICE_NONE)
+		{
+			if (a_api->structSize < DMUI_HOST_API_QUERY_SERVICES_SIZE ||
+				!a_api->queryServices)
+				return DMUI_RESULT_SERVICE_UNAVAILABLE;
 
-		DMUI_HostServicesInfo services{};
-		services.structSize = sizeof(services);
-		const auto queryResult = a_api->queryServices(&services);
-		if (queryResult != DMUI_RESULT_OK)
-			return queryResult;
-		if ((services.supportedServices & a_options.requiredServices) !=
-			a_options.requiredServices)
-			return DMUI_RESULT_SERVICE_UNAVAILABLE;
-		if (services.forwardingVersion < a_options.minimumForwardingVersion)
-			return DMUI_RESULT_FORWARDING_VERSION_MISMATCH;
+			DMUI_HostServicesInfo services{};
+			services.structSize = sizeof(services);
+			const auto queryResult = a_api->queryServices(&services);
+			if (queryResult != DMUI_RESULT_OK)
+				return queryResult;
+			supportedServices = services.supportedServices;
+			if ((supportedServices & a_options.requiredServices) !=
+				a_options.requiredServices)
+				return DMUI_RESULT_SERVICE_UNAVAILABLE;
+		}
+
+		if (a_api->structSize < DMUI_HOST_API_QUERY_UI_API_SIZE ||
+			!a_api->queryUIAPI)
+			return DMUI_RESULT_UNSUPPORTED_ABI;
+		DMUI_UIAPIInfo uiInfo{};
+		uiInfo.structSize = sizeof(uiInfo);
+		const auto uiResult = a_api->queryUIAPI(
+			DMUI_UI_ABI_CURRENT,
+			a_options.minimumUIRevision,
+			a_options.minimumUIAPISize,
+			&uiInfo);
+		if (uiResult != DMUI_RESULT_OK)
+			return uiResult;
+		if (!uiInfo.api ||
+			uiInfo.abiVersion != DMUI_UI_ABI_CURRENT ||
+			uiInfo.revision < a_options.minimumUIRevision ||
+			uiInfo.tableSize < a_options.minimumUIAPISize ||
+			uiInfo.api->structSize < a_options.minimumUIAPISize ||
+			!ui::detail::HasOperationsThroughSize(
+				uiInfo.api,
+				a_options.minimumUIAPISize))
+			return DMUI_RESULT_UNSUPPORTED_ABI;
 
 		const auto required = a_options.requiredServices;
 		const auto frameControlAvailable =
@@ -198,9 +221,13 @@ namespace dmui
 			return DMUI_RESULT_SERVICE_UNAVAILABLE;
 		if (a_services)
 		{
-			a_services->forwardingVersion = services.forwardingVersion;
-			a_services->supported = services.supportedServices;
+			a_services->supported = supportedServices;
+			a_services->uiABI = uiInfo.abiVersion;
+			a_services->uiRevision = uiInfo.revision;
+			a_services->uiTableSize = uiInfo.tableSize;
 		}
+		if (a_uiAPI)
+			*a_uiAPI = uiInfo.api;
 		return DMUI_RESULT_OK;
 	}
 
@@ -366,11 +393,6 @@ namespace dmui
 		uint64_t used{};
 		uint64_t budget{};
 	};
-
-	struct ForwardingClientTag
-	{};
-
-	inline constexpr ForwardingClientTag kForwardingClient{};
 
 	using SettingValue = std::variant<bool, double, int64_t, uint64_t, std::string>;
 
@@ -709,7 +731,7 @@ namespace dmui
 
 	inline void DrawDivider() noexcept
 	{
-		ImGui::Separator();
+		ui::Separator();
 	}
 
 	struct SettingDescriptor
@@ -1055,30 +1077,10 @@ namespace dmui
 	class Client
 	{
 	public:
-#if defined(IMGUI_VERSION) && defined(IMGUI_VERSION_NUM)
 		Client(
 			std::string_view a_id,
 			std::string_view a_displayName,
 			Version a_version,
-			std::string_view a_iconName = {},
-			ClientOrigin a_origin = {},
-			ClientOptions a_options = {}) :
-			id_(a_id),
-			displayName_(a_displayName),
-			iconName_(a_iconName),
-			origin_(a_origin.kind),
-			bridgeSourceLabel_(a_origin.sourceLabel),
-			version_(a_version),
-			options_(a_options),
-			fingerprint_(DMUI_MakeImGuiFingerprint())
-		{}
-#endif
-
-		Client(
-			std::string_view a_id,
-			std::string_view a_displayName,
-			Version a_version,
-			ForwardingClientTag,
 			std::string_view a_iconName = {},
 			ClientOrigin a_origin = {},
 			ClientOptions a_options = {}) :
@@ -1106,33 +1108,33 @@ namespace dmui
 				return true;
 			}
 
-			const auto getHostAPI = FindHostAPI();
-			hostPresent_ = getHostAPI != nullptr;
-			if (!getHostAPI)
+			hostPresent_ = detail::HostModulePresent();
+			const auto getAPI = FindAPI();
+			if (!getAPI)
 			{
 				api_ = nullptr;
-				lastResult_ = DMUI_RESULT_OK;
+				lastResult_ = hostPresent_ ?
+					DMUI_RESULT_UNSUPPORTED_ABI :
+					DMUI_RESULT_OK;
 				return false;
 			}
-#if !defined(IMGUI_VERSION) || !defined(IMGUI_VERSION_NUM)
-			if (!ImGui::IsForwardVersionCompatible())
-			{
-				api_ = nullptr;
-				lastResult_ =
-					DMUI_RESULT_IMGUI_FORWARDING_VERSION_MISMATCH;
-				return false;
-			}
-#endif
 
-			api_ = getHostAPI(DMUI_API_VERSION_CURRENT);
+			api_ = getAPI(DMUI_HOST_ABI_CURRENT);
 			if (!api_)
 			{
 				lastResult_ = DMUI_RESULT_UNSUPPORTED_ABI;
 				return false;
 			}
-			lastResult_ = PreflightHostAPI(api_, options_);
+			lastResult_ = PreflightHostAPI(
+				api_,
+				options_,
+				nullptr,
+				&uiAPI_);
 			if (lastResult_ != DMUI_RESULT_OK)
+			{
+				uiAPI_ = nullptr;
 				return false;
+			}
 
 			DMUI_ClientDescriptor descriptor{};
 			descriptor.structSize = sizeof(descriptor);
@@ -1140,7 +1142,6 @@ namespace dmui
 			descriptor.id = id_.c_str();
 			descriptor.displayName = displayName_.c_str();
 			descriptor.version = version_.Pack();
-			descriptor.expectedImGui = fingerprint_ ? &*fingerprint_ : nullptr;
 			descriptor.onHostReady = &OnHostReady;
 			descriptor.onHostUnavailable = &OnHostUnavailable;
 			descriptor.userData = this;
@@ -1151,8 +1152,6 @@ namespace dmui
 			descriptor.bridgeSourceLabel =
 				bridgeSourceLabel_.empty() ? nullptr : bridgeSourceLabel_.c_str();
 			descriptor.requiredServices = options_.requiredServices;
-			descriptor.minimumForwardingVersion =
-				options_.minimumForwardingVersion;
 
 			DMUI_ClientHandle handle{ DMUI_INVALID_CLIENT_HANDLE };
 			lastResult_ = api_->registerClient(&descriptor, &handle);
@@ -1181,7 +1180,11 @@ namespace dmui
 					return std::nullopt;
 				}
 
-				pages_.push_back({ DMUI_INVALID_PAGE_HANDLE, std::move(callback) });
+				pages_.push_back({
+					DMUI_INVALID_PAGE_HANDLE,
+					this,
+					std::move(callback)
+				});
 				auto& registration = pages_.back();
 
 				DMUI_PageDescriptor descriptor{};
@@ -1192,8 +1195,8 @@ namespace dmui
 				descriptor.summary = a_page.summary;
 				descriptor.sortKey = a_page.sortKey;
 				descriptor.kind = a_page.kind;
-				descriptor.draw = &Invoke;
-				descriptor.userData = &registration.callback;
+				descriptor.draw = &InvokePage;
+				descriptor.userData = &registration;
 				descriptor.iconName = a_page.iconName;
 
 				DMUI_PageHandle handle{ DMUI_INVALID_PAGE_HANDLE };
@@ -1627,8 +1630,10 @@ namespace dmui
 			if (lastResult_ != DMUI_RESULT_OK)
 				return std::nullopt;
 			return HostServices{
-				services.forwardingVersion,
-				services.supportedServices
+				services.supportedServices,
+				uiAPI_ ? uiAPI_->abiVersion : 0u,
+				uiAPI_ ? uiAPI_->revision : 0u,
+				uiAPI_ ? uiAPI_->structSize : 0u
 			};
 		}
 
@@ -2041,42 +2046,9 @@ namespace dmui
 			}
 			DMUI_StyleMetrics metrics{};
 			metrics.structSize = sizeof(metrics);
-#if defined(IMGUI_VERSION) && defined(IMGUI_VERSION_NUM)
-			if (!ImGui::GetCurrentContext())
-			{
-				Fail(DMUI_RESULT_HOST_NOT_READY);
-				return std::nullopt;
-			}
-			const auto& style = ImGui::GetStyle();
-			metrics.itemSpacing = {
-				style.ItemSpacing.x,
-				style.ItemSpacing.y
-			};
-			metrics.framePadding = {
-				style.FramePadding.x,
-				style.FramePadding.y
-			};
-			metrics.itemInnerSpacing = {
-				style.ItemInnerSpacing.x,
-				style.ItemInnerSpacing.y
-			};
-			metrics.cellPadding = {
-				style.CellPadding.x,
-				style.CellPadding.y
-			};
-			metrics.windowPadding = {
-				style.WindowPadding.x,
-				style.WindowPadding.y
-			};
-			metrics.indentSpacing = style.IndentSpacing;
-			metrics.scrollbarSize = style.ScrollbarSize;
-			metrics.fontSizeBase = style.FontSizeBase;
-			lastResult_ = DMUI_RESULT_OK;
-#else
-			lastResult_ = ImGui::GetStyleMetrics(metrics);
+			lastResult_ = ui::GetStyleMetrics(metrics);
 			if (lastResult_ != DMUI_RESULT_OK)
 				return std::nullopt;
-#endif
 			return metrics;
 		}
 
@@ -2304,8 +2276,8 @@ namespace dmui
 
 		[[nodiscard]] std::optional<bool> DrawSettingsActionButton(
 			const char* a_id,
-			const ImVec2& a_origin,
-			const ImVec2& a_size,
+			const ui::Vec2& a_origin,
+			const ui::Vec2& a_size,
 			DMUI_SettingsAction a_action,
 			const char* a_fallbackLabel,
 			const char* a_tooltip,
@@ -2596,11 +2568,12 @@ namespace dmui
 			std::string_view,
 			LabeledValueOptions) noexcept;
 
-		using GetHostAPIFn = const DMUI_HostAPI* (DMUI_CALL*)(uint32_t) noexcept;
+		using GetAPIFn = const DMUI_HostAPI* (DMUI_CALL*)(uint32_t) noexcept;
 
 		struct PageRegistration
 		{
 			DMUI_PageHandle handle;
+			Client* owner;
 			std::function<void()> callback;
 		};
 
@@ -2641,9 +2614,9 @@ namespace dmui
 		static constexpr uint32_t kIsMenuVisibleSize =
 			static_cast<uint32_t>(offsetof(DMUI_HostAPI, isMenuVisible) + sizeof(DMUI_IsMenuVisibleFn));
 
-		[[nodiscard]] static GetHostAPIFn FindHostAPI() noexcept
+		[[nodiscard]] static GetAPIFn FindAPI() noexcept
 		{
-			return detail::ResolveHostSymbol<GetHostAPIFn>("DMUI_GetHostAPI");
+			return detail::ResolveHostSymbol<GetAPIFn>("DMUI_GetAPI");
 		}
 
 		[[nodiscard]] bool CanRegisterPage() noexcept
@@ -2661,6 +2634,23 @@ namespace dmui
 			return false;
 		}
 
+		void ReportUIFailure(DMUI_Result a_result) noexcept
+		{
+			if (!api_ ||
+				api_->structSize < DMUI_HOST_API_REPORT_DIAGNOSTIC_SIZE ||
+				!api_->reportDiagnostic ||
+				clientHandle_ == DMUI_INVALID_CLIENT_HANDLE)
+				return;
+			const DMUI_DiagnosticDescriptor diagnostic{
+				DMUI_DIAGNOSTIC_DESCRIPTOR_0_1_SIZE,
+				DMUI_STATUS_SEVERITY_ERROR,
+				"ui-contract",
+				"Stable UI operation failed; drawing callback was disabled.",
+				DMUI_ResultToString(a_result)
+			};
+			(void)api_->reportDiagnostic(clientHandle_, &diagnostic);
+		}
+
 		void SetPresentationResult(DMUI_Result a_result) noexcept
 		{
 			lastResult_ = a_result;
@@ -2672,18 +2662,7 @@ namespace dmui
 		{
 			if (!a_info || a_info->structSize < sizeof(DMUI_HostReadyInfo))
 				return;
-#if defined(IMGUI_VERSION) && defined(IMGUI_VERSION_NUM)
-			const auto* self = static_cast<const Client*>(a_userData);
-			if (!self || !self->fingerprint_)
-				return;
-			ImGui::SetCurrentContext(static_cast<ImGuiContext*>(a_info->imguiContext));
-			ImGui::SetAllocatorFunctions(
-				a_info->imguiAlloc,
-				a_info->imguiFree,
-				a_info->imguiAllocatorUserData);
-#else
 			(void)a_userData;
-#endif
 		}
 
 		static void DMUI_CALL OnHostUnavailable(
@@ -2692,6 +2671,39 @@ namespace dmui
 		{
 			if (auto* const self = static_cast<Client*>(a_userData))
 				self->unavailableReason_.store(a_reason, std::memory_order_relaxed);
+		}
+
+		static DMUI_Result DMUI_CALL InvokePage(void* a_userData) noexcept
+		{
+			auto* const registration =
+				static_cast<PageRegistration*>(a_userData);
+			if (!registration || !registration->owner)
+				return DMUI_RESULT_INVALID_ARGUMENT;
+			auto& owner = *registration->owner;
+			owner.lastResult_ = DMUI_RESULT_OK;
+			ui::detail::ScopedContext uiContext{
+				owner.uiAPI_,
+				owner.clientHandle_
+			};
+			try
+			{
+				registration->callback();
+			}
+			catch (...)
+			{
+				owner.lastResult_ = DMUI_RESULT_CALLBACK_FAILED;
+				return DMUI_RESULT_CALLBACK_FAILED;
+			}
+			const auto uiResult = uiContext.Result();
+			const auto result = uiResult != DMUI_RESULT_OK ?
+				uiResult :
+				owner.LastResult();
+			if (result != DMUI_RESULT_OK)
+			{
+				owner.lastResult_ = result;
+				owner.ReportUIFailure(result);
+			}
+			return result;
 		}
 
 		static void DMUI_CALL Invoke(void* a_userData) noexcept
@@ -2759,8 +2771,8 @@ namespace dmui
 		std::string bridgeSourceLabel_;
 		Version version_;
 		ClientOptions options_;
-		std::optional<DMUI_ImGuiFingerprint> fingerprint_;
 		const DMUI_HostAPI* api_{};
+		const DMUI_UIAPI* uiAPI_{};
 		DMUI_ClientHandle clientHandle_{ DMUI_INVALID_CLIENT_HANDLE };
 		std::atomic<DMUI_Result> lastResult_{ DMUI_RESULT_OK };
 		std::atomic<DMUI_UnavailableReason> unavailableReason_{ DMUI_UNAVAILABLE_NONE };
@@ -3076,31 +3088,21 @@ namespace dmui
 		if (!metrics)
 			return false;
 
-		ImFont* originalFont{};
-		float originalFontSizeBase{};
+		presentation_detail::DrawUnformatted(a_label, false);
+		ui::SameLine(
+			0.0f,
+			metrics->itemSpacing.x * a_options.spacingScale);
+
 		std::optional<FontGuard> valueFont;
 		if (a_options.valueStyle.fontRole)
 		{
-			originalFont = ImGui::GetFont();
-			originalFontSizeBase = metrics->fontSizeBase;
-			if (!originalFont ||
-				!std::isfinite(originalFontSizeBase) ||
-				originalFontSizeBase <= 0.0f)
-				return a_client.Fail(DMUI_RESULT_BACKEND_FAILED);
 			valueFont.emplace(
 				a_client,
 				*a_options.valueStyle.fontRole);
 			if (!valueFont->Pushed())
 				return false;
-			ImGui::PushFont(originalFont, originalFontSizeBase);
 		}
 
-		presentation_detail::DrawUnformatted(a_label, false);
-		ImGui::SameLine(
-			0.0f,
-			metrics->itemSpacing.x * a_options.spacingScale);
-		if (valueFont)
-			ImGui::PopFont();
 		const auto drawResult = presentation_detail::DrawPreparedText(
 			a_value,
 			prepared);
@@ -3115,17 +3117,6 @@ namespace dmui
 
 	namespace setting_detail
 	{
-		template <NumericSettingValue T>
-		[[nodiscard]] constexpr ImGuiDataType NumericDataType() noexcept
-		{
-			if constexpr (std::same_as<T, double>)
-				return ImGuiDataType_Double;
-			else if constexpr (std::same_as<T, int64_t>)
-				return ImGuiDataType_S64;
-			else
-				return ImGuiDataType_U64;
-		}
-
 		template <NumericSettingValue T>
 		[[nodiscard]] constexpr const char* DefaultNumericFormat() noexcept
 		{
@@ -3151,19 +3142,17 @@ namespace dmui
 			bool& a_changed) noexcept
 		{
 			auto edited = a_value;
-			const auto type = NumericDataType<T>();
 			const auto* format = a_control.format.empty() ?
 				DefaultNumericFormat<T>() :
 				a_control.format.c_str();
 			switch (ResolveNumericSettingWidget(a_control))
 			{
 			case NumericSettingWidget::kInput:
-				a_changed = ImGui::InputScalar(
+				a_changed = ui::InputScalar(
 					"##Value",
-					type,
 					&edited,
-					nullptr,
-					nullptr,
+					static_cast<const T*>(nullptr),
+					static_cast<const T*>(nullptr),
 					format);
 				break;
 			case NumericSettingWidget::kDrag:
@@ -3176,9 +3165,8 @@ namespace dmui
 					a_control.range && a_control.range->maximum ?
 					&*a_control.range->maximum :
 					nullptr;
-				a_changed = ImGui::DragScalar(
+				a_changed = ui::DragScalar(
 					"##Value",
-					type,
 					&edited,
 					a_control.dragSpeed > 0.0f ?
 						a_control.dragSpeed :
@@ -3186,7 +3174,7 @@ namespace dmui
 					minimum,
 					maximum,
 					format,
-					ImGuiSliderFlags_AlwaysClamp);
+					ui::SliderFlags::kAlwaysClamp);
 				break;
 			}
 			case NumericSettingWidget::kSlider:
@@ -3195,14 +3183,13 @@ namespace dmui
 				auto maximum = *a_control.range->maximum;
 				if (maximum < minimum)
 					std::swap(minimum, maximum);
-				a_changed = ImGui::SliderScalar(
+				a_changed = ui::SliderScalar(
 					"##Value",
-					type,
 					&edited,
 					&minimum,
 					&maximum,
 					format,
-					ImGuiSliderFlags_AlwaysClamp);
+					ui::SliderFlags::kAlwaysClamp);
 				break;
 			}
 			}
@@ -3256,7 +3243,7 @@ namespace dmui
 			case SettingControlKind::kCheckbox:
 			{
 				auto value = std::get<bool>(a_value);
-				changed = ImGui::Checkbox("##Value", &value);
+				changed = ui::Checkbox("##Value", &value);
 				completed = changed;
 				edited = value;
 				break;
@@ -3267,7 +3254,7 @@ namespace dmui
 					std::get<double>(a_value),
 					std::get<double>(a_setting.defaultValue),
 					changed);
-				completed = ImGui::IsItemDeactivatedAfterEdit();
+				completed = ui::IsItemDeactivatedAfterEdit();
 				break;
 			case SettingControlKind::kSigned:
 				edited = DrawNumericSetting(
@@ -3275,7 +3262,7 @@ namespace dmui
 					std::get<int64_t>(a_value),
 					std::get<int64_t>(a_setting.defaultValue),
 					changed);
-				completed = ImGui::IsItemDeactivatedAfterEdit();
+				completed = ui::IsItemDeactivatedAfterEdit();
 				break;
 			case SettingControlKind::kUnsigned:
 				edited = DrawNumericSetting(
@@ -3283,7 +3270,7 @@ namespace dmui
 					std::get<uint64_t>(a_value),
 					std::get<uint64_t>(a_setting.defaultValue),
 					changed);
-				completed = ImGui::IsItemDeactivatedAfterEdit();
+				completed = ui::IsItemDeactivatedAfterEdit();
 				break;
 			case SettingControlKind::kText:
 			{
@@ -3296,19 +3283,19 @@ namespace dmui
 				std::vector<char> buffer(capacity);
 				std::copy(value.begin(), value.end(), buffer.begin());
 				changed = control.multiline ?
-					ImGui::InputTextMultiline(
+					ui::InputTextMultiline(
 						"##Value",
 						buffer.data(),
 						buffer.size(),
 						{
 							0.0f,
-							ImGui::GetTextLineHeightWithSpacing() * 3.0f
+							ui::GetTextLineHeightWithSpacing() * 3.0f
 						}) :
-					ImGui::InputText(
+					ui::InputText(
 						"##Value",
 						buffer.data(),
 						buffer.size());
-				completed = ImGui::IsItemDeactivatedAfterEdit();
+				completed = ui::IsItemDeactivatedAfterEdit();
 				if (changed)
 					edited = std::string{ buffer.data() };
 				break;
@@ -3491,7 +3478,7 @@ namespace dmui
 		{
 			{
 				const DisabledScope disabled;
-				ImGui::TextUnformatted("Unsupported setting control.");
+				ui::TextUnformatted("Unsupported setting control.");
 			}
 			return a_row.End(false, false).has_value();
 		}
@@ -3590,7 +3577,7 @@ namespace dmui
 				const auto& label =
 					action.buttonLabel.empty() ? action.label : action.buttonLabel;
 				const auto itemLabel = label + "###" + action.id;
-				if (ImGui::Button(itemLabel.c_str()) && enabled)
+				if (ui::Button(itemLabel.c_str()) && enabled)
 				{
 					try
 					{
@@ -3653,8 +3640,8 @@ namespace dmui
 							return DrawActionRow(a_client, a_evaluated);
 						else
 						{
-							ImGui::TableNextRow();
-							(void)ImGui::TableSetColumnIndex(0);
+							ui::TableNextRow();
+							(void)ui::TableSetColumnIndex(0);
 							DrawDivider();
 							return true;
 						}
@@ -3665,7 +3652,7 @@ namespace dmui
 			}
 			if (!table.End())
 				return false;
-			ImGui::Spacing();
+			ui::Spacing();
 			return true;
 		}
 
@@ -3731,26 +3718,16 @@ namespace dmui
 			if (actionCount == 0 && !drawFilter)
 				return true;
 
-			const auto start = ImGui::GetCursorScreenPos();
+			const auto start = ui::GetCursorScreenPos();
 			const auto available =
-				(std::max)(ImGui::GetContentRegionAvail().x, 0.0f);
-			float spacing{};
-			float itemSpacingY{};
-			float itemInnerSpacingX{};
-#if defined(IMGUI_VERSION) && defined(IMGUI_VERSION_NUM)
-			const auto& style = ImGui::GetStyle();
-			spacing = style.ItemSpacing.x;
-			itemSpacingY = style.ItemSpacing.y;
-			itemInnerSpacingX = style.ItemInnerSpacing.x;
-#else
-			DMUI_StyleMetrics style{};
-			if (ImGui::GetStyleMetrics(style) != DMUI_RESULT_OK)
+				(std::max)(ui::GetContentRegionAvail().x, 0.0f);
+			const auto style = a_client.GetStyleMetrics();
+			if (!style)
 				return false;
-			spacing = style.itemSpacing.x;
-			itemSpacingY = style.itemSpacing.y;
-			itemInnerSpacingX = style.itemInnerSpacing.x;
-#endif
-			const auto frameHeight = ImGui::GetFrameHeight();
+			const auto spacing = style->itemSpacing.x;
+			const auto itemSpacingY = style->itemSpacing.y;
+			const auto itemInnerSpacingX = style->itemInnerSpacing.x;
+			const auto frameHeight = ui::GetFrameHeight();
 			auto buttonExtent = frameHeight;
 			std::array<float, actions.size()> widths{};
 			if (actionCount != 0)
@@ -3800,16 +3777,16 @@ namespace dmui
 					a_page.filterOptions.showModifiedOnly ?
 					frameHeight +
 						itemInnerSpacingX +
-						ImGui::CalcTextSize("Modified only").x :
+						ui::CalcTextSize("Modified only").x :
 					0.0f;
-				const auto minimumSearchWidth = ImGui::GetFontSize() * 10.0f;
+				const auto minimumSearchWidth = ui::GetFontSize() * 10.0f;
 				const auto searchWidth = (std::max)(
 					minimumSearchWidth,
 					(std::min)(
-						ImGui::GetFontSize() * 24.0f,
+						ui::GetFontSize() * 24.0f,
 						filterWidth - modifiedWidth - spacing));
-				ImGui::SetNextItemWidth((std::min)(searchWidth, filterWidth));
-				if (ImGui::InputTextWithHint(
+				ui::SetNextItemWidth((std::min)(searchWidth, filterWidth));
+				if (ui::InputTextWithHint(
 						"##dmui.settings.search",
 						a_page.filterOptions.searchHint.c_str(),
 						search.data(),
@@ -3820,10 +3797,10 @@ namespace dmui
 					modifiedInline =
 						searchWidth + modifiedWidth + spacing <= filterWidth;
 					if (modifiedInline)
-						ImGui::SameLine();
+						ui::SameLine();
 					else
 					{
-						ImGui::SetCursorScreenPos({
+						ui::SetCursorScreenPos({
 							start.x,
 							start.y + rowHeight + itemSpacingY
 						});
@@ -3832,7 +3809,7 @@ namespace dmui
 			}
 			if (a_page.filterOptions.showModifiedOnly)
 			{
-				(void)ImGui::Checkbox(
+				(void)ui::Checkbox(
 					"Modified only###dmui.settings.modified",
 					&a_page.filter.modifiedOnly);
 			}
@@ -3870,9 +3847,9 @@ namespace dmui
 				a_page.filterOptions.showModifiedOnly &&
 				!modifiedInline)
 				consumedHeight += itemSpacingY + frameHeight;
-			ImGui::SetCursorScreenPos(start);
-			ImGui::Dummy({ available, consumedHeight });
-			ImGui::Spacing();
+			ui::SetCursorScreenPos(start);
+			ui::Dummy({ available, consumedHeight });
+			ui::Spacing();
 
 			if (!pressed)
 				return true;
@@ -3912,7 +3889,7 @@ namespace dmui
 					return false;
 			}
 			if (!a_page.notes.empty())
-				ImGui::Spacing();
+				ui::Spacing();
 			return true;
 		}
 	}
@@ -3937,7 +3914,7 @@ namespace dmui
 		}
 	}
 
-	[[nodiscard]] constexpr ImVec4 ToImVec4(DMUI_Vec4 a_color) noexcept
+	[[nodiscard]] constexpr ui::Vec4 ToUIVec4(DMUI_Vec4 a_color) noexcept
 	{
 		return { a_color.x, a_color.y, a_color.z, a_color.w };
 	}

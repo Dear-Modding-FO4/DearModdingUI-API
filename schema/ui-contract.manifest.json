@@ -1,0 +1,2398 @@
+{
+  "contract": {
+    "name": "DearModdingUI stable UI",
+    "abi": 1,
+    "revision": 1,
+    "namespace": "dmui::ui",
+    "packedColor": "RRGGBBAA"
+  },
+  "enums": [
+    {
+      "name": "Color",
+      "cName": "DMUI_UIColor",
+      "kind": "value",
+      "values": [
+        {
+          "name": "Text",
+          "value": 1000
+        },
+        {
+          "name": "TextDisabled",
+          "value": 1001
+        },
+        {
+          "name": "WindowBg",
+          "value": 1002
+        },
+        {
+          "name": "ChildBg",
+          "value": 1003
+        },
+        {
+          "name": "PopupBg",
+          "value": 1004
+        },
+        {
+          "name": "Border",
+          "value": 1005
+        },
+        {
+          "name": "BorderShadow",
+          "value": 1006
+        },
+        {
+          "name": "FrameBg",
+          "value": 1007
+        },
+        {
+          "name": "FrameBgHovered",
+          "value": 1008
+        },
+        {
+          "name": "FrameBgActive",
+          "value": 1009
+        },
+        {
+          "name": "TitleBg",
+          "value": 1010
+        },
+        {
+          "name": "TitleBgActive",
+          "value": 1011
+        },
+        {
+          "name": "TitleBgCollapsed",
+          "value": 1012
+        },
+        {
+          "name": "MenuBarBg",
+          "value": 1013
+        },
+        {
+          "name": "ScrollbarBg",
+          "value": 1014
+        },
+        {
+          "name": "ScrollbarGrab",
+          "value": 1015
+        },
+        {
+          "name": "ScrollbarGrabHovered",
+          "value": 1016
+        },
+        {
+          "name": "ScrollbarGrabActive",
+          "value": 1017
+        },
+        {
+          "name": "CheckMark",
+          "value": 1018
+        },
+        {
+          "name": "CheckboxSelectedBg",
+          "value": 1019
+        },
+        {
+          "name": "SliderGrab",
+          "value": 1020
+        },
+        {
+          "name": "SliderGrabActive",
+          "value": 1021
+        },
+        {
+          "name": "Button",
+          "value": 1022
+        },
+        {
+          "name": "ButtonHovered",
+          "value": 1023
+        },
+        {
+          "name": "ButtonActive",
+          "value": 1024
+        },
+        {
+          "name": "Header",
+          "value": 1025
+        },
+        {
+          "name": "HeaderHovered",
+          "value": 1026
+        },
+        {
+          "name": "HeaderActive",
+          "value": 1027
+        },
+        {
+          "name": "Separator",
+          "value": 1028
+        },
+        {
+          "name": "SeparatorHovered",
+          "value": 1029
+        },
+        {
+          "name": "SeparatorActive",
+          "value": 1030
+        },
+        {
+          "name": "ResizeGrip",
+          "value": 1031
+        },
+        {
+          "name": "ResizeGripHovered",
+          "value": 1032
+        },
+        {
+          "name": "ResizeGripActive",
+          "value": 1033
+        },
+        {
+          "name": "InputTextCursor",
+          "value": 1034
+        },
+        {
+          "name": "TabHovered",
+          "value": 1035
+        },
+        {
+          "name": "Tab",
+          "value": 1036
+        },
+        {
+          "name": "TabSelected",
+          "value": 1037
+        },
+        {
+          "name": "TabSelectedOverline",
+          "value": 1038
+        },
+        {
+          "name": "TabDimmed",
+          "value": 1039
+        },
+        {
+          "name": "TabDimmedSelected",
+          "value": 1040
+        },
+        {
+          "name": "TabDimmedSelectedOverline",
+          "value": 1041
+        },
+        {
+          "name": "DockingPreview",
+          "value": 1042
+        },
+        {
+          "name": "DockingEmptyBg",
+          "value": 1043
+        },
+        {
+          "name": "PlotLines",
+          "value": 1044
+        },
+        {
+          "name": "PlotLinesHovered",
+          "value": 1045
+        },
+        {
+          "name": "PlotHistogram",
+          "value": 1046
+        },
+        {
+          "name": "PlotHistogramHovered",
+          "value": 1047
+        },
+        {
+          "name": "TableHeaderBg",
+          "value": 1048
+        },
+        {
+          "name": "TableBorderStrong",
+          "value": 1049
+        },
+        {
+          "name": "TableBorderLight",
+          "value": 1050
+        },
+        {
+          "name": "TableRowBg",
+          "value": 1051
+        },
+        {
+          "name": "TableRowBgAlt",
+          "value": 1052
+        },
+        {
+          "name": "TextLink",
+          "value": 1053
+        },
+        {
+          "name": "TextSelectedBg",
+          "value": 1054
+        },
+        {
+          "name": "TreeLines",
+          "value": 1055
+        },
+        {
+          "name": "DragDropTarget",
+          "value": 1056
+        },
+        {
+          "name": "DragDropTargetBg",
+          "value": 1057
+        },
+        {
+          "name": "UnsavedMarker",
+          "value": 1058
+        },
+        {
+          "name": "NavCursor",
+          "value": 1059
+        },
+        {
+          "name": "NavWindowingHighlight",
+          "value": 1060
+        },
+        {
+          "name": "NavWindowingDimBg",
+          "value": 1061
+        },
+        {
+          "name": "ModalWindowDimBg",
+          "value": 1062
+        }
+      ],
+      "aliases": [],
+      "rejectedMask": 0
+    },
+    {
+      "name": "DataType",
+      "cName": "DMUI_UIDataType",
+      "kind": "value",
+      "values": [
+        {
+          "name": "S8",
+          "value": 101
+        },
+        {
+          "name": "U8",
+          "value": 102
+        },
+        {
+          "name": "S16",
+          "value": 103
+        },
+        {
+          "name": "U16",
+          "value": 104
+        },
+        {
+          "name": "S32",
+          "value": 105
+        },
+        {
+          "name": "U32",
+          "value": 106
+        },
+        {
+          "name": "S64",
+          "value": 107
+        },
+        {
+          "name": "U64",
+          "value": 108
+        },
+        {
+          "name": "Float",
+          "value": 109
+        },
+        {
+          "name": "Double",
+          "value": 110
+        }
+      ],
+      "aliases": [],
+      "rejectedMask": 0
+    },
+    {
+      "name": "ComboFlags",
+      "cName": "DMUI_UIComboFlags",
+      "kind": "flags",
+      "values": [
+        {
+          "name": "PopupAlignLeft",
+          "value": 1
+        },
+        {
+          "name": "HeightSmall",
+          "value": 2
+        },
+        {
+          "name": "HeightRegular",
+          "value": 4
+        },
+        {
+          "name": "HeightLarge",
+          "value": 8
+        },
+        {
+          "name": "HeightLargest",
+          "value": 16
+        },
+        {
+          "name": "NoArrowButton",
+          "value": 32
+        },
+        {
+          "name": "NoPreview",
+          "value": 64
+        },
+        {
+          "name": "WidthFitPreview",
+          "value": 128
+        }
+      ],
+      "aliases": [],
+      "rejectedMask": 0
+    },
+    {
+      "name": "HoveredFlags",
+      "cName": "DMUI_UIHoveredFlags",
+      "kind": "flags",
+      "values": [
+        {
+          "name": "ChildWindows",
+          "value": 1
+        },
+        {
+          "name": "RootWindow",
+          "value": 2
+        },
+        {
+          "name": "AnyWindow",
+          "value": 4
+        },
+        {
+          "name": "NoPopupHierarchy",
+          "value": 8
+        },
+        {
+          "name": "DockHierarchy",
+          "value": 16
+        },
+        {
+          "name": "AllowWhenBlockedByPopup",
+          "value": 32
+        },
+        {
+          "name": "AllowWhenBlockedByActiveItem",
+          "value": 64
+        },
+        {
+          "name": "AllowWhenOverlappedByItem",
+          "value": 128
+        },
+        {
+          "name": "AllowWhenOverlappedByWindow",
+          "value": 256
+        },
+        {
+          "name": "AllowWhenDisabled",
+          "value": 512
+        },
+        {
+          "name": "NoNavOverride",
+          "value": 1024
+        },
+        {
+          "name": "ForTooltip",
+          "value": 2048
+        },
+        {
+          "name": "Stationary",
+          "value": 4096
+        },
+        {
+          "name": "DelayNone",
+          "value": 8192
+        },
+        {
+          "name": "DelayShort",
+          "value": 16384
+        },
+        {
+          "name": "DelayNormal",
+          "value": 32768
+        },
+        {
+          "name": "NoSharedDelay",
+          "value": 65536
+        }
+      ],
+      "aliases": [],
+      "rejectedMask": 0
+    },
+    {
+      "name": "InputTextFlags",
+      "cName": "DMUI_UIInputTextFlags",
+      "kind": "flags",
+      "values": [
+        {
+          "name": "CharsDecimal",
+          "value": 1
+        },
+        {
+          "name": "CharsHexadecimal",
+          "value": 2
+        },
+        {
+          "name": "CharsScientific",
+          "value": 4
+        },
+        {
+          "name": "CharsUppercase",
+          "value": 8
+        },
+        {
+          "name": "CharsNoBlank",
+          "value": 16
+        },
+        {
+          "name": "AllowTabInput",
+          "value": 32
+        },
+        {
+          "name": "EnterReturnsTrue",
+          "value": 64
+        },
+        {
+          "name": "EscapeClearsAll",
+          "value": 128
+        },
+        {
+          "name": "CtrlEnterForNewLine",
+          "value": 256
+        },
+        {
+          "name": "ReadOnly",
+          "value": 512
+        },
+        {
+          "name": "Password",
+          "value": 1024
+        },
+        {
+          "name": "AlwaysOverwrite",
+          "value": 2048
+        },
+        {
+          "name": "AutoSelectAll",
+          "value": 4096
+        },
+        {
+          "name": "ParseEmptyRefVal",
+          "value": 8192
+        },
+        {
+          "name": "DisplayEmptyRefVal",
+          "value": 16384
+        },
+        {
+          "name": "NoHorizontalScroll",
+          "value": 32768
+        },
+        {
+          "name": "NoUndoRedo",
+          "value": 65536
+        },
+        {
+          "name": "ElideLeft",
+          "value": 131072
+        },
+        {
+          "name": "WordWrap",
+          "value": 262144
+        }
+      ],
+      "aliases": [],
+      "rejectedMask": 4227858432
+    },
+    {
+      "name": "SelectableFlags",
+      "cName": "DMUI_UISelectableFlags",
+      "kind": "flags",
+      "values": [
+        {
+          "name": "NoAutoClosePopups",
+          "value": 1
+        },
+        {
+          "name": "SpanAllColumns",
+          "value": 2
+        },
+        {
+          "name": "AllowDoubleClick",
+          "value": 4
+        },
+        {
+          "name": "Disabled",
+          "value": 8
+        },
+        {
+          "name": "AllowOverlap",
+          "value": 16
+        },
+        {
+          "name": "Highlight",
+          "value": 32
+        },
+        {
+          "name": "SelectOnNav",
+          "value": 64
+        }
+      ],
+      "aliases": [],
+      "rejectedMask": 0
+    },
+    {
+      "name": "SliderFlags",
+      "cName": "DMUI_UISliderFlags",
+      "kind": "flags",
+      "values": [
+        {
+          "name": "Logarithmic",
+          "value": 1
+        },
+        {
+          "name": "NoRoundToFormat",
+          "value": 2
+        },
+        {
+          "name": "NoInput",
+          "value": 4
+        },
+        {
+          "name": "WrapAround",
+          "value": 8
+        },
+        {
+          "name": "ClampOnInput",
+          "value": 16
+        },
+        {
+          "name": "ClampZeroRange",
+          "value": 32
+        },
+        {
+          "name": "NoSpeedTweaks",
+          "value": 64
+        },
+        {
+          "name": "ColorMarkers",
+          "value": 128
+        }
+      ],
+      "aliases": [
+        {
+          "name": "AlwaysClamp",
+          "value": 48
+        }
+      ],
+      "rejectedMask": 0
+    },
+    {
+      "name": "TableFlags",
+      "cName": "DMUI_UITableFlags",
+      "kind": "flags",
+      "values": [
+        {
+          "name": "Resizable",
+          "value": 1
+        },
+        {
+          "name": "Reorderable",
+          "value": 2
+        },
+        {
+          "name": "Hideable",
+          "value": 4
+        },
+        {
+          "name": "Sortable",
+          "value": 8
+        },
+        {
+          "name": "NoSavedSettings",
+          "value": 16
+        },
+        {
+          "name": "ContextMenuInBody",
+          "value": 32
+        },
+        {
+          "name": "RowBg",
+          "value": 64
+        },
+        {
+          "name": "BordersInnerH",
+          "value": 128
+        },
+        {
+          "name": "BordersOuterH",
+          "value": 256
+        },
+        {
+          "name": "BordersInnerV",
+          "value": 512
+        },
+        {
+          "name": "BordersOuterV",
+          "value": 1024
+        },
+        {
+          "name": "NoBordersInBody",
+          "value": 2048
+        },
+        {
+          "name": "NoBordersInBodyUntilResize",
+          "value": 4096
+        },
+        {
+          "name": "SizingFixedFit",
+          "value": 8192
+        },
+        {
+          "name": "SizingFixedSame",
+          "value": 16384
+        },
+        {
+          "name": "SizingStretchProp",
+          "value": 32768
+        },
+        {
+          "name": "SizingStretchSame",
+          "value": 65536
+        },
+        {
+          "name": "NoHostExtendX",
+          "value": 131072
+        },
+        {
+          "name": "NoHostExtendY",
+          "value": 262144
+        },
+        {
+          "name": "NoKeepColumnsVisible",
+          "value": 524288
+        },
+        {
+          "name": "PreciseWidths",
+          "value": 1048576
+        },
+        {
+          "name": "NoClip",
+          "value": 2097152
+        },
+        {
+          "name": "PadOuterX",
+          "value": 4194304
+        },
+        {
+          "name": "NoPadOuterX",
+          "value": 8388608
+        },
+        {
+          "name": "NoPadInnerX",
+          "value": 16777216
+        },
+        {
+          "name": "ScrollX",
+          "value": 33554432
+        },
+        {
+          "name": "ScrollY",
+          "value": 67108864
+        },
+        {
+          "name": "SortMulti",
+          "value": 134217728
+        },
+        {
+          "name": "SortTristate",
+          "value": 268435456
+        },
+        {
+          "name": "HighlightHoveredColumn",
+          "value": 536870912
+        }
+      ],
+      "aliases": [
+        {
+          "name": "BordersH",
+          "value": 384
+        },
+        {
+          "name": "BordersV",
+          "value": 1536
+        },
+        {
+          "name": "BordersInner",
+          "value": 640
+        },
+        {
+          "name": "BordersOuter",
+          "value": 1280
+        },
+        {
+          "name": "Borders",
+          "value": 1920
+        }
+      ],
+      "rejectedMask": 0
+    },
+    {
+      "name": "TableColumnFlags",
+      "cName": "DMUI_UITableColumnFlags",
+      "kind": "flags",
+      "values": [
+        {
+          "name": "Disabled",
+          "value": 1
+        },
+        {
+          "name": "DefaultHide",
+          "value": 2
+        },
+        {
+          "name": "DefaultSort",
+          "value": 4
+        },
+        {
+          "name": "WidthStretch",
+          "value": 8
+        },
+        {
+          "name": "WidthFixed",
+          "value": 16
+        },
+        {
+          "name": "NoResize",
+          "value": 32
+        },
+        {
+          "name": "NoReorder",
+          "value": 64
+        },
+        {
+          "name": "NoHide",
+          "value": 128
+        },
+        {
+          "name": "NoClip",
+          "value": 256
+        },
+        {
+          "name": "NoSort",
+          "value": 512
+        },
+        {
+          "name": "NoSortAscending",
+          "value": 1024
+        },
+        {
+          "name": "NoSortDescending",
+          "value": 2048
+        },
+        {
+          "name": "NoHeaderLabel",
+          "value": 4096
+        },
+        {
+          "name": "NoHeaderWidth",
+          "value": 8192
+        },
+        {
+          "name": "PreferSortAscending",
+          "value": 16384
+        },
+        {
+          "name": "PreferSortDescending",
+          "value": 32768
+        },
+        {
+          "name": "IndentEnable",
+          "value": 65536
+        },
+        {
+          "name": "IndentDisable",
+          "value": 131072
+        },
+        {
+          "name": "AngledHeader",
+          "value": 262144
+        }
+      ],
+      "aliases": [],
+      "rejectedMask": 0
+    },
+    {
+      "name": "TableRowFlags",
+      "cName": "DMUI_UITableRowFlags",
+      "kind": "flags",
+      "values": [
+        {
+          "name": "Headers",
+          "value": 1
+        }
+      ],
+      "aliases": [],
+      "rejectedMask": 0
+    },
+    {
+      "name": "TreeNodeFlags",
+      "cName": "DMUI_UITreeNodeFlags",
+      "kind": "flags",
+      "values": [
+        {
+          "name": "Selected",
+          "value": 1
+        },
+        {
+          "name": "Framed",
+          "value": 2
+        },
+        {
+          "name": "AllowOverlap",
+          "value": 4
+        },
+        {
+          "name": "NoTreePushOnOpen",
+          "value": 8
+        },
+        {
+          "name": "NoAutoOpenOnLog",
+          "value": 16
+        },
+        {
+          "name": "DefaultOpen",
+          "value": 32
+        },
+        {
+          "name": "OpenOnDoubleClick",
+          "value": 64
+        },
+        {
+          "name": "OpenOnArrow",
+          "value": 128
+        },
+        {
+          "name": "Leaf",
+          "value": 256
+        },
+        {
+          "name": "Bullet",
+          "value": 512
+        },
+        {
+          "name": "FramePadding",
+          "value": 1024
+        },
+        {
+          "name": "SpanAvailWidth",
+          "value": 2048
+        },
+        {
+          "name": "SpanFullWidth",
+          "value": 4096
+        },
+        {
+          "name": "SpanLabelWidth",
+          "value": 8192
+        },
+        {
+          "name": "SpanAllColumns",
+          "value": 16384
+        },
+        {
+          "name": "LabelSpanAllColumns",
+          "value": 32768
+        },
+        {
+          "name": "NavLeftJumpsToParent",
+          "value": 65536
+        },
+        {
+          "name": "DrawLinesNone",
+          "value": 131072
+        },
+        {
+          "name": "DrawLinesFull",
+          "value": 262144
+        },
+        {
+          "name": "DrawLinesToNodes",
+          "value": 524288
+        }
+      ],
+      "aliases": [
+        {
+          "name": "CollapsingHeader",
+          "value": 26
+        }
+      ],
+      "rejectedMask": 0
+    }
+  ],
+  "operations": [
+    {
+      "id": 1,
+      "name": "GetStyleMetrics",
+      "field": "getStyleMetrics",
+      "kind": "style_metrics",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_StyleMetrics*",
+          "metrics"
+        ]
+      ]
+    },
+    {
+      "id": 2,
+      "name": "BeginCombo",
+      "field": "beginCombo",
+      "kind": "bool",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "label"
+        ],
+        [
+          "const char*",
+          "previewValue"
+        ],
+        [
+          "DMUI_UIComboFlags",
+          "flags"
+        ],
+        [
+          "uint32_t*",
+          "visible"
+        ]
+      ]
+    },
+    {
+      "id": 3,
+      "name": "EndCombo",
+      "field": "endCombo",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ]
+      ]
+    },
+    {
+      "id": 4,
+      "name": "BeginDisabled",
+      "field": "beginDisabled",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "uint32_t",
+          "disabled"
+        ]
+      ]
+    },
+    {
+      "id": 5,
+      "name": "EndDisabled",
+      "field": "endDisabled",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ]
+      ]
+    },
+    {
+      "id": 6,
+      "name": "BeginTable",
+      "field": "beginTable",
+      "kind": "bool",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "id"
+        ],
+        [
+          "int32_t",
+          "columns"
+        ],
+        [
+          "DMUI_UITableFlags",
+          "flags"
+        ],
+        [
+          "DMUI_Vec2",
+          "outerSize"
+        ],
+        [
+          "float",
+          "innerWidth"
+        ],
+        [
+          "uint32_t*",
+          "visible"
+        ]
+      ]
+    },
+    {
+      "id": 7,
+      "name": "EndTable",
+      "field": "endTable",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ]
+      ]
+    },
+    {
+      "id": 8,
+      "name": "BeginTooltip",
+      "field": "beginTooltip",
+      "kind": "bool",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "uint32_t*",
+          "visible"
+        ]
+      ]
+    },
+    {
+      "id": 9,
+      "name": "EndTooltip",
+      "field": "endTooltip",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ]
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Button",
+      "field": "button",
+      "kind": "bool",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "label"
+        ],
+        [
+          "DMUI_Vec2",
+          "size"
+        ],
+        [
+          "uint32_t*",
+          "pressed"
+        ]
+      ]
+    },
+    {
+      "id": 11,
+      "name": "CalcTextSize",
+      "field": "calcTextSize",
+      "kind": "vec2",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "text"
+        ],
+        [
+          "size_t",
+          "textLength"
+        ],
+        [
+          "uint32_t",
+          "hideTextAfterDoubleHash"
+        ],
+        [
+          "float",
+          "wrapWidth"
+        ],
+        [
+          "DMUI_Vec2*",
+          "size"
+        ]
+      ]
+    },
+    {
+      "id": 12,
+      "name": "Checkbox",
+      "field": "checkbox",
+      "kind": "bool_inout",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "label"
+        ],
+        [
+          "uint32_t*",
+          "value"
+        ],
+        [
+          "uint32_t*",
+          "changed"
+        ]
+      ]
+    },
+    {
+      "id": 13,
+      "name": "CollapsingHeader",
+      "field": "collapsingHeader",
+      "kind": "bool",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "label"
+        ],
+        [
+          "DMUI_UITreeNodeFlags",
+          "flags"
+        ],
+        [
+          "uint32_t*",
+          "open"
+        ]
+      ]
+    },
+    {
+      "id": 14,
+      "name": "CollapsingHeaderVisible",
+      "field": "collapsingHeaderVisible",
+      "kind": "bool_inout_result",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "label"
+        ],
+        [
+          "uint32_t*",
+          "visible"
+        ],
+        [
+          "DMUI_UITreeNodeFlags",
+          "flags"
+        ],
+        [
+          "uint32_t*",
+          "open"
+        ]
+      ]
+    },
+    {
+      "id": 15,
+      "name": "DragScalar",
+      "field": "dragScalar",
+      "kind": "scalar",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "label"
+        ],
+        [
+          "DMUI_UIDataType",
+          "dataType"
+        ],
+        [
+          "void*",
+          "data"
+        ],
+        [
+          "uint32_t",
+          "dataSize"
+        ],
+        [
+          "float",
+          "speed"
+        ],
+        [
+          "const void*",
+          "minimum"
+        ],
+        [
+          "uint32_t",
+          "minimumSize"
+        ],
+        [
+          "const void*",
+          "maximum"
+        ],
+        [
+          "uint32_t",
+          "maximumSize"
+        ],
+        [
+          "const char*",
+          "format"
+        ],
+        [
+          "DMUI_UISliderFlags",
+          "flags"
+        ],
+        [
+          "uint32_t*",
+          "changed"
+        ]
+      ]
+    },
+    {
+      "id": 16,
+      "name": "Dummy",
+      "field": "dummy",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_Vec2",
+          "size"
+        ]
+      ]
+    },
+    {
+      "id": 17,
+      "name": "GetContentRegionAvail",
+      "field": "getContentRegionAvail",
+      "kind": "vec2",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_Vec2*",
+          "size"
+        ]
+      ]
+    },
+    {
+      "id": 18,
+      "name": "GetCursorScreenPos",
+      "field": "getCursorScreenPos",
+      "kind": "vec2",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_Vec2*",
+          "position"
+        ]
+      ]
+    },
+    {
+      "id": 19,
+      "name": "GetFontSize",
+      "field": "getFontSize",
+      "kind": "float",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "float*",
+          "size"
+        ]
+      ]
+    },
+    {
+      "id": 20,
+      "name": "GetFrameHeight",
+      "field": "getFrameHeight",
+      "kind": "float",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "float*",
+          "height"
+        ]
+      ]
+    },
+    {
+      "id": 21,
+      "name": "GetStyleColor",
+      "field": "getStyleColor",
+      "kind": "vec4",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_UIColor",
+          "color"
+        ],
+        [
+          "DMUI_Vec4*",
+          "value"
+        ]
+      ]
+    },
+    {
+      "id": 22,
+      "name": "GetTextLineHeightWithSpacing",
+      "field": "getTextLineHeightWithSpacing",
+      "kind": "float",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "float*",
+          "height"
+        ]
+      ]
+    },
+    {
+      "id": 23,
+      "name": "Indent",
+      "field": "indent",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "float",
+          "width"
+        ]
+      ]
+    },
+    {
+      "id": 24,
+      "name": "InputScalar",
+      "field": "inputScalar",
+      "kind": "scalar",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "label"
+        ],
+        [
+          "DMUI_UIDataType",
+          "dataType"
+        ],
+        [
+          "void*",
+          "data"
+        ],
+        [
+          "uint32_t",
+          "dataSize"
+        ],
+        [
+          "const void*",
+          "step"
+        ],
+        [
+          "uint32_t",
+          "stepSize"
+        ],
+        [
+          "const void*",
+          "fastStep"
+        ],
+        [
+          "uint32_t",
+          "fastStepSize"
+        ],
+        [
+          "const char*",
+          "format"
+        ],
+        [
+          "DMUI_UIInputTextFlags",
+          "flags"
+        ],
+        [
+          "uint32_t*",
+          "changed"
+        ]
+      ]
+    },
+    {
+      "id": 25,
+      "name": "InputText",
+      "field": "inputText",
+      "kind": "input_text",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "label"
+        ],
+        [
+          "char*",
+          "buffer"
+        ],
+        [
+          "uint32_t",
+          "capacity"
+        ],
+        [
+          "DMUI_UIInputTextFlags",
+          "flags"
+        ],
+        [
+          "uint32_t*",
+          "changed"
+        ]
+      ]
+    },
+    {
+      "id": 26,
+      "name": "InputTextMultiline",
+      "field": "inputTextMultiline",
+      "kind": "input_text",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "label"
+        ],
+        [
+          "char*",
+          "buffer"
+        ],
+        [
+          "uint32_t",
+          "capacity"
+        ],
+        [
+          "DMUI_Vec2",
+          "size"
+        ],
+        [
+          "DMUI_UIInputTextFlags",
+          "flags"
+        ],
+        [
+          "uint32_t*",
+          "changed"
+        ]
+      ]
+    },
+    {
+      "id": 27,
+      "name": "InputTextWithHint",
+      "field": "inputTextWithHint",
+      "kind": "input_text",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "label"
+        ],
+        [
+          "const char*",
+          "hint"
+        ],
+        [
+          "char*",
+          "buffer"
+        ],
+        [
+          "uint32_t",
+          "capacity"
+        ],
+        [
+          "DMUI_UIInputTextFlags",
+          "flags"
+        ],
+        [
+          "uint32_t*",
+          "changed"
+        ]
+      ]
+    },
+    {
+      "id": 28,
+      "name": "IsItemDeactivatedAfterEdit",
+      "field": "isItemDeactivatedAfterEdit",
+      "kind": "bool",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "uint32_t*",
+          "deactivated"
+        ]
+      ]
+    },
+    {
+      "id": 29,
+      "name": "IsItemHovered",
+      "field": "isItemHovered",
+      "kind": "bool",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_UIHoveredFlags",
+          "flags"
+        ],
+        [
+          "uint32_t*",
+          "hovered"
+        ]
+      ]
+    },
+    {
+      "id": 30,
+      "name": "PopID",
+      "field": "popID",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ]
+      ]
+    },
+    {
+      "id": 31,
+      "name": "PopStyleColor",
+      "field": "popStyleColor",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "int32_t",
+          "count"
+        ]
+      ]
+    },
+    {
+      "id": 32,
+      "name": "PopTextWrapPos",
+      "field": "popTextWrapPos",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ]
+      ]
+    },
+    {
+      "id": 33,
+      "name": "ProgressBar",
+      "field": "progressBar",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "float",
+          "fraction"
+        ],
+        [
+          "DMUI_Vec2",
+          "size"
+        ],
+        [
+          "const char*",
+          "overlay"
+        ],
+        [
+          "size_t",
+          "overlayLength"
+        ]
+      ]
+    },
+    {
+      "id": 34,
+      "name": "PushIDString",
+      "field": "pushIDString",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "id"
+        ]
+      ]
+    },
+    {
+      "id": 35,
+      "name": "PushIDRange",
+      "field": "pushIDRange",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "id"
+        ],
+        [
+          "size_t",
+          "length"
+        ]
+      ]
+    },
+    {
+      "id": 36,
+      "name": "PushIDValue",
+      "field": "pushIDValue",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "uint64_t",
+          "id"
+        ]
+      ]
+    },
+    {
+      "id": 37,
+      "name": "PushStyleColorU32",
+      "field": "pushStyleColorU32",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_UIColor",
+          "color"
+        ],
+        [
+          "uint32_t",
+          "rgba"
+        ]
+      ]
+    },
+    {
+      "id": 38,
+      "name": "PushStyleColor",
+      "field": "pushStyleColor",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_UIColor",
+          "color"
+        ],
+        [
+          "DMUI_Vec4",
+          "value"
+        ]
+      ]
+    },
+    {
+      "id": 39,
+      "name": "PushTextWrapPos",
+      "field": "pushTextWrapPos",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "float",
+          "localX"
+        ]
+      ]
+    },
+    {
+      "id": 40,
+      "name": "SameLine",
+      "field": "sameLine",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "float",
+          "offsetFromStartX"
+        ],
+        [
+          "float",
+          "spacing"
+        ]
+      ]
+    },
+    {
+      "id": 41,
+      "name": "Selectable",
+      "field": "selectable",
+      "kind": "bool",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "label"
+        ],
+        [
+          "uint32_t",
+          "selected"
+        ],
+        [
+          "DMUI_UISelectableFlags",
+          "flags"
+        ],
+        [
+          "DMUI_Vec2",
+          "size"
+        ],
+        [
+          "uint32_t*",
+          "pressed"
+        ]
+      ]
+    },
+    {
+      "id": 42,
+      "name": "SelectableToggle",
+      "field": "selectableToggle",
+      "kind": "bool_inout_result",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "label"
+        ],
+        [
+          "uint32_t*",
+          "selected"
+        ],
+        [
+          "DMUI_UISelectableFlags",
+          "flags"
+        ],
+        [
+          "DMUI_Vec2",
+          "size"
+        ],
+        [
+          "uint32_t*",
+          "pressed"
+        ]
+      ]
+    },
+    {
+      "id": 43,
+      "name": "Separator",
+      "field": "separator",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ]
+      ]
+    },
+    {
+      "id": 44,
+      "name": "SetClipboardText",
+      "field": "setClipboardText",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "text"
+        ],
+        [
+          "size_t",
+          "textLength"
+        ]
+      ]
+    },
+    {
+      "id": 45,
+      "name": "SetCursorScreenPos",
+      "field": "setCursorScreenPos",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_Vec2",
+          "position"
+        ]
+      ]
+    },
+    {
+      "id": 46,
+      "name": "SetItemDefaultFocus",
+      "field": "setItemDefaultFocus",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ]
+      ]
+    },
+    {
+      "id": 47,
+      "name": "SetNextItemWidth",
+      "field": "setNextItemWidth",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "float",
+          "width"
+        ]
+      ]
+    },
+    {
+      "id": 48,
+      "name": "SetTooltipText",
+      "field": "setTooltipText",
+      "kind": "text",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "text"
+        ],
+        [
+          "size_t",
+          "textLength"
+        ]
+      ]
+    },
+    {
+      "id": 49,
+      "name": "SliderScalar",
+      "field": "sliderScalar",
+      "kind": "scalar",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "label"
+        ],
+        [
+          "DMUI_UIDataType",
+          "dataType"
+        ],
+        [
+          "void*",
+          "data"
+        ],
+        [
+          "uint32_t",
+          "dataSize"
+        ],
+        [
+          "const void*",
+          "minimum"
+        ],
+        [
+          "uint32_t",
+          "minimumSize"
+        ],
+        [
+          "const void*",
+          "maximum"
+        ],
+        [
+          "uint32_t",
+          "maximumSize"
+        ],
+        [
+          "const char*",
+          "format"
+        ],
+        [
+          "DMUI_UISliderFlags",
+          "flags"
+        ],
+        [
+          "uint32_t*",
+          "changed"
+        ]
+      ]
+    },
+    {
+      "id": 50,
+      "name": "Spacing",
+      "field": "spacing",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ]
+      ]
+    },
+    {
+      "id": 51,
+      "name": "TableHeadersRow",
+      "field": "tableHeadersRow",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ]
+      ]
+    },
+    {
+      "id": 52,
+      "name": "TableNextColumn",
+      "field": "tableNextColumn",
+      "kind": "bool",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "uint32_t*",
+          "visible"
+        ]
+      ]
+    },
+    {
+      "id": 53,
+      "name": "TableNextRow",
+      "field": "tableNextRow",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_UITableRowFlags",
+          "flags"
+        ],
+        [
+          "float",
+          "minimumHeight"
+        ]
+      ]
+    },
+    {
+      "id": 54,
+      "name": "TableSetColumnIndex",
+      "field": "tableSetColumnIndex",
+      "kind": "bool",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "int32_t",
+          "column"
+        ],
+        [
+          "uint32_t*",
+          "visible"
+        ]
+      ]
+    },
+    {
+      "id": 55,
+      "name": "TableSetupColumn",
+      "field": "tableSetupColumn",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "label"
+        ],
+        [
+          "DMUI_UITableColumnFlags",
+          "flags"
+        ],
+        [
+          "float",
+          "initialWidthOrWeight"
+        ],
+        [
+          "uint32_t",
+          "userId"
+        ]
+      ]
+    },
+    {
+      "id": 56,
+      "name": "TableSetupScrollFreeze",
+      "field": "tableSetupScrollFreeze",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "int32_t",
+          "columns"
+        ],
+        [
+          "int32_t",
+          "rows"
+        ]
+      ]
+    },
+    {
+      "id": 57,
+      "name": "Text",
+      "field": "text",
+      "kind": "text",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "text"
+        ],
+        [
+          "size_t",
+          "textLength"
+        ]
+      ]
+    },
+    {
+      "id": 58,
+      "name": "TextColored",
+      "field": "textColored",
+      "kind": "text",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_Vec4",
+          "color"
+        ],
+        [
+          "const char*",
+          "text"
+        ],
+        [
+          "size_t",
+          "textLength"
+        ]
+      ]
+    },
+    {
+      "id": 59,
+      "name": "TextDisabled",
+      "field": "textDisabled",
+      "kind": "text",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "text"
+        ],
+        [
+          "size_t",
+          "textLength"
+        ]
+      ]
+    },
+    {
+      "id": 60,
+      "name": "TextWrapped",
+      "field": "textWrapped",
+      "kind": "text",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "text"
+        ],
+        [
+          "size_t",
+          "textLength"
+        ]
+      ]
+    },
+    {
+      "id": 61,
+      "name": "Unindent",
+      "field": "unindent",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "float",
+          "width"
+        ]
+      ]
+    },
+    {
+      "id": 62,
+      "name": "NewLine",
+      "field": "newLine",
+      "kind": "void",
+      "required": true,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ]
+      ]
+    },
+    {
+      "id": 63,
+      "name": "PlotLines",
+      "field": "plotLines",
+      "kind": "plot",
+      "required": false,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "label"
+        ],
+        [
+          "const float*",
+          "values"
+        ],
+        [
+          "int32_t",
+          "valueCount"
+        ],
+        [
+          "int32_t",
+          "valueOffset"
+        ],
+        [
+          "const char*",
+          "overlay"
+        ],
+        [
+          "size_t",
+          "overlayLength"
+        ],
+        [
+          "float",
+          "scaleMinimum"
+        ],
+        [
+          "float",
+          "scaleMaximum"
+        ],
+        [
+          "DMUI_Vec2",
+          "size"
+        ],
+        [
+          "uint32_t",
+          "strideBytes"
+        ]
+      ]
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # DearModdingUI API
 
-DearModdingUI is a standalone F4SE plugin that hosts a shared Dear ImGui menu for Fallout 4 mods. This repository contains the client-facing headers for its versioned C ABI, header-only C++ client, ImGui forwarding API, compatibility fingerprint, and shared visual helpers.
+DearModdingUI is a standalone F4SE plugin that hosts a shared UI menu for Fallout 4 mods. This repository contains the client-facing headers for its versioned host C ABI, stable DMUI-owned UI C ABI, header-only C++ client, and shared visual helpers.
 
 ## Using commonlibf4
 
@@ -19,11 +19,56 @@ includes("path/to/dearmoddingui-api")
 add_deps("dearmoddingui-api", { public = true })
 ```
 
-The C++ client supports lockstep Dear ImGui and layout-independent forwarding modes on Windows. The fingerprint builder requires Dear ImGui headers; forwarding mode compiles without Dear ImGui and calls the loaded host DLL through `ImGuiForward.h`. Host discovery uses matching narrow Win32 declarations in `Win32Discovery.h`, so public headers do not include `Windows.h` or leak its macros. The C ABI in `API.h` is independent of commonlibf4 and the host binary.
+The C++ client compiles without Dear ImGui. Resolve `DMUI_GetAPI`, request
+`DMUI_HOST_ABI_CURRENT`, and validate the returned `hostAbiVersion`. The
+`apiVersion` field remains 0.1 release metadata and is not a compatibility
+gate. Use the appended `queryUIAPI` entry to request `DMUI_UI_ABI_CURRENT`, a
+minimum UI revision, and a minimum table prefix. `UI.h` exposes the familiar drawing
+surface in `dmui::ui`; it never declares `ImGui::`, imports cimgui symbols, or
+changes implementation based on include order. Host discovery uses matching
+narrow Win32 declarations in `Win32Discovery.h`, so public headers do not
+include `Windows.h` or leak its macros.
+
+`schema/ui-contract.json` is the current ABI authority. The immutable
+`schema/ui-contract.manifest.json` is the published ABI-1 compatibility
+baseline: generation fails if an existing operation ID, slot, signature,
+requirement, enum family, or enum value changes. New enum values and operation
+slots may only be appended under a newer UI revision. Generated
+`CUIAPI.h` is the C table, `UIChecked.generated.h` contains explicit
+result-returning wrappers, and `UI.h` adds the familiar bool/void C++ facade.
+The host translates every stable enum and flag by symbolic name; stable values
+are not native Dear ImGui values. Unknown bits return
+`DMUI_RESULT_INVALID_ARGUMENT`.
+
+The required table prefix ends at `NewLine`. Later slots are optional and
+additive; revision-1 currently adds optional `PlotLines`. A client may connect
+to a host that supplies its required prefix even when a newer optional tail is
+absent. Calling a missing operation reports `DMUI_RESULT_UNSUPPORTED_ABI`.
+Familiar wrappers preserve `noexcept` drawing code by recording the first UI
+failure in the callback-scoped sticky result; the page trampoline returns that
+result to the host, which diagnoses and disables the failed callback. Scope-end
+operations still dispatch so stacks unwind after an earlier failure.
+
+Mechanical client migration is intentionally explicit:
+
+- `ImGui::Button`, `Checkbox`, `BeginTable`, and the other approved operations
+  become the same familiar spellings under `dmui::ui`.
+- `ImVec2`/`ImVec4` become `dmui::ui::Vec2`/`Vec4`.
+- Native `ImGuiCol_*`, `ImGuiDataType_*`, and flag constants become scoped
+  `dmui::ui::Color`, `DataType`, and `*Flags` values.
+- Scalar C++ calls are typed, for example
+  `dmui::ui::SliderScalar("##Value", &value, &minimum, &maximum)`. The C ABI
+  carries the stable data type and exact byte sizes.
+- `InputText`, `InputTextWithHint`, and `InputTextMultiline` keep buffer,
+  capacity, and stable flags, but expose no callback or callback userdata.
+- Native font getters and pointer-based `PushFont` are unavailable. Use
+  `dmui::FontGuard` with a `DMUI_FontRole`.
+
+There is no `namespace ImGui` alias or raw-forwarding compatibility shim.
 
 ## Shared C++ presentation helpers
 
-`Presentation.h` contains the ImGui-facing helpers that do not require a
+`Presentation.h` contains the stable-UI-facing helpers that do not require a
 registered client. `Client.h` includes it and adds helpers that use client
 theme, font, and settings-table services.
 
@@ -49,7 +94,7 @@ dmui::DrawLabeledValue(
 
 `TextStyle` fields are `fontRole`, `tone`, and `wrapped`, in that order.
 Omitting `fontRole` inherits the current font. `TextTone::kInherit` preserves
-the current ImGui text color. The other tones map directly to
+the current UI text color. The other tones map directly to
 `DMUI_ThemeColors`: `kAccent`, `kAccentMuted`, `kMuted`, `kSuccess`,
 `kWarning`, `kError`, `kInfo`, `kStatusDisable`, `kStatusError`,
 `kStatusWarning`, `kStatusRestartNeeded`, `kStatusCurrentHotkey`,
@@ -71,19 +116,20 @@ font, color, and wrap push is balanced. `FontGuard` exposes `Pushed()`,
 pre-existing client error with a successful pop.
 
 `DrawLabeledValue` is intentionally an inline label/value layout. It obtains
-live style metrics before drawing, places the value after
-`itemSpacing.x * spacingScale`, resolves the theme once, and acquires the
-requested value font once before drawing either half. While that value font is
-held, the label temporarily uses the caller's original font. A service failure
-therefore does not leave a half-drawn pair. Inside an existing settings row,
-draw only the value with `DrawStyledText`; the row already owns label and value
-geometry.
+live style metrics before drawing, draws the label in the caller's current
+font, places the value after `itemSpacing.x * spacingScale`, and then enters
+the optional host-owned value-font role. No native font pointer crosses the
+API. A failed value-font scope leaves the already drawn caller-font label
+visible and reports the exact error. Inside an existing settings row, draw only
+the value with `DrawStyledText`; the row already owns label and value geometry.
 
 `DMUI_StyleMetrics` fields are `structSize`, `itemSpacing`, `framePadding`,
 `itemInnerSpacing`, `cellPadding`, `windowPadding`, `indentSpacing`,
-`scrollbarSize`, and `fontSizeBase`, in that order. Forwarding clients obtain
-the current unscaled base font size through the existing
-`DMUI_GetStyleMetrics` export; there is no separate font-metrics export.
+`scrollbarSize`, and `fontSizeBase`, in that order. The stable UI table's
+`GetStyleMetrics` operation writes the original 52-byte prefix through
+`scrollbarSize`; it writes `fontSizeBase` only when the caller supplies the
+complete 56-byte field. It preserves the caller's `structSize` and never writes
+trailing storage.
 
 ```cpp
 dmui::SettingsTableScope table{ client, "rendering" };
@@ -169,15 +215,18 @@ An empty label is allowed. Existing matched option labels and disabled/empty-lis
 behavior are unchanged. This is a C++ descriptor change, not a C ABI or version
 change; rebuild consumers of the descriptor with matching headers.
 
-## Forwarding-only services
+## Host services and stable UI preflight
 
-Forwarding clients can declare `dmui::ClientOptions::requiredServices` and
-`minimumForwardingVersion`. `Client::Connect` calls `queryServices` before
-registration and returns `SERVICE_UNAVAILABLE` or
-`FORWARDING_VERSION_MISMATCH` without creating a partial client. Host service
-flags are availability promises and are separate from client capability
-permissions such as `RENDERER_REPLACEMENT`. Callers that do not opt into
-requirements use the current 0.1 registration contract.
+Clients can declare `dmui::ClientOptions::requiredServices`,
+`minimumUIRevision`, and `minimumUIAPISize`. `Client::Connect` validates host
+services and the stable UI table before registration, returning
+`SERVICE_UNAVAILABLE` or `UNSUPPORTED_ABI` without creating a partial client.
+`minimumUIAPISize` is also an operation-availability requirement: every
+complete slot through that size must be non-null. Require a specific tail with
+its generated size constant, such as `DMUI_UI_API_PLOT_LINES_SIZE`, rather than
+`sizeof(DMUI_UIAPI)`.
+Host service flags are availability promises and are separate from client
+capability permissions such as `RENDERER_REPLACEMENT`.
 Require `DMUI_HOST_SERVICE_NAVIGATION_ICONS` when category-heading and
 page-palette icon names are required presentation behavior. The preflight
 checks both page and category registration entries.
@@ -356,6 +405,12 @@ reset is one discrete edit with both flags set, while disabled and already
 default settings do not write or emit an edit event.
 `TextSettingControl::multiline` uses an ordinary stable client-owned string
 buffer and a three-line editor; completion does not imply persistence.
+Input-text callbacks and native callback flags are not part of UI ABI 1 and
+are rejected. Scalar widgets carry a stable data type plus explicit byte sizes;
+the host validates every data, bound, and step pointer before native use.
+Formatted text is rendered into an exact-size client-owned buffer and sent as
+UTF-8 text plus length. No `va_list` crosses the DLL boundary. Style colors
+are copied values, and `dmui::ui::Color32` is packed as `0xRRGGBBAA`.
 
 See the [ABI and lifecycle documentation](https://github.com/Dear-Modding-FO4/DearModdingUI/blob/main/include/DearModdingUI/README.md) for discovery, registration, compatibility, callback, and example details.
 
@@ -370,5 +425,3 @@ Publishing requires a fine-grained personal access token stored as the `COMMONLI
 ## License
 
 DearModdingUI API is licensed under GPL-3.0. Including these headers makes the consuming plugin a derivative work and requires the plugin to comply with GPL-3.0, including its source-distribution requirements when conveyed.
-
-`ImGuiFingerprint.h` derives compatibility information from MIT-licensed Dear ImGui declarations. `ImGuiForward.h` derives API declarations from MIT-licensed cimgui. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

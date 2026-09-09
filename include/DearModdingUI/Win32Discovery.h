@@ -22,6 +22,11 @@ namespace dmui::detail
 		return module;
 	}
 
+	[[nodiscard]] inline bool HostModulePresent() noexcept
+	{
+		return HostModule() != nullptr;
+	}
+
 	template <class Function>
 	[[nodiscard]] Function ResolveHostSymbol(const char* symbol) noexcept
 	{
@@ -31,6 +36,11 @@ namespace dmui::detail
 			nullptr;
 	}
 #else
+	[[nodiscard]] inline bool HostModulePresent() noexcept
+	{
+		return false;
+	}
+
 	template <class Function>
 	[[nodiscard]] Function ResolveHostSymbol(const char*) noexcept
 	{
