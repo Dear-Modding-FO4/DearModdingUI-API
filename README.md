@@ -13,7 +13,7 @@ draw custom interfaces, and interact with the shared DearModdingUI host menu.
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue?style=for-the-badge)](LICENSE)
 [![C++23](https://img.shields.io/badge/C%2B%2B-23-00599C?style=for-the-badge&logo=cplusplus&logoColor=white)](xmake.lua)
 
-<sub>[Features](#features) · [Integration](#integration) · [Quick Example](#quick-example) · [Key Concepts](#key-concepts) · [Header Guide](#header-guide) · [Specification](#full-specification) · [License](#license)</sub>
+<sub>[Features](#features) · [Integration](#integration) · [Quick Example](#quick-example) · [Complete Example](#complete-example) · [Documentation](#documentation) · [Header Guide](#header-guide) · [License](#license)</sub>
 
 </div>
 
@@ -64,87 +64,59 @@ Register your mod during F4SE `kPostPostLoad` after plugins have loaded:
 ```cpp
 #include <DearModdingUI/Client.h>
 
-static dmui::Client g_client;
+static dmui::Client g_client{
+    "my_mod_id",
+    "My Mod Display Name",
+    dmui::Version{ 1, 0 },
+    "sliders" // Optional Phosphor icon name
+};
+
 static bool g_enabled = true;
 static float g_scale = 1.0f;
 
 void InitializeUI()
 {
-    dmui::ClientOptions options{
-        .client = {
-            .id = "my_mod_id",
-            .displayName = "My Mod Display Name",
-        }
-    };
-
-    if (!g_client.Connect(options)) {
+    if (!g_client.Connect()) {
         return;
     }
 
     g_client.AddPage({
         .id = "general",
         .displayName = "General Settings",
-        .onDraw = [](void*) {
-            dmui::ui::TextUnformatted("Configure plugin options below:");
-            dmui::ui::Checkbox("Enable feature", &g_enabled);
-            dmui::ui::SliderScalar("Scale factor", &g_scale, 0.5f, 2.0f);
-        }
+        .iconName = "gear"
+    },
+    [] {
+        dmui::ui::TextUnformatted("Configure plugin options below:");
+        dmui::ui::Checkbox("Enable feature", &g_enabled);
+        dmui::ui::SliderScalar("Scale factor", &g_scale, 0.5f, 2.0f);
     });
 }
 ```
 
 ---
 
-## Key Concepts
+## Complete Example
 
-### Drawing Controls (`dmui::ui`)
+A fully featured, compilable sample plugin is provided in [`examples/plugin/`](examples/plugin/):
 
-Widgets live in the `dmui::ui` namespace:
+- **Multiple categories & icons**: Organizes pages under structured headings with custom Phosphor icon glyphs.
+- **Two-column settings tables**: Standardized layouts with row descriptions and reset buttons via `SettingsTableScope` and `SettingsRowScope`.
+- **Dropdown choices**: Typed combo selectors using `DrawChoice`.
+- **Status & telemetry**: Status banners with `DrawStyledText`, live key-value readouts via `DrawLabeledValue`, and real-time graphs with `dmui::ui::PlotLines`.
+- **Global actions & notifications**: Registers palette commands and triggers toast notifications.
 
-- Standard widgets: `dmui::ui::Button`, `Checkbox`, `SliderScalar`, `InputText`, `BeginTable`, `EndTable`.
-- Geometry types: `dmui::ui::Vec2` and `dmui::ui::Vec4`.
-- Scoped enums: `dmui::ui::Color`, `dmui::ui::DataType`, `dmui::ui::TableFlags`.
+Build the example directly:
 
-### Standard Settings Rows
-
-Use RAII scopes to produce uniform settings rows matching the host interface:
-
-```cpp
-dmui::SettingsTableScope table{ client, "my_table" };
-if (table.Visible())
-{
-    dmui::SettingsRowScope row{ client, "setting_id", "Setting Label", "Description text" };
-    if (row.Visible())
-    {
-        dmui::ui::Checkbox("##setting_id", &g_enabled);
-        row.End(true, true); // (resetVisible, resetEnabled)
-    }
-    table.End();
-}
+```powershell
+xmake build example-plugin
 ```
 
-### Choice Combos
+---
 
-Dropdown selections using type-deduced arrays or spans:
+## Documentation
 
-```cpp
-const std::array options{
-    dmui::ChoiceOption<int>{ 0, "Low", "low", true },
-    dmui::ChoiceOption<int>{ 1, "High", "high", true }
-};
-
-auto choice = dmui::DrawChoice("preset", currentPreset, options, "Custom");
-if (choice.changed) {
-    currentPreset = *choice.selected;
-}
-```
-
-### Advanced Capabilities
-
-- **Managed overlays**: Passive in-game HUD elements requested via `RequestFrame` and `ReleaseFrame`.
-- **System notifications**: Toast messages displayed through the host notification system.
-- **Confirmation dialogs**: Submission-aware modal dialogs without managing custom popup loops.
-- **Custom images**: Retained D3D11 shader resource views or host-uploaded RGBA8 CPU pixel buffers.
+- **[Controls Guide](docs/controls-guide.md)**: Visual guide and code snippets for `dmui::ui` widgets, settings tables, choice dropdowns, styled text, font roles, and notifications.
+- **[Full Specification](docs/specification.md)**: Deep dive into binary memory layouts, structure sizes, thread affinity rules, and ownership contracts.
 
 ---
 
@@ -161,19 +133,14 @@ if (choice.changed) {
 
 ---
 
-## Full Specification
-
-For detailed binary layouts, struct sizing requirements, thread affinity rules, and memory ownership contracts, consult [docs/specification.md](docs/specification.md).
-
----
-
 ## Verification
 
-Build and run compile-time ABI checks:
+Build the test suites and example plugin:
 
 ```powershell
 xmake
 xmake run api-header-checks
+xmake build example-plugin
 ```
 
 ---
