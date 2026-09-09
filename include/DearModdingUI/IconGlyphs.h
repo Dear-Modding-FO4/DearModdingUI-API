@@ -76,6 +76,7 @@ namespace DearModdingUI
 
 	inline constexpr std::array kIconConcepts{
 		IconConceptMapping{ "ai", "brain" },
+		IconConceptMapping{ "appearance", "palette" },
 		IconConceptMapping{ "armor", "shield" },
 		IconConceptMapping{ "audio", "speaker-high" },
 		IconConceptMapping{ "building", "buildings" },
@@ -90,6 +91,7 @@ namespace DearModdingUI
 		IconConceptMapping{ "dialogue", "chat-circle-text" },
 		IconConceptMapping{ "difficulty", "gauge" },
 		IconConceptMapping{ "economy", "coins" },
+		IconConceptMapping{ "facts", "info" },
 		IconConceptMapping{ "gameplay", "game-controller" },
 		IconConceptMapping{ "general", "gear" },
 		IconConceptMapping{ "graphics", "image" },
@@ -114,6 +116,7 @@ namespace DearModdingUI
 		IconConceptMapping{ "power-armor", "robot" },
 		IconConceptMapping{ "quest", "scroll" },
 		IconConceptMapping{ "radio", "radio" },
+		IconConceptMapping{ "readability", "text-aa" },
 		IconConceptMapping{ "save", "floppy-disk" },
 		IconConceptMapping{ "settlement", "house" },
 		IconConceptMapping{ "skills", "student" },

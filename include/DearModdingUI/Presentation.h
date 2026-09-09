@@ -204,6 +204,8 @@ namespace dmui
 					}
 					ui::PopID();
 				}
+				// Commit the restored cursor before ending the popup.
+				ui::Dummy({ 0.0f, 0.0f });
 				ui::EndCombo();
 			}
 		}
