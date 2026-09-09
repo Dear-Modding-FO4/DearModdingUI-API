@@ -1,427 +1,150 @@
+﻿<div align="center">
+
 # DearModdingUI API
 
-DearModdingUI is a standalone F4SE plugin that hosts a shared UI menu for Fallout 4 mods. This repository contains the client-facing headers for its versioned host C ABI, stable DMUI-owned UI C ABI, header-only C++ client, and shared visual helpers.
+**Client-facing C ABI and header-only C++ integration library for DearModdingUI.**
 
-## Using commonlibf4
+DearModdingUI-API enables Fallout 4 F4SE plugins to register settings pages,
+draw custom interfaces, and interact with the shared DearModdingUI host menu.
 
-The Dear Modding FO4 commonlibf4 fork includes this repository as a public dependency. Plugins that already depend on commonlibf4 can include the API directly with no additional dependency:
+<br>
+
+[![CI](https://img.shields.io/github/actions/workflow/status/Dear-Modding-FO4/DearModdingUI-API/xmake.yml?branch=main&style=for-the-badge&label=CI&logo=githubactions&logoColor=white)](https://github.com/Dear-Modding-FO4/DearModdingUI-API/actions/workflows/xmake.yml)
+[![License](https://img.shields.io/badge/license-GPL--3.0-blue?style=for-the-badge)](LICENSE)
+[![C++23](https://img.shields.io/badge/C%2B%2B-23-00599C?style=for-the-badge&logo=cplusplus&logoColor=white)](xmake.lua)
+
+<sub>[Features](#features) · [Integration](#integration) · [Quick Example](#quick-example) · [Complete Example](#complete-example) · [Documentation](#documentation) · [Header Guide](#header-guide) · [License](#license)</sub>
+
+</div>
+
+---
+
+## Features
+
+- **No Dear ImGui dependencies**: Client plugins do not compile Dear ImGui sources or link against ImGui libraries.
+- **Header-only C++ client**: Include `<DearModdingUI/Client.h>` to handle discovery, registration, and drawing.
+- **Stable C ABI**: Generated from `schema/ui-contract.json` with backward-compatibility baseline enforcement.
+- **Familiar drawing facade**: Draw controls using `dmui::ui::*` functions that mirror familiar ImGui APIs.
+- **Host theming and layouts**: Built-in helpers for standardized two-column settings rows, semantic color tones, and font scaling.
+
+---
+
+## Integration
+
+### Using CommonLibF4
+
+The [Dear-Modding-FO4 CommonLibF4 fork](https://github.com/Dear-Modding-FO4/commonlibf4) includes this repository as a public dependency. If your plugin uses that fork, you can include the headers directly without modifying build scripts:
 
 ```cpp
 #include <DearModdingUI/Client.h>
 ```
 
-## Using the API standalone
+### Standalone with xmake
 
-Clone this repository and add its `include` directory to the consuming target's include paths. An xmake project can include this repository as a subproject and depend on its header-only target:
+Add this repository as an include directory or target dependency:
 
 ```lua
 includes("path/to/dearmoddingui-api")
-add_deps("dearmoddingui-api", { public = true })
+target("MyPlugin", function()
+    -- ...
+    add_deps("dearmoddingui-api", { public = true })
+end)
 ```
 
-The C++ client compiles without Dear ImGui. Resolve `DMUI_GetAPI`, request
-`DMUI_HOST_ABI_CURRENT`, and validate the returned `hostAbiVersion`. The
-`apiVersion` field remains 0.1 release metadata and is not a compatibility
-gate. Use the appended `queryUIAPI` entry to request `DMUI_UI_ABI_CURRENT`, a
-minimum UI revision, and a minimum table prefix. `UI.h` exposes the familiar drawing
-surface in `dmui::ui`; it never declares `ImGui::`, imports cimgui symbols, or
-changes implementation based on include order. Host discovery uses matching
-narrow Win32 declarations in `Win32Discovery.h`, so public headers do not
-include `Windows.h` or leak its macros.
+### Other build systems
 
-`schema/ui-contract.json` is the current ABI authority. The immutable
-`schema/ui-contract.manifest.json` is the published ABI-1 compatibility
-baseline: generation fails if an existing operation ID, slot, signature,
-requirement, enum family, or enum value changes. New enum values and operation
-slots may only be appended under a newer UI revision. Generated
-`CUIAPI.h` is the C table, `UIChecked.generated.h` contains explicit
-result-returning wrappers, and `UI.h` adds the familiar bool/void C++ facade.
-The host translates every stable enum and flag by symbolic name; stable values
-are not native Dear ImGui values. Unknown bits return
-`DMUI_RESULT_INVALID_ARGUMENT`.
+Add the `include/` directory of this repository to your compiler include search paths. C++20 or later is recommended.
 
-The required table prefix ends at `NewLine`. Later slots are optional and
-additive; revision-1 currently adds optional `PlotLines`. A client may connect
-to a host that supplies its required prefix even when a newer optional tail is
-absent. Calling a missing operation reports `DMUI_RESULT_UNSUPPORTED_ABI`.
-Familiar wrappers preserve `noexcept` drawing code by recording the first UI
-failure in the callback-scoped sticky result; the page trampoline returns that
-result to the host, which diagnoses and disables the failed callback. Scope-end
-operations still dispatch so stacks unwind after an earlier failure.
+---
 
-Mechanical client migration is intentionally explicit:
+## Quick Example
 
-- `ImGui::Button`, `Checkbox`, `BeginTable`, and the other approved operations
-  become the same familiar spellings under `dmui::ui`.
-- `ImVec2`/`ImVec4` become `dmui::ui::Vec2`/`Vec4`.
-- Native `ImGuiCol_*`, `ImGuiDataType_*`, and flag constants become scoped
-  `dmui::ui::Color`, `DataType`, and `*Flags` values.
-- Scalar C++ calls are typed, for example
-  `dmui::ui::SliderScalar("##Value", &value, &minimum, &maximum)`. The C ABI
-  carries the stable data type and exact byte sizes.
-- `InputText`, `InputTextWithHint`, and `InputTextMultiline` keep buffer,
-  capacity, and stable flags, but expose no callback or callback userdata.
-- Native font getters and pointer-based `PushFont` are unavailable. Use
-  `dmui::FontGuard` with a `DMUI_FontRole`.
-
-There is no `namespace ImGui` alias or raw-forwarding compatibility shim.
-
-## Shared C++ presentation helpers
-
-`Presentation.h` contains the stable-UI-facing helpers that do not require a
-registered client. `Client.h` includes it and adds helpers that use client
-theme, font, and settings-table services.
+Register your mod during F4SE `kPostPostLoad` after plugins have loaded:
 
 ```cpp
-dmui::DrawStyledText(
-	client,
-	"Restart required: 100% ## is ordinary text",
-	{
-		.fontRole = DMUI_FONT_ROLE_SUBTEXT,
-		.tone = dmui::TextTone::kStatusRestartNeeded,
-		.wrapped = true
-	});
+#include <DearModdingUI/Client.h>
 
-dmui::DrawLabeledValue(
-	client,
-	"Backend",
-	"Available",
-	{
-		.valueStyle = { .tone = dmui::TextTone::kSuccess },
-		.spacingScale = 2.0f
-	});
-```
+static dmui::Client g_client{
+    "my_mod_id",
+    "My Mod Display Name",
+    dmui::Version{ 1, 0 },
+    "sliders" // Optional Phosphor icon name
+};
 
-`TextStyle` fields are `fontRole`, `tone`, and `wrapped`, in that order.
-Omitting `fontRole` inherits the current font. `TextTone::kInherit` preserves
-the current UI text color. The other tones map directly to
-`DMUI_ThemeColors`: `kAccent`, `kAccentMuted`, `kMuted`, `kSuccess`,
-`kWarning`, `kError`, `kInfo`, `kStatusDisable`, `kStatusError`,
-`kStatusWarning`, `kStatusRestartNeeded`, `kStatusCurrentHotkey`,
-`kStatusSuccess`, and `kStatusInfo`.
+static bool g_enabled = true;
+static float g_scale = 1.0f;
 
-`ResolveTextColor` returns both a `DMUI_Result` and an optional color pointer;
-the successful inherit result intentionally has no override. `ThemeToneColor`
-is the pointer-only convenience for callers that already validated their
-snapshot. `DrawStyledText(text, snapshot, style)` is the client-independent
-core; it rejects a non-inherited font role because no client font provider is
-available. Both draw functions use length-delimited `TextUnformatted`, so `%`
-and `##` are ordinary text and embedded views need not be NUL-terminated.
-Wrapping uses the current window, column, or table-cell width.
-
-The client overload of `DrawStyledText` returns false and leaves the exact failure in
-`Client::LastResult()` when theme or font acquisition fails. Every successful
-font, color, and wrap push is balanced. `FontGuard` exposes `Pushed()`,
-`Result()`, and idempotent `End()`; destructor cleanup does not replace a
-pre-existing client error with a successful pop.
-
-`DrawLabeledValue` is intentionally an inline label/value layout. It obtains
-live style metrics before drawing, draws the label in the caller's current
-font, places the value after `itemSpacing.x * spacingScale`, and then enters
-the optional host-owned value-font role. No native font pointer crosses the
-API. A failed value-font scope leaves the already drawn caller-font label
-visible and reports the exact error. Inside an existing settings row, draw only
-the value with `DrawStyledText`; the row already owns label and value geometry.
-
-`DMUI_StyleMetrics` fields are `structSize`, `itemSpacing`, `framePadding`,
-`itemInnerSpacing`, `cellPadding`, `windowPadding`, `indentSpacing`,
-`scrollbarSize`, and `fontSizeBase`, in that order. The stable UI table's
-`GetStyleMetrics` operation writes the original 52-byte prefix through
-`scrollbarSize`; it writes `fontSizeBase` only when the caller supplies the
-complete 56-byte field. It preserves the caller's `structSize` and never writes
-trailing storage.
-
-```cpp
-dmui::SettingsTableScope table{ client, "rendering" };
-if (table.Result() != DMUI_RESULT_OK)
-	return;
-if (table.Visible())
+void InitializeUI()
 {
-	dmui::SettingsRowScope row{
-		client, "quality", "Quality", "Rendering quality."
-	};
-	if (row.Result() != DMUI_RESULT_OK)
-		return;
-	if (row.Visible())
-	{
-		// Draw the value control.
-		const auto reset = row.End(true, canReset);
-		if (!reset)
-			return;
-	}
-	if (!table.End())
-		return;
+    if (!g_client.Connect()) {
+        return;
+    }
+
+    g_client.AddPage({
+        .id = "general",
+        .displayName = "General Settings",
+        .iconName = "gear"
+    },
+    [] {
+        dmui::ui::TextUnformatted("Configure plugin options below:");
+        dmui::ui::Checkbox("Enable feature", &g_enabled);
+        dmui::ui::SliderScalar("Scale factor", &g_scale, 0.5f, 2.0f);
+    });
 }
 ```
 
-`SettingsTableScope` and `SettingsRowScope` own their successful visible
-begin calls, are non-copyable and non-movable, and end only brackets they
-opened. `Result()` distinguishes failure from clipping, while `Visible()`
-preserves the existing clipping contract. Explicit `End()` is idempotent and
-never retries a failed end. Row `End(resetVisible, resetEnabled)` returns the
-cached `std::optional<bool>` reset result on repeated calls. Destructor cleanup
-preserves an earlier client failure.
+---
 
-`DisabledScope` balances `BeginDisabled` for both true and false arguments.
-`TooltipScope` checks the caller's hover flags, owns only a successful
-`BeginTooltip`, exposes `Hovered()` and `Visible()`, and has idempotent
-`End()`. It is suitable for multi-widget tooltip content and does not impose a
-title, color, or mod-specific tooltip system.
+## Complete Example
 
-The generic choice primitive uses an allocation-free span at draw time:
+A fully featured, compilable sample plugin is provided in [`examples/plugin/`](examples/plugin/):
 
-```cpp
-const std::array options{
-	dmui::ChoiceOption<int>{ 0, "Low", "low", true },
-	dmui::ChoiceOption<int>{ 1, "High", "high", false }
-};
-const auto choice = dmui::DrawChoice(
-	"quality",
-	current,
-	options,
-	"Unavailable",
-	"Quality mode");
-if (choice.changed)
-	current = *choice.selected;
+- **Multiple categories & icons**: Organizes pages under structured headings with custom Phosphor icon glyphs.
+- **Two-column settings tables**: Standardized layouts with row descriptions and reset buttons via `SettingsTableScope` and `SettingsRowScope`.
+- **Dropdown choices**: Typed combo selectors using `DrawChoice`.
+- **Status & telemetry**: Status banners with `DrawStyledText`, live key-value readouts via `DrawLabeledValue`, and real-time graphs with `dmui::ui::PlotLines`.
+- **Global actions & notifications**: Registers palette commands and triggers toast notifications.
+
+Build the example directly:
+
+```powershell
+xmake build example-plugin
 ```
 
-`ChoiceOption<Value>` fields are `value`, `label`, `key`, and `enabled`.
-The stable value and key are independent of the visible label. Duplicate
-labels, `%`, and `##` are safe. Empty option spans draw a disabled combo.
-Unknown current values show the explicit unavailable preview and are never
-clamped or mutated merely by drawing. `changed` and `completed` become true
-together only when the user selects a different enabled value.
-`Value` is deduced from the current-value argument; arrays and vectors of
-matching options convert to the non-deduced span parameter without an explicit
-template argument. The optional final display-label argument is drawn
-unformatted beside the combo and is independent of `id`; omit it inside an
-existing settings-row label/value layout.
-`ChoiceSettingOption` is now an alias of `ChoiceOption<std::string>`; aggregate
-initializers that need a key or disabled state must use the new field order.
-Declarative `ChoiceSettingControl` exposes the same unmatched-value presentation
-through its owned `unmatchedLabel`, which defaults to `"Unavailable"`. For example:
+---
 
-```cpp
-dmui::ChoiceSettingControl files{
-	.options = { { "", "None" }, { "preset.xml", "Preset" } },
-	.unmatchedLabel = "None"
-};
+## Documentation
+
+- **[Controls Guide](docs/controls-guide.md)**: Visual guide and code snippets for `dmui::ui` widgets, settings tables, choice dropdowns, styled text, font roles, and notifications.
+- **[Full Specification](docs/specification.md)**: Deep dive into binary memory layouts, structure sizes, thread affinity rules, and ownership contracts.
+
+---
+
+## Header Guide
+
+| Header | Description |
+|---|---|
+| `<DearModdingUI/Client.h>` | High-level C++ client interface. Handles discovery, callbacks, and registration. |
+| `<DearModdingUI/UI.h>` | Safe C++ drawing facade (`dmui::ui::*`). |
+| `<DearModdingUI/Presentation.h>` | UI layout scopes, choice controls, and styled text helpers. |
+| `<DearModdingUI/API.h>` | Pure C ABI declarations for host interaction. |
+| `<DearModdingUI/CUIAPI.h>` | Low-level C function table for drawing primitives. |
+| `<DearModdingUI/IconGlyphs.h>` | Phosphor icon glyph constants for labels and headers. |
+
+---
+
+## Verification
+
+Build the test suites and example plugin:
+
+```powershell
+xmake
+xmake run api-header-checks
+xmake build example-plugin
 ```
 
-This label affects only the combo preview when no option matches. The bound
-value remains unchanged, so selecting the empty option or resetting to an empty
-default can still clear a missing filename and emit the normal change event.
-An empty label is allowed. Existing matched option labels and disabled/empty-list
-behavior are unchanged. This is a C++ descriptor change, not a C ABI or version
-change; rebuild consumers of the descriptor with matching headers.
-
-## Host services and stable UI preflight
-
-Clients can declare `dmui::ClientOptions::requiredServices`,
-`minimumUIRevision`, and `minimumUIAPISize`. `Client::Connect` validates host
-services and the stable UI table before registration, returning
-`SERVICE_UNAVAILABLE` or `UNSUPPORTED_ABI` without creating a partial client.
-`minimumUIAPISize` is also an operation-availability requirement: every
-complete slot through that size must be non-null. Require a specific tail with
-its generated size constant, such as `DMUI_UI_API_PLOT_LINES_SIZE`, rather than
-`sizeof(DMUI_UIAPI)`.
-Host service flags are availability promises and are separate from client
-capability permissions such as `RENDERER_REPLACEMENT`.
-Require `DMUI_HOST_SERVICE_NAVIGATION_ICONS` when category-heading and
-page-palette icon names are required presentation behavior. The preflight
-checks both page and category registration entries.
-
-The 0.1 table supplies official wrappers for frame demand
-(`RequestFrame`/`ReleaseFrame`), swapchain attachment, contextual hotkey
-enablement, D3D11 images, managed overlays, notifications, annotated plots,
-submission-aware dialogs, generic CPU-pixel images, first-class categories,
-and generic external opening. DearModdingUI remains pre-release at product
-version 0.1.0 and API version 0.1. The Dear Modding team maintains all consumers,
-so API improvements may break earlier development snapshots without changing
-these versions. Use matching host and client headers; compatibility shims are
-not maintained for superseded development interfaces. CPU producers require the separate
-`DMUI_HOST_SERVICE_PIXEL_IMAGES` bit; imported-SRV availability remains
-`DMUI_HOST_SERVICE_IMAGE_RESOURCES`.
-
-Register each client category once with `Client::AddCategory` before adding a
-page that references its stable `categoryId`. Category display names and sort
-keys are independent of page metadata; all-zero category sort keys order by
-display name and then stable ID. Empty category IDs remain ungrouped.
-`CategoryDescriptor::iconName` and `PageDescriptor::iconName` are optional
-trailing fields forwarded with the current structure size. The C ABI retains
-the old 32-byte category and 64-byte page prefixes; hosts read the appended
-pointers only at `DMUI_CATEGORY_DESCRIPTOR_ICON_SIZE` and
-`DMUI_PAGE_DESCRIPTOR_ICON_SIZE`.
-
-Named navigation icons use this precedence:
-
-| Source | Precedence |
-| --- | --- |
-| Client | valid explicit name, category metadata, whole-word display-name concept, question |
-| Category heading | valid explicit name, existing client-category rule, category concept, question |
-| Page in command palette | valid explicit name, page-name concept, category concept, Files |
-| Action in command palette | valid explicit name, action-label concept, Terminal Window |
-
-Canonical Phosphor names and normalized spellings are accepted. Unknown or
-blank well-formed names fall through instead of rejecting registration;
-malformed or oversized strings reject the descriptor. Page icons are not
-drawn in plain sidebar or title rows. Toolbar/header actions intentionally
-remain text-only when their icon is absent or unknown.
-
-For example, a Community Shaders client may keep `iconName = "cloud-sun"`
-while registering `{ .id = "lighting", .displayName = "Lighting",
-.iconName = "sun-horizon" }`; the category selection is independent of the
-client selection. There is no icon-name editor, curated mod table, API version
-bump, or product version bump for this appended 0.1 extension.
-
-Links and section headers already take a raw glyph: zero means no icon, and an
-unavailable glyph keeps the existing text fallback. `SettingGroup::glyph`
-similarly uses a chosen nonzero glyph or automatic label inference, while
-`HeadingMode::kDivider` remains explicitly iconless.
-
-`Client::OpenExternal` accepts a URI, absolute file, or absolute directory for
-the OS-associated handler. Supplying an absolute application path overrides
-that handler; arguments are an argv array, the target is appended after those
-arguments, and no command shell or placeholder expansion is used. An explicit
-application may launch with `targetKind == NONE`. `dmui::Link` independently
-chooses `kCopyTarget` or `kOpenExternal`, so copy links never become launches
-implicitly. External launch success means Windows accepted the dispatch or
-created the process, not that its window rendered.
-
-Require `DMUI_HOST_SERVICE_VIRTUAL_FILE_TARGETS` for the explicit
-`VIRTUAL_FILE` and `VIRTUAL_FILE_PARENT` target kinds. Both take an absolute
-path to an existing file visible to the host process. The former opens that
-file's physical backing file; the latter opens its physical containing
-folder. Application overrides and arguments work as above. Ordinary `FILE`
-and `DIRECTORY` targets are never implicitly resolved, and copy links still
-copy the supplied target without resolution.
-
-Resolution is read-only and synchronous. The mapped-file resolver supports
-readable, nonempty loose files, including the winning file exposed through
-MO2/USVFS. Empty files, directories, archive interiors, and backing namespaces
-without a supported external path are not resolved. An unresolved target
-never falls back to its virtual name, an ancestor folder, or a guessed mod
-directory. `EXTERNAL_RESOLUTION_FAILED` reports a resolution failure;
-`EXTERNAL_RESOLUTION_UNSUPPORTED` reports a known unsupported case.
-`EXTERNAL_OPEN_FAILED` means resolution succeeded but Windows rejected the
-launch. `nativeError` preserves the relevant Windows error.
-
-This finds an existing read winner, not a future write or Overwrite
-destination. Opening the backing file may edit an installed mod directly;
-creating a user override remains client policy. Files can change between
-resolution and the external program reopening the path, and launching does
-not opt out of the mod manager's child-process injection.
-
-New drawing calls are valid only on the render thread while the owning page
-callback is active. Image import, CPU creation, and CPU update instead require
-a ready backend and the bound render thread, so they are valid from a frame
-observer without forcing a UI draw or frame demand. Image queries require no
-draw phase. Image release and notification posting are thread-safe. Dialog
-request and polling run in an owning render-thread callback;
-submission resolution and cancellation may be
-returned from another thread. Registered callbacks and their user data remain
-process-lifetime except for hotkeys, which retain their documented explicit
-unregister operation.
-
-`DMUI_D3D11ImageDescriptor::shaderResourceView` must point to a live
-`ID3D11ShaderResourceView` during import. The host accepts same-device,
-single-sample Texture2D views with one array slice and normalized or floating
-sampleable formats. It retains a COM reference and a separate lease for every
-queued draw through `RenderDrawData`. A handle is owner-scoped and carries the
-device generation; device replacement invalidates it, while ordinary
-same-device backbuffer resize does not. Releasing a handle does not invalidate
-an already queued draw. Released and invalidated handles remain queryable only
-until their storage slot is reused; reuse advances a per-slot generation, so an
-older handle returns `STALE_HANDLE` and never aliases the replacement. A slot
-whose generation is exhausted is retired rather than wrapped.
-
-`DMUI_ImageDescriptor` supplies decoded ordinary pixels without exposing D3D
-or ImGui types. The initial format is `DMUI_PIXEL_FORMAT_RGBA8_UNORM`, with
-bytes ordered R, G, B, A. Alpha is straight, not premultiplied. The host does
-no alpha premultiplication, color-space conversion, decoding, or tonemapping.
-`rowPitch` must be at least `width * 4` and fit the D3D11 pitch field.
-`accessibleByteCount` must cover exactly the bytes the host may read:
-`(height - 1) * rowPitch + width * 4`; padding after the final row is not
-required, including the one-row case. Arithmetic, format, reserved fields,
-dimensions, device state, thread, owner, handle generation, and provenance
-are validated before pixel memory or GPU creation. The caller keeps `pixels`
-valid only for the call; the host synchronously copies all referenced pixel
-bytes before returning and never retains the pointer.
-
-`createImage` publishes a new ordinary image handle. `updateImage` accepts only
-handles created from CPU pixels; imported SRVs return `UNSUPPORTED_RESOURCE`.
-An update creates a replacement Texture2D/SRV first and commits it to the same
-handle only after rechecking owner, handle, device, and generation. Width and
-height may change. Validation or allocation failure leaves the old view,
-dimensions, status, and generation unchanged. Draws queued before the commit
-retain the old SRV through submission, while later draws use the replacement.
-Device replacement invalidates CPU and imported handles alike; rebinding the
-same device for a backbuffer resize preserves them. Imported pixels remain
-producer-owned and are not copied, so imported producers must order GPU writes
-before sampling and supply any required conversion.
-
-Managed overlays are opt-in per existing overlay page. Coordinates, offsets,
-and constraints are logical ImGui/backbuffer coordinates and are scaled by
-the host scale; `contentScale` is a continuous multiplier in the inclusive
-0.5..3 range. Anchored overlays are host-positioned. Free overlays can move
-only while the host menu owns input and `allowArrangement` is set. Outside
-that mode they use `NoInputs`, never request a cursor, and never consume
-gameplay input. `queryOverlay` reports position, size, change generation, and
-an arrangement-completed edge so the client remains the sole persistence
-owner.
-
-Notifications copy at most 1024 message bytes, use a clamped 250..30000 ms
-duration (zero means 4000 ms), and use one latest-message-wins slot. They
-independently demand frames and render without input outside the modal menu.
-Annotated plots consume the sample and reference arrays during the call,
-accept at most 1,000,000 samples and 64 reference lines, and reject non-finite
-samples, lines, sizes, or ranges. Empty plots are valid. New array counts,
-offsets, and dialog buffer capacities use fixed-width `uint32_t` ABI fields.
-
-Dialogs copy all descriptor strings and permit one active request. Requests
-require a visible host menu. Text capacity is bytes including the NUL, from 1
-through 4096; the current contract does not split or validate UTF-8
-codepoints. `SUBMITTED` carries a monotonic submission ID. Resolving success
-produces `COMPLETED`; rejection copies an error, preserves the entered text,
-and returns to `PENDING`. The rejection error is optional, so `nullptr` and an
-empty string both mean no displayed error. A small poll buffer reports the required capacity
-without truncating or consuming the event. Escape/menu close cancels only a
-not-yet-submitted dialog; submitted work remains pending until resolved.
-
-Hotkey chords additionally accept ASCII A-Z and 0-9, canonically uppercased.
-`HOST_INPUT_INACTIVE` yields while the host menu, its dialogs, or text editing
-owns input. `GAMEPLAY_UNOBSTRUCTED` additionally requires the current input
-message's safe engine UI snapshot to report no active menu mode; an unavailable
-snapshot yields to the game. Dynamic
-enablement is thread-safe and checked before a press is consumed. Once a
-press is owned, its release remains owned across policy/enable changes.
-Focus loss synthesizes the queued release before forgetting ownership.
-
-Declarative settings continue calling `binding.set` for every live edit.
-`SettingDescriptor::onEdit` separately reports `changed` and `completed`
-immediately after the value widget. Checkbox and choice edits complete
-immediately; scalar/text controls use `IsItemDeactivatedAfterEdit`. An effective
-reset is one discrete edit with both flags set, while disabled and already
-default settings do not write or emit an edit event.
-`TextSettingControl::multiline` uses an ordinary stable client-owned string
-buffer and a three-line editor; completion does not imply persistence.
-Input-text callbacks and native callback flags are not part of UI ABI 1 and
-are rejected. Scalar widgets carry a stable data type plus explicit byte sizes;
-the host validates every data, bound, and step pointer before native use.
-Formatted text is rendered into an exact-size client-owned buffer and sent as
-UTF-8 text plus length. No `va_list` crosses the DLL boundary. Style colors
-are copied values, and `dmui::ui::Color32` is packed as `0xRRGGBBAA`.
-
-See the [ABI and lifecycle documentation](https://github.com/Dear-Modding-FO4/DearModdingUI/blob/main/include/DearModdingUI/README.md) for discovery, registration, compatibility, callback, and example details.
-
-## Continuous integration
-
-The `xmake` workflow compiles the public headers and runs the commonlibf4 sync integration tests for pushes and pull requests targeting `main`, as well as manual runs. Pull request jobs only build and test; they never receive the publishing credential.
-
-After a successful build of `main` in the canonical API repository, the workflow advances `lib/dearmoddingui-api` on `Dear-Modding-FO4/commonlibf4` to the exact API commit built by that run. The sync is an explicit no-op when the pointer already matches and an explicit successful skip when a newer API commit is already published. Invalid gitlinks, candidates outside API `main`, divergent history, credential failures, and non-race push failures stop the job. Concurrent non-fast-forward updates are retried at most three times from the latest commonlibf4 `main`, preserving unrelated changes.
-
-Publishing requires a fine-grained personal access token stored as the `COMMONLIBF4_TOKEN` Actions secret. Grant the token access only to `Dear-Modding-FO4/commonlibf4` with repository **Contents: Read and write** permission. To retry or intentionally publish the current API `main`, run the `xmake` workflow manually from the Actions tab on the `main` branch; the same build, provenance, ancestry, and push checks apply.
+---
 
 ## License
 
-DearModdingUI API is licensed under GPL-3.0. Including these headers makes the consuming plugin a derivative work and requires the plugin to comply with GPL-3.0, including its source-distribution requirements when conveyed.
+DearModdingUI-API is licensed under GPL-3.0. See [LICENSE](LICENSE).
