@@ -73,10 +73,11 @@ canonical/accepted alias first, then primary metadata, then secondary
 metadata. Full-label authoritative terms precede the longest whole
 authoritative phrase, which precedes the longest descriptive tag phrase.
 Canonical names and accepted aliases outrank reviewed domain terms at the same
-phrase length. Candidate glyphs are coalesced; secondary metadata may narrow
-an ambiguous primary result but cannot replace it with an unrelated result.
-Remaining ambiguity and no-match results use the caller's declared surface
-fallback.
+phrase length. If equally ranked terms identify several glyphs, the resolver
+chooses the lowest pinned glyph codepoint so the result is stable and
+independent of metadata order. A primary match is final; secondary metadata is
+consulted only when primary metadata has no match. Only a genuine no-match
+result uses the caller's declared surface fallback.
 
 Normalization performs ASCII case folding, collapses punctuation and
 separators to word boundaries, and preserves lower/digit-to-uppercase and

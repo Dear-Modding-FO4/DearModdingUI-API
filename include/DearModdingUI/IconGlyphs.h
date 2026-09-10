@@ -9,7 +9,6 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
-#include <vector>
 
 namespace DearModdingUI
 {
@@ -63,7 +62,6 @@ namespace DearModdingUI
 	enum class IconSelectionStatus : uint32_t
 	{
 		kNoMatch,
-		kAmbiguous,
 		kSelected,
 		kInvalidRawGlyph
 	};
@@ -187,30 +185,22 @@ namespace DearModdingUI
 			}
 		};
 
-		struct CandidateSet
+		struct BestMatch
 		{
 			MatchRank rank;
-			std::vector<char32_t> glyphs;
-			std::span<const char32_t> allowedGlyphs;
+			char32_t glyph{};
 
 			void Add(char32_t a_glyph, MatchRank a_rank)
 			{
-				if (!a_glyph ||
-					(!allowedGlyphs.empty() &&
-						std::ranges::find(allowedGlyphs, a_glyph) ==
-							allowedGlyphs.end()))
+				if (!a_glyph)
 					return;
-				if (rank < a_rank)
+				if (!glyph || rank < a_rank)
 				{
 					rank = a_rank;
-					glyphs.clear();
+					glyph = a_glyph;
 				}
-				else if (a_rank < rank)
-				{
-					return;
-				}
-				if (std::ranges::find(glyphs, a_glyph) == glyphs.end())
-					glyphs.push_back(a_glyph);
+				else if (!(a_rank < rank) && a_glyph < glyph)
+					glyph = a_glyph;
 			}
 		};
 
@@ -238,14 +228,14 @@ namespace DearModdingUI
 
 		template <size_t Size>
 		void AddMatches(
-			CandidateSet& a_candidates,
+			BestMatch& a_match,
 			const std::array<IconPhraseMapping, Size>& a_mappings,
 			std::string_view a_phrase,
 			MatchRank a_rank)
 		{
 			const auto [first, last] = EqualRange(a_mappings, a_phrase);
 			for (auto index = first; index < last; ++index)
-				a_candidates.Add(a_mappings[index].glyph, a_rank);
+				a_match.Add(a_mappings[index].glyph, a_rank);
 		}
 
 		[[nodiscard]] inline size_t WordCount(
@@ -259,7 +249,7 @@ namespace DearModdingUI
 		}
 
 		inline void AddMetadataMatches(
-			CandidateSet& a_candidates,
+			BestMatch& a_match,
 			std::string_view a_metadata)
 		{
 			const auto normalized = NormalizeIconName(a_metadata);
@@ -268,17 +258,17 @@ namespace DearModdingUI
 
 			const auto fullWordCount = WordCount(normalized);
 			AddMatches(
-				a_candidates,
+				a_match,
 				kPhosphorIconGlyphs,
 				normalized,
 				{ 3, fullWordCount, 2 });
 			AddMatches(
-				a_candidates,
+				a_match,
 				kPhosphorIconAliases,
 				normalized,
 				{ 3, fullWordCount, 2 });
 			AddMatches(
-				a_candidates,
+				a_match,
 				kPhosphorIconDomainTerms,
 				normalized,
 				{ 3, fullWordCount, 1 });
@@ -299,22 +289,22 @@ namespace DearModdingUI
 					if (phrase.size() > 1 || normalized.size() == 1)
 					{
 						AddMatches(
-							a_candidates,
+							a_match,
 							kPhosphorIconGlyphs,
 							phrase,
 							{ 2, words, 2 });
 						AddMatches(
-							a_candidates,
+							a_match,
 							kPhosphorIconAliases,
 							phrase,
 							{ 2, words, 2 });
 						AddMatches(
-							a_candidates,
+							a_match,
 							kPhosphorIconDomainTerms,
 							phrase,
 							{ 2, words, 1 });
 						AddMatches(
-							a_candidates,
+							a_match,
 							kPhosphorIconTags,
 							phrase,
 							{ 1, words, 0 });
@@ -330,14 +320,13 @@ namespace DearModdingUI
 			}
 		}
 
-		[[nodiscard]] inline CandidateSet EvaluateGroup(
-			std::span<const std::string_view> a_metadata,
-			std::span<const char32_t> a_allowedGlyphs = {})
+		[[nodiscard]] inline BestMatch EvaluateGroup(
+			std::span<const std::string_view> a_metadata)
 		{
-			CandidateSet candidates{ .allowedGlyphs = a_allowedGlyphs };
+			BestMatch match;
 			for (const auto value : a_metadata)
-				AddMetadataMatches(candidates, value);
-			return candidates;
+				AddMetadataMatches(match, value);
+			return match;
 		}
 
 		[[nodiscard]] inline char32_t FindExactAuthoritative(
@@ -386,35 +375,17 @@ namespace DearModdingUI
 
 			auto primary =
 				IconResolverDetail::EvaluateGroup(a_request.primaryMetadata);
-			if (primary.glyphs.size() == 1)
-				return { IconSelectionStatus::kSelected, primary.glyphs.front() };
-			if (primary.glyphs.size() > 1)
-			{
-				const auto secondary =
-					IconResolverDetail::EvaluateGroup(
-						a_request.secondaryMetadata,
-						primary.glyphs);
-				if (secondary.glyphs.size() == 1)
-					return {
-						IconSelectionStatus::kSelected,
-						secondary.glyphs.front()
-					};
-				return { IconSelectionStatus::kAmbiguous, {} };
-			}
+			if (primary.glyph)
+				return { IconSelectionStatus::kSelected, primary.glyph };
 
 			auto secondary =
 				IconResolverDetail::EvaluateGroup(a_request.secondaryMetadata);
-			if (secondary.glyphs.size() == 1)
+			if (secondary.glyph)
 				return {
 					IconSelectionStatus::kSelected,
-					secondary.glyphs.front()
+					secondary.glyph
 				};
-			return {
-				secondary.glyphs.empty() ?
-					IconSelectionStatus::kNoMatch :
-					IconSelectionStatus::kAmbiguous,
-				{}
-			};
+			return { IconSelectionStatus::kNoMatch, {} };
 		}
 	};
 
