@@ -3607,11 +3607,10 @@ namespace dmui
 			else
 			{
 				const auto label = a_group.label.empty() ? key : a_group.label;
-				const auto glyph = a_group.glyph ?
-					a_group.glyph :
-					DearModdingUI::ResolveIconGlyph(
-						DearModdingUI::IconKind::kCategory,
-						label);
+				const auto glyph = DearModdingUI::ResolveAutomaticIconGlyph(
+					a_group.glyph,
+					label,
+					DearModdingUI::PhosphorGlyph::kQuestion);
 				if (!a_client.DrawCollapsingSectionHeader(
 						key.c_str(),
 						label.c_str(),

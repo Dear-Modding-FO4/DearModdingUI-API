@@ -65,18 +65,42 @@ Drawing wrappers record the first failure in a callback-scoped sticky result. Th
 - `TooltipScope`: Manages hover evaluation and `BeginTooltip` / `EndTooltip`.
 - `ChoiceOption<Value>`: Represents an option in `DrawChoice` with fields `value`, `label`, `key`, and `enabled`. Selection is type-deduced. If the active value does not match any entry, it renders an explicit "Unavailable" fallback without altering the underlying data.
 
-## Navigation Icons Precedence
+## Icon Resolution
 
-Canonical Phosphor icon names are resolved by the host with the following lookup order:
+`IconResolver` is a game-independent, header-only selector backed by the
+generated Phosphor catalog. It resolves a valid explicit raw glyph or exact
+canonical/accepted alias first, then primary metadata, then secondary
+metadata. Full-label authoritative terms precede the longest whole
+authoritative phrase, which precedes the longest descriptive tag phrase.
+Canonical names and accepted aliases outrank reviewed domain terms at the same
+phrase length. Candidate glyphs are coalesced; secondary metadata may narrow
+an ambiguous primary result but cannot replace it with an unrelated result.
+Remaining ambiguity and no-match results use the caller's declared surface
+fallback.
 
-| Target | Lookup Precedence |
+Normalization performs ASCII case folding, collapses punctuation and
+separators to word boundaries, and preserves lower/digit-to-uppercase and
+acronym-run boundaries. Thus spaces, hyphens, underscores, and forms such as
+`DearModdingUI` normalize consistently. Short terms such as `AI` and `UI`
+match whole words only.
+
+The host applies that shared selection policy as follows:
+
+| Target | Metadata and fallback |
 |---|---|
-| Client | Explicit icon name, category metadata, display-name concept, default fallback. |
-| Category heading | Explicit icon name, client category rule, category concept, default fallback. |
-| Page (Palette) | Explicit icon name, page-name concept, category concept, Files glyph. |
-| Action (Palette) | Explicit icon name, action-label concept, Terminal Window glyph. |
+| Client | Display name; category display names; Question. |
+| Category heading | Category display name; Question. |
+| Page (Palette) | Page display name; category display name; Files. |
+| Action | Action label; text-only toolbar or Terminal Window palette. |
+| Setting group | Group label; existing Question heading fallback. |
 
-Unknown or blank icon names fall back gracefully without rejecting registration. Malformed or oversized strings (over 128 bytes) reject the descriptor.
+An unknown or blank well-formed explicit name falls through to metadata.
+Malformed or oversized descriptor strings (over 128 bytes) still reject the
+descriptor. Raw zero remains no-icon for section/link operations, while an
+unset `SettingGroup::glyph` requests automatic inference. Invalid raw Unicode
+is not treated as a semantic miss. Older binaries retain the icon helper code
+they compiled; this pure inference change does not add a C ABI operation or
+replace helper behavior inside an already-built mod.
 
 ## External Open and Virtual Files
 

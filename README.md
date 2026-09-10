@@ -129,7 +129,7 @@ xmake build example-plugin
 | `<DearModdingUI/Presentation.h>` | UI layout scopes, choice controls, and styled text helpers. |
 | `<DearModdingUI/API.h>` | Pure C ABI declarations for host interaction. |
 | `<DearModdingUI/CUIAPI.h>` | Low-level C function table for drawing primitives. |
-| `<DearModdingUI/IconGlyphs.h>` | Phosphor icon glyph constants for labels and headers. |
+| `<DearModdingUI/IconGlyphs.h>` | Phosphor glyph constants and the catalog-driven semantic icon resolver. |
 
 ---
 
@@ -141,6 +141,13 @@ Build the test suites and example plugin:
 xmake
 xmake run api-header-checks
 xmake build example-plugin
+```
+
+The checked-in Phosphor vocabulary is regenerated offline from pinned source
+snapshots:
+
+```powershell
+python Tools/GeneratePhosphorGlyphs.py --check
 ```
 
 ---

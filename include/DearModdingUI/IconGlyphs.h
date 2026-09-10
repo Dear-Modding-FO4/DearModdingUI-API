@@ -1,12 +1,15 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <limits>
-#include <new>
+#include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <vector>
 
 namespace DearModdingUI
 {
@@ -46,9 +49,9 @@ namespace DearModdingUI
 		inline constexpr char32_t kFiles{ 0xE710 };
 	}
 
-	struct IconGlyphMapping
+	struct IconPhraseMapping
 	{
-		std::string_view slug;
+		std::string_view phrase;
 		char32_t glyph;
 	};
 }
@@ -57,85 +60,46 @@ namespace DearModdingUI
 
 namespace DearModdingUI
 {
-	struct IconConceptMapping
+	enum class IconSelectionStatus : uint32_t
 	{
-		std::string_view slug;
-		std::string_view icon;
+		kNoMatch,
+		kAmbiguous,
+		kSelected,
+		kInvalidRawGlyph
 	};
 
-	struct IconConceptMatch
+	struct IconSelection
 	{
-		std::string_view slug;
+		IconSelectionStatus status{ IconSelectionStatus::kNoMatch };
 		char32_t glyph{};
 
-		[[nodiscard]] explicit operator bool() const noexcept
+		[[nodiscard]] constexpr bool HasSelection() const noexcept
 		{
-			return glyph != char32_t{};
+			return status == IconSelectionStatus::kSelected;
+		}
+
+		[[nodiscard]] constexpr char32_t GlyphOr(
+			char32_t a_fallback) const noexcept
+		{
+			return status == IconSelectionStatus::kSelected ||
+					status == IconSelectionStatus::kInvalidRawGlyph ?
+				glyph :
+				a_fallback;
 		}
 	};
 
-	inline constexpr std::array kIconConcepts{
-		IconConceptMapping{ "ai", "brain" },
-		IconConceptMapping{ "appearance", "palette" },
-		IconConceptMapping{ "armor", "shield" },
-		IconConceptMapping{ "audio", "speaker-high" },
-		IconConceptMapping{ "building", "buildings" },
-		IconConceptMapping{ "camera", "camera" },
-		IconConceptMapping{ "combat", "sword" },
-		IconConceptMapping{ "compatibility", "puzzle-piece" },
-		IconConceptMapping{ "controls", "sliders-horizontal" },
-		IconConceptMapping{ "crafting", "hammer" },
-		IconConceptMapping{ "debug", "bug" },
-		IconConceptMapping{ "dev-tools", "terminal-window" },
-		IconConceptMapping{ "diagnostics", "stethoscope" },
-		IconConceptMapping{ "dialogue", "chat-circle-text" },
-		IconConceptMapping{ "difficulty", "gauge" },
-		IconConceptMapping{ "economy", "coins" },
-		IconConceptMapping{ "facts", "info" },
-		IconConceptMapping{ "gameplay", "game-controller" },
-		IconConceptMapping{ "general", "gear" },
-		IconConceptMapping{ "graphics", "image" },
-		IconConceptMapping{ "hud", "crosshair-simple" },
-		IconConceptMapping{ "input", "keyboard" },
-		IconConceptMapping{ "interface", "monitor" },
-		IconConceptMapping{ "inventory", "backpack" },
-		IconConceptMapping{ "leveling", "trend-up" },
-		IconConceptMapping{ "lighting", "lightbulb" },
-		IconConceptMapping{ "logging", "file-text" },
-		IconConceptMapping{ "map", "map-trifold" },
-		IconConceptMapping{ "memory", "memory" },
-		IconConceptMapping{ "misc", "dots-three-circle" },
-		IconConceptMapping{ "network", "wifi-high" },
-		IconConceptMapping{ "npc", "user" },
-		IconConceptMapping{ "other", "dots-three-circle" },
-		IconConceptMapping{ "overlay", "app-window" },
-		IconConceptMapping{ "performance", "speedometer" },
-		IconConceptMapping{ "perks", "medal" },
-		IconConceptMapping{ "physics", "atom" },
-		IconConceptMapping{ "post-process", "magic-wand" },
-		IconConceptMapping{ "power-armor", "robot" },
-		IconConceptMapping{ "quest", "scroll" },
-		IconConceptMapping{ "radio", "radio" },
-		IconConceptMapping{ "readability", "text-aa" },
-		IconConceptMapping{ "save", "floppy-disk" },
-		IconConceptMapping{ "settlement", "house" },
-		IconConceptMapping{ "skills", "student" },
-		IconConceptMapping{ "stability", "shield-check" },
-		IconConceptMapping{ "stealth", "eye-slash" },
-		IconConceptMapping{ "survival", "campfire" },
-		IconConceptMapping{ "ui", "layout" },
-		IconConceptMapping{ "unloaded", "archive" },
-		IconConceptMapping{ "vats", "crosshair" },
-		IconConceptMapping{ "video", "video-camera" },
-		IconConceptMapping{ "visuals", "palette" },
-		IconConceptMapping{ "weapons", "crosshair" },
-		IconConceptMapping{ "weather", "cloud-sun" }
+	struct IconResolutionRequest
+	{
+		std::optional<char32_t> explicitGlyph;
+		std::string_view explicitName;
+		std::span<const std::string_view> primaryMetadata;
+		std::span<const std::string_view> secondaryMetadata;
 	};
 
-	[[nodiscard]] inline std::string SlugifyIconName(std::string_view a_name)
+	[[nodiscard]] inline std::string NormalizeIconName(std::string_view a_name)
 	{
-		std::string slug;
-		slug.reserve(a_name.size());
+		std::string normalized;
+		normalized.reserve(a_name.size());
 		bool separatorPending = false;
 		bool previousLowerOrDigit = false;
 		bool previousUpper = false;
@@ -149,9 +113,9 @@ namespace DearModdingUI
 			if ((character >= 'a' && character <= 'z') ||
 				(character >= '0' && character <= '9'))
 			{
-				if (separatorPending && !slug.empty())
-					slug.push_back('-');
-				slug.push_back(static_cast<char>(character));
+				if (separatorPending && !normalized.empty())
+					normalized.push_back('-');
+				normalized.push_back(static_cast<char>(character));
 				separatorPending = false;
 				previousLowerOrDigit = true;
 				previousUpper = false;
@@ -160,138 +124,27 @@ namespace DearModdingUI
 			{
 				if ((separatorPending || previousLowerOrDigit ||
 						(previousUpper && nextLower)) &&
-					!slug.empty() && slug.back() != '-')
-					slug.push_back('-');
-				slug.push_back(static_cast<char>(character - 'A' + 'a'));
+					!normalized.empty() && normalized.back() != '-')
+					normalized.push_back('-');
+				normalized.push_back(
+					static_cast<char>(character - 'A' + 'a'));
 				separatorPending = false;
 				previousLowerOrDigit = false;
 				previousUpper = true;
 			}
 			else
 			{
-				separatorPending = !slug.empty();
+				separatorPending = !normalized.empty();
 				previousLowerOrDigit = false;
 				previousUpper = false;
-			}
-		}
-		return slug;
-	}
-
-	[[nodiscard]] inline std::string NormalizeIconOwnerName(std::string_view a_name)
-	{
-		std::string normalized;
-		normalized.reserve(a_name.size());
-		for (const auto value : a_name)
-		{
-			const auto character = static_cast<unsigned char>(value);
-			if ((character >= 'a' && character <= 'z') ||
-				(character >= '0' && character <= '9'))
-			{
-				normalized.push_back(static_cast<char>(character));
-			}
-			else if (character >= 'A' && character <= 'Z')
-			{
-				normalized.push_back(static_cast<char>(character - 'A' + 'a'));
 			}
 		}
 		return normalized;
 	}
 
-	[[nodiscard]] inline char32_t FindPhosphorSlugGlyphOrZero(
-		std::string_view a_slug) noexcept
+	[[nodiscard]] inline std::string SlugifyIconName(std::string_view a_name)
 	{
-		size_t first{};
-		size_t last = kPhosphorIconGlyphs.size();
-		while (first < last)
-		{
-			const auto middle = first + (last - first) / 2;
-			if (kPhosphorIconGlyphs[middle].slug < a_slug)
-				first = middle + 1;
-			else
-				last = middle;
-		}
-		if (first < kPhosphorIconGlyphs.size() &&
-			kPhosphorIconGlyphs[first].slug == a_slug)
-			return kPhosphorIconGlyphs[first].glyph;
-		return {};
-	}
-
-	[[nodiscard]] inline char32_t FindPhosphorIconGlyphOrZero(
-		std::string_view a_name)
-	{
-		return FindPhosphorSlugGlyphOrZero(SlugifyIconName(a_name));
-	}
-
-	[[nodiscard]] inline bool PreferIconConceptMatch(
-		const IconConceptMatch& a_candidate,
-		const IconConceptMatch& a_current) noexcept
-	{
-		if (!a_candidate)
-			return false;
-		if (!a_current)
-			return true;
-		if (a_candidate.slug.size() != a_current.slug.size())
-			return a_candidate.slug.size() > a_current.slug.size();
-		return a_candidate.slug < a_current.slug;
-	}
-
-	[[nodiscard]] inline bool ContainsWholeIconConcept(
-		std::string_view a_name,
-		std::string_view a_conceptSlug) noexcept
-	{
-		size_t position{};
-		while ((position = a_name.find(a_conceptSlug, position)) !=
-			std::string_view::npos)
-		{
-			const auto startsOnBoundary =
-				position == 0 || a_name[position - 1] == '-';
-			const auto end = position + a_conceptSlug.size();
-			const auto endsOnBoundary =
-				end == a_name.size() || a_name[end] == '-';
-			if (startsOnBoundary && endsOnBoundary)
-				return true;
-			++position;
-		}
-		return false;
-	}
-
-	[[nodiscard]] inline IconConceptMatch FindIconConceptMatch(
-		std::string_view a_name,
-		bool a_wholeWords)
-	{
-		const auto slug = SlugifyIconName(a_name);
-		IconConceptMatch best;
-		for (const auto& mapping : kIconConcepts)
-		{
-			const auto matches = a_wholeWords ?
-				ContainsWholeIconConcept(slug, mapping.slug) :
-				slug == mapping.slug;
-			if (!matches)
-				continue;
-			const IconConceptMatch candidate{
-				mapping.slug,
-				FindPhosphorSlugGlyphOrZero(mapping.icon)
-			};
-			if (PreferIconConceptMatch(candidate, best))
-				best = candidate;
-		}
-		return best;
-	}
-
-	[[nodiscard]] inline char32_t ResolveNamedIconGlyphOrZero(
-		std::string_view a_name)
-	{
-		if (const auto glyph = FindPhosphorIconGlyphOrZero(a_name))
-			return glyph;
-		return FindIconConceptMatch(a_name, false).glyph;
-	}
-
-	[[nodiscard]] inline char32_t ResolveInferredIconGlyphOrZero(
-		std::string_view a_name)
-	{
-		if (const auto glyph = ResolveNamedIconGlyphOrZero(a_name))
-			return glyph;
-		return FindIconConceptMatch(a_name, true).glyph;
+		return NormalizeIconName(a_name);
 	}
 
 	[[nodiscard]] constexpr bool IsValidUnicodeScalar(
@@ -314,75 +167,341 @@ namespace DearModdingUI
 				(std::numeric_limits<Value>::max)());
 	}
 
+	namespace IconResolverDetail
+	{
+		struct MatchRank
+		{
+			uint32_t tier{};
+			size_t wordCount{};
+			uint32_t authority{};
+
+			[[nodiscard]] friend constexpr bool operator<(
+				const MatchRank& a_left,
+				const MatchRank& a_right) noexcept
+			{
+				if (a_left.tier != a_right.tier)
+					return a_left.tier < a_right.tier;
+				if (a_left.wordCount != a_right.wordCount)
+					return a_left.wordCount < a_right.wordCount;
+				return a_left.authority < a_right.authority;
+			}
+		};
+
+		struct CandidateSet
+		{
+			MatchRank rank;
+			std::vector<char32_t> glyphs;
+
+			void Add(char32_t a_glyph, MatchRank a_rank)
+			{
+				if (!a_glyph)
+					return;
+				if (rank < a_rank)
+				{
+					rank = a_rank;
+					glyphs.clear();
+				}
+				else if (a_rank < rank)
+				{
+					return;
+				}
+				if (std::ranges::find(glyphs, a_glyph) == glyphs.end())
+					glyphs.push_back(a_glyph);
+			}
+		};
+
+		template <size_t Size>
+		[[nodiscard]] inline std::pair<size_t, size_t> EqualRange(
+			const std::array<IconPhraseMapping, Size>& a_mappings,
+			std::string_view a_phrase) noexcept
+		{
+			const auto first = std::ranges::lower_bound(
+				a_mappings,
+				a_phrase,
+				{},
+				&IconPhraseMapping::phrase);
+			const auto last = std::ranges::upper_bound(
+				first,
+				a_mappings.end(),
+				a_phrase,
+				{},
+				&IconPhraseMapping::phrase);
+			return {
+				static_cast<size_t>(first - a_mappings.begin()),
+				static_cast<size_t>(last - a_mappings.begin())
+			};
+		}
+
+		template <size_t Size>
+		void AddMatches(
+			CandidateSet& a_candidates,
+			const std::array<IconPhraseMapping, Size>& a_mappings,
+			std::string_view a_phrase,
+			MatchRank a_rank)
+		{
+			const auto [first, last] = EqualRange(a_mappings, a_phrase);
+			for (auto index = first; index < last; ++index)
+				a_candidates.Add(a_mappings[index].glyph, a_rank);
+		}
+
+		[[nodiscard]] inline size_t WordCount(
+			std::string_view a_phrase) noexcept
+		{
+			return a_phrase.empty() ?
+				0 :
+				static_cast<size_t>(
+					std::ranges::count(a_phrase, '-')) +
+					1;
+		}
+
+		inline void AddMetadataMatches(
+			CandidateSet& a_candidates,
+			std::string_view a_metadata)
+		{
+			const auto normalized = NormalizeIconName(a_metadata);
+			if (normalized.empty())
+				return;
+
+			const auto fullWordCount = WordCount(normalized);
+			AddMatches(
+				a_candidates,
+				kPhosphorIconGlyphs,
+				normalized,
+				{ 3, fullWordCount, 2 });
+			AddMatches(
+				a_candidates,
+				kPhosphorIconAliases,
+				normalized,
+				{ 3, fullWordCount, 2 });
+			AddMatches(
+				a_candidates,
+				kPhosphorIconDomainTerms,
+				normalized,
+				{ 3, fullWordCount, 1 });
+
+			for (size_t begin = 0; begin < normalized.size();)
+			{
+				size_t end = begin;
+				size_t words{};
+				while (end < normalized.size())
+				{
+					const auto separator = normalized.find('-', end);
+					end = separator == std::string::npos ?
+						normalized.size() :
+						separator;
+					++words;
+					const auto phrase =
+						std::string_view{ normalized }.substr(begin, end - begin);
+					AddMatches(
+						a_candidates,
+						kPhosphorIconGlyphs,
+						phrase,
+						{ 2, words, 2 });
+					AddMatches(
+						a_candidates,
+						kPhosphorIconAliases,
+						phrase,
+						{ 2, words, 2 });
+					AddMatches(
+						a_candidates,
+						kPhosphorIconDomainTerms,
+						phrase,
+						{ 2, words, 1 });
+					AddMatches(
+						a_candidates,
+						kPhosphorIconTags,
+						phrase,
+						{ 1, words, 0 });
+					if (separator == std::string::npos)
+						break;
+					end = separator + 1;
+				}
+				const auto next = normalized.find('-', begin);
+				if (next == std::string::npos)
+					break;
+				begin = next + 1;
+			}
+		}
+
+		[[nodiscard]] inline CandidateSet EvaluateGroup(
+			std::span<const std::string_view> a_metadata)
+		{
+			CandidateSet candidates;
+			for (const auto value : a_metadata)
+				AddMetadataMatches(candidates, value);
+			return candidates;
+		}
+
+		[[nodiscard]] inline char32_t FindExactAuthoritative(
+			std::string_view a_name)
+		{
+			const auto normalized = NormalizeIconName(a_name);
+			if (normalized.empty())
+				return {};
+			for (const auto& mappings : {
+					std::span<const IconPhraseMapping>{ kPhosphorIconGlyphs },
+					std::span<const IconPhraseMapping>{ kPhosphorIconAliases },
+					std::span<const IconPhraseMapping>{
+						kPhosphorIconDomainTerms } })
+			{
+				const auto first = std::ranges::lower_bound(
+					mappings,
+					normalized,
+					{},
+					&IconPhraseMapping::phrase);
+				if (first != mappings.end() && first->phrase == normalized)
+					return first->glyph;
+			}
+			return {};
+		}
+	}
+
+	class IconResolver
+	{
+	public:
+		[[nodiscard]] static IconSelection Resolve(
+			const IconResolutionRequest& a_request)
+		{
+			if (a_request.explicitGlyph)
+			{
+				return {
+					IsValidUnicodeScalar(*a_request.explicitGlyph) ?
+						IconSelectionStatus::kSelected :
+						IconSelectionStatus::kInvalidRawGlyph,
+					*a_request.explicitGlyph
+				};
+			}
+			if (const auto glyph =
+					IconResolverDetail::FindExactAuthoritative(
+						a_request.explicitName))
+				return { IconSelectionStatus::kSelected, glyph };
+
+			auto primary =
+				IconResolverDetail::EvaluateGroup(a_request.primaryMetadata);
+			if (primary.glyphs.size() == 1)
+				return { IconSelectionStatus::kSelected, primary.glyphs.front() };
+			if (primary.glyphs.size() > 1)
+			{
+				const auto secondary =
+					IconResolverDetail::EvaluateGroup(
+						a_request.secondaryMetadata);
+				if (!secondary.glyphs.empty())
+				{
+					std::vector<char32_t> narrowed;
+					for (const auto glyph : primary.glyphs)
+					{
+						if (std::ranges::find(
+								secondary.glyphs,
+								glyph) != secondary.glyphs.end())
+							narrowed.push_back(glyph);
+					}
+					if (narrowed.size() == 1)
+						return {
+							IconSelectionStatus::kSelected,
+							narrowed.front()
+						};
+				}
+				return { IconSelectionStatus::kAmbiguous, {} };
+			}
+
+			auto secondary =
+				IconResolverDetail::EvaluateGroup(a_request.secondaryMetadata);
+			if (secondary.glyphs.size() == 1)
+				return {
+					IconSelectionStatus::kSelected,
+					secondary.glyphs.front()
+				};
+			return {
+				secondary.glyphs.empty() ?
+					IconSelectionStatus::kNoMatch :
+					IconSelectionStatus::kAmbiguous,
+				{}
+			};
+		}
+	};
+
+	[[nodiscard]] inline char32_t FindPhosphorSlugGlyphOrZero(
+		std::string_view a_slug) noexcept
+	{
+		const auto [first, last] =
+			IconResolverDetail::EqualRange(kPhosphorIconGlyphs, a_slug);
+		return first != last ? kPhosphorIconGlyphs[first].glyph : char32_t{};
+	}
+
+	[[nodiscard]] inline char32_t FindPhosphorIconGlyphOrZero(
+		std::string_view a_name)
+	{
+		return FindPhosphorSlugGlyphOrZero(NormalizeIconName(a_name));
+	}
+
+	[[nodiscard]] inline IconSelection ResolveIconSelection(
+		std::string_view a_explicitName,
+		std::string_view a_primaryMetadata = {},
+		std::string_view a_secondaryMetadata = {})
+	{
+		const std::array primary{ a_primaryMetadata };
+		const std::array secondary{ a_secondaryMetadata };
+		return IconResolver::Resolve({
+			.explicitName = a_explicitName,
+			.primaryMetadata = a_primaryMetadata.empty() ?
+				std::span<const std::string_view>{} :
+				std::span<const std::string_view>{ primary },
+			.secondaryMetadata = a_secondaryMetadata.empty() ?
+				std::span<const std::string_view>{} :
+				std::span<const std::string_view>{ secondary }
+		});
+	}
+
+	[[nodiscard]] inline char32_t ResolveNamedIconGlyphOrZero(
+		std::string_view a_name)
+	{
+		return IconResolverDetail::FindExactAuthoritative(a_name);
+	}
+
+	[[nodiscard]] inline char32_t ResolveInferredIconGlyphOrZero(
+		std::string_view a_name)
+	{
+		return ResolveIconSelection({}, a_name).GlyphOr({});
+	}
+
 	[[nodiscard]] inline char32_t ResolveSemanticIconGlyph(
 		std::string_view a_explicitName,
 		std::string_view a_primaryMetadata,
 		std::string_view a_secondaryMetadata,
-		char32_t a_fallback) noexcept
+		char32_t a_fallback)
 	{
-		try
-		{
-			if (const auto glyph =
-					ResolveNamedIconGlyphOrZero(a_explicitName))
-				return glyph;
-			if (const auto glyph =
-					ResolveInferredIconGlyphOrZero(a_primaryMetadata))
-				return glyph;
-			if (const auto glyph =
-					ResolveInferredIconGlyphOrZero(a_secondaryMetadata))
-				return glyph;
-			return a_fallback;
-		}
-		catch (const std::bad_alloc&)
-		{
-			return a_fallback;
-		}
+		return ResolveIconSelection(
+			a_explicitName,
+			a_primaryMetadata,
+			a_secondaryMetadata)
+			.GlyphOr(a_fallback);
 	}
 
 	[[nodiscard]] inline char32_t ResolveIconGlyph(
 		IconKind,
-		std::string_view a_name) noexcept
+		std::string_view a_name)
 	{
-		try
-		{
-			if (const auto glyph = ResolveNamedIconGlyphOrZero(a_name))
-				return glyph;
-			return PhosphorGlyph::kQuestion;
-		}
-		catch (...)
-		{
-			return PhosphorGlyph::kQuestion;
-		}
+		return ResolveIconSelection(a_name).GlyphOr(
+			PhosphorGlyph::kQuestion);
 	}
 
 	[[nodiscard]] inline char32_t ResolveClientIconGlyph(
 		std::string_view a_iconName,
 		std::string_view a_category,
-		std::string_view a_displayName) noexcept
+		std::string_view a_displayName)
 	{
-		try
-		{
-			if (const auto glyph = ResolveNamedIconGlyphOrZero(a_iconName))
-				return glyph;
-			if (const auto glyph = ResolveNamedIconGlyphOrZero(a_category))
-				return glyph;
-			if (const auto match = FindIconConceptMatch(a_displayName, true))
-				return match.glyph;
-			return PhosphorGlyph::kQuestion;
-		}
-		catch (...)
-		{
-			return PhosphorGlyph::kQuestion;
-		}
+		return ResolveSemanticIconGlyph(
+			a_iconName,
+			a_displayName,
+			a_category,
+			PhosphorGlyph::kQuestion);
 	}
 
 	[[nodiscard]] inline char32_t ResolveIconGlyph(
-		IconKind a_kind,
+		IconKind,
 		std::string_view a_iconName,
-		std::string_view a_fallbackName) noexcept
+		std::string_view a_fallbackName)
 	{
-		if (a_kind == IconKind::kClient)
-			return ResolveClientIconGlyph(a_iconName, {}, a_fallbackName);
 		return ResolveSemanticIconGlyph(
 			a_iconName,
 			a_fallbackName,
@@ -392,45 +511,36 @@ namespace DearModdingUI
 
 	[[nodiscard]] inline char32_t ResolveCategoryIconGlyph(
 		std::string_view a_category,
-		std::string_view a_clientDisplayName,
-		std::string_view a_clientId,
-		std::string_view a_clientIconName = {},
-		std::string_view a_categoryIconName = {}) noexcept
+		std::string_view,
+		std::string_view,
+		std::string_view = {},
+		std::string_view a_categoryIconName = {})
 	{
-		try
-		{
-			if (const auto glyph =
-					ResolveNamedIconGlyphOrZero(a_categoryIconName))
-				return glyph;
-			const auto category = NormalizeIconOwnerName(a_category);
-			if (!category.empty() &&
-				(category == NormalizeIconOwnerName(a_clientDisplayName) ||
-					category == NormalizeIconOwnerName(a_clientId)))
-				return ResolveClientIconGlyph(
-					a_clientIconName,
-					a_category,
-					a_clientDisplayName);
-			return ResolveIconGlyph(
-				IconKind::kCategory,
-				{},
-				a_category);
-		}
-		catch (...)
-		{
-			return PhosphorGlyph::kQuestion;
-		}
+		return ResolveSemanticIconGlyph(
+			a_categoryIconName,
+			a_category,
+			{},
+			PhosphorGlyph::kQuestion);
 	}
 
 	[[nodiscard]] inline char32_t ResolveActionIconGlyph(
-		std::string_view a_name) noexcept
+		std::string_view a_name,
+		std::string_view a_label = {})
 	{
-		try
+		return ResolveIconSelection(a_name, a_label).GlyphOr({});
+	}
+
+	[[nodiscard]] inline char32_t ResolveAutomaticIconGlyph(
+		char32_t a_chosenGlyph,
+		std::string_view a_label,
+		char32_t a_fallback)
+	{
+		if (a_chosenGlyph)
 		{
-			return ResolveNamedIconGlyphOrZero(a_name);
+			return IconResolver::Resolve({
+				.explicitGlyph = a_chosenGlyph
+			}).GlyphOr(a_fallback);
 		}
-		catch (...)
-		{
-			return {};
-		}
+		return ResolveIconSelection({}, a_label).GlyphOr(a_fallback);
 	}
 }

@@ -35,6 +35,9 @@ jobs:
     - name: Test stable UI compatibility baseline
       run: python Tests/test-ui-contract-generator.py -v
 
+    - name: Test Phosphor vocabulary generation
+      run: python Tests/test-phosphor-generator.py -v
+
     - name: Build header checks
       run: xmake build --yes -vD api-header-checks
 
