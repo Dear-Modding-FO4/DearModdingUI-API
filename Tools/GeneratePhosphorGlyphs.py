@@ -8,6 +8,12 @@ EXPECTED_GLYPH_COUNT = 1512
 EXPECTED_FONT_SHA256 = (
     "a53f5d2630cab5e3b7536ecb9d69d71519a2190298c22b1f8d770dd37bc2940a"
 )
+EXPECTED_CATALOG_SHA256 = (
+    "fb94760f6163db61ba0dc4606ad48480107c986c862f577163852d1c86172e9f"
+)
+EXPECTED_METADATA_SHA256 = (
+    "f312607486c9ef74690915e32b75e7bb06106810556d794012f4a944d1de4aea"
+)
 EXPECTED_METADATA_CODEPOINT_MISMATCHES = {
     "building-office": (0xE0FF, 0xE0FE),
     "crane-tower": (0xED49, 0xED48),
@@ -71,6 +77,17 @@ def normalize(value: str) -> str:
 
 def read_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def validate_pinned_source(source: dict, expected_sha256: str) -> None:
+    canonical = json.dumps(
+        source, sort_keys=True, separators=(",", ":"), ensure_ascii=True
+    )
+    actual = hashlib.sha256(canonical.encode("ascii")).hexdigest()
+    if actual != expected_sha256:
+        raise GenerationError(
+            f"pinned Phosphor input checksum mismatch: {actual} != {expected_sha256}"
+        )
 
 
 def add_unique(mapping: dict[str, int], phrase: str, glyph: int, source: str) -> None:
@@ -252,11 +269,11 @@ def main() -> None:
                 "Phosphor Fill font SHA-256 does not match @phosphor-icons/web@2.1.2"
             )
 
-    rendered, excluded = render(
-        read_json(arguments.catalog),
-        read_json(arguments.metadata),
-        read_json(arguments.domains),
-    )
+    catalog = read_json(arguments.catalog)
+    metadata = read_json(arguments.metadata)
+    validate_pinned_source(catalog, EXPECTED_CATALOG_SHA256)
+    validate_pinned_source(metadata, EXPECTED_METADATA_SHA256)
+    rendered, excluded = render(catalog, metadata, read_json(arguments.domains))
     print(f"Shipped glyphs: {EXPECTED_GLYPH_COUNT}")
     print(f"Excluded metadata icons absent from the shipped font: {len(excluded)}")
     for name in excluded:

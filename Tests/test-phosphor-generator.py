@@ -25,11 +25,38 @@ class PhosphorGeneratorTests(unittest.TestCase):
         self.domains = json.loads(DOMAINS.read_text(encoding="utf-8"))
 
     def test_checked_in_output_is_current(self) -> None:
+        generator.validate_pinned_source(
+            self.catalog, generator.EXPECTED_CATALOG_SHA256
+        )
+        generator.validate_pinned_source(
+            self.metadata, generator.EXPECTED_METADATA_SHA256
+        )
         rendered, excluded = generator.render(
             self.catalog, self.metadata, self.domains
         )
         self.assertEqual([], excluded)
         self.assertEqual(OUTPUT.read_text(encoding="utf-8"), rendered)
+
+    def test_changed_upstream_inputs_are_rejected(self) -> None:
+        changed_catalog = copy.deepcopy(self.catalog)
+        changed_catalog["glyphs"][0]["codepoint"] += 1
+        changed_metadata = copy.deepcopy(self.metadata)
+        changed_metadata["icons"][0]["tags"].append("unreviewed")
+        for source, checksum in (
+            (changed_catalog, generator.EXPECTED_CATALOG_SHA256),
+            (changed_metadata, generator.EXPECTED_METADATA_SHA256),
+        ):
+            with self.assertRaisesRegex(
+                generator.GenerationError, "input checksum mismatch"
+            ):
+                generator.validate_pinned_source(source, checksum)
+
+    def test_unexpected_codepoint_difference_is_rejected(self) -> None:
+        self.metadata["icons"][0]["codepoint"] += 1
+        with self.assertRaisesRegex(
+            generator.GenerationError, "codepoint mismatch set changed"
+        ):
+            generator.build_vocabulary(self.catalog, self.metadata, self.domains)
 
     def test_normalization_matches_runtime_contract(self) -> None:
         for source, expected in generator.NORMALIZATION_EXAMPLES.items():

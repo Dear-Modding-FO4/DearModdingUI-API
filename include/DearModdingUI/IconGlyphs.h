@@ -191,10 +191,14 @@ namespace DearModdingUI
 		{
 			MatchRank rank;
 			std::vector<char32_t> glyphs;
+			std::span<const char32_t> allowedGlyphs;
 
 			void Add(char32_t a_glyph, MatchRank a_rank)
 			{
-				if (!a_glyph)
+				if (!a_glyph ||
+					(!allowedGlyphs.empty() &&
+						std::ranges::find(allowedGlyphs, a_glyph) ==
+							allowedGlyphs.end()))
 					return;
 				if (rank < a_rank)
 				{
@@ -292,26 +296,29 @@ namespace DearModdingUI
 					++words;
 					const auto phrase =
 						std::string_view{ normalized }.substr(begin, end - begin);
-					AddMatches(
-						a_candidates,
-						kPhosphorIconGlyphs,
-						phrase,
-						{ 2, words, 2 });
-					AddMatches(
-						a_candidates,
-						kPhosphorIconAliases,
-						phrase,
-						{ 2, words, 2 });
-					AddMatches(
-						a_candidates,
-						kPhosphorIconDomainTerms,
-						phrase,
-						{ 2, words, 1 });
-					AddMatches(
-						a_candidates,
-						kPhosphorIconTags,
-						phrase,
-						{ 1, words, 0 });
+					if (phrase.size() > 1 || normalized.size() == 1)
+					{
+						AddMatches(
+							a_candidates,
+							kPhosphorIconGlyphs,
+							phrase,
+							{ 2, words, 2 });
+						AddMatches(
+							a_candidates,
+							kPhosphorIconAliases,
+							phrase,
+							{ 2, words, 2 });
+						AddMatches(
+							a_candidates,
+							kPhosphorIconDomainTerms,
+							phrase,
+							{ 2, words, 1 });
+						AddMatches(
+							a_candidates,
+							kPhosphorIconTags,
+							phrase,
+							{ 1, words, 0 });
+					}
 					if (separator == std::string::npos)
 						break;
 					end = separator + 1;
@@ -324,9 +331,10 @@ namespace DearModdingUI
 		}
 
 		[[nodiscard]] inline CandidateSet EvaluateGroup(
-			std::span<const std::string_view> a_metadata)
+			std::span<const std::string_view> a_metadata,
+			std::span<const char32_t> a_allowedGlyphs = {})
 		{
-			CandidateSet candidates;
+			CandidateSet candidates{ .allowedGlyphs = a_allowedGlyphs };
 			for (const auto value : a_metadata)
 				AddMetadataMatches(candidates, value);
 			return candidates;
@@ -384,23 +392,13 @@ namespace DearModdingUI
 			{
 				const auto secondary =
 					IconResolverDetail::EvaluateGroup(
-						a_request.secondaryMetadata);
-				if (!secondary.glyphs.empty())
-				{
-					std::vector<char32_t> narrowed;
-					for (const auto glyph : primary.glyphs)
-					{
-						if (std::ranges::find(
-								secondary.glyphs,
-								glyph) != secondary.glyphs.end())
-							narrowed.push_back(glyph);
-					}
-					if (narrowed.size() == 1)
-						return {
-							IconSelectionStatus::kSelected,
-							narrowed.front()
-						};
-				}
+						a_request.secondaryMetadata,
+						primary.glyphs);
+				if (secondary.glyphs.size() == 1)
+					return {
+						IconSelectionStatus::kSelected,
+						secondary.glyphs.front()
+					};
 				return { IconSelectionStatus::kAmbiguous, {} };
 			}
 
