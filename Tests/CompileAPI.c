@@ -17,6 +17,14 @@ DMUI_ImageDescriptor image_descriptor = {
 
 DMUI_CreateImageFn create_image;
 DMUI_UpdateImageFn update_image;
+DMUI_ResolveIconGlyphFn resolve_icon_glyph;
+
+DMUI_IconResolutionRequest icon_request = {
+	DMUI_ICON_RESOLUTION_REQUEST_0_1_SIZE,
+	"wrench",
+	"Graphics Settings",
+	"General"
+};
 
 DMUI_ExternalOpenDescriptor virtual_file = {
 	DMUI_EXTERNAL_OPEN_DESCRIPTOR_0_1_SIZE,

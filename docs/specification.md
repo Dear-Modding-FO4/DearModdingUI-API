@@ -67,8 +67,8 @@ Drawing wrappers record the first failure in a callback-scoped sticky result. Th
 
 ## Icon Resolution
 
-`IconResolver` is a game-independent, header-only selector backed by the
-generated Phosphor catalog. It resolves a valid explicit raw glyph or exact
+`IconResolver` is a game-independent, header-only snapshot utility backed by
+the generated Phosphor catalog. It resolves a valid explicit raw glyph or exact
 canonical/accepted alias first, then primary metadata, then secondary
 metadata. Full-label authoritative terms precede the longest whole
 authoritative phrase, which precedes the longest descriptive tag phrase.
@@ -99,9 +99,39 @@ An unknown or blank well-formed explicit name falls through to metadata.
 Malformed or oversized descriptor strings (over 128 bytes) still reject the
 descriptor. Raw zero remains no-icon for section/link operations, while an
 unset `SettingGroup::glyph` requests automatic inference. Invalid raw Unicode
-is not treated as a semantic miss. Older binaries retain the icon helper code
-they compiled; this pure inference change does not add a C ABI operation or
-replace helper behavior inside an already-built mod.
+is not treated as a semantic miss.
+
+The appended `DMUI_HostAPI::resolveIconGlyph` entry makes automatic client
+drawing host-authoritative. It is a stateless, thread-safe, no-render query
+over immutable host data and does not require host readiness, an active frame,
+or a client handle. `DMUI_IconResolutionRequest` is size-prefixed:
+`DMUI_ICON_RESOLUTION_REQUEST_0_1_SIZE` is the minimum accepted prefix and
+larger caller tails are ignored. `explicitName` is limited to 128 bytes and
+each metadata field to 256 bytes; null and empty are equivalent. Every string
+must terminate within its limit and may not contain bytes below `0x20` other
+than tab. A successful zero glyph means no match. Errors also zero a valid
+output pointer.
+
+`Client::ResolveIconGlyph(primaryMetadata, explicitName, secondaryMetadata)`
+requires a connected client so it can use the negotiated host table, although
+the underlying C operation itself has no lifecycle or thread-affinity
+requirement. It returns an engaged zero for a successful no-match and
+`std::nullopt` for failure, with `LastResult()` preserving the host result.
+Serialize access to a shared `Client` instance; unlike the underlying pure
+query, the wrapper updates mutable client state.
+Missing or short older host entries return `UNSUPPORTED_ABI`; there is no local
+resolver fallback.
+
+An automatic `SettingGroup` resolves its current label on each draw (or its key
+when the label is empty), then uses Question only for a successful no-match.
+A nonzero explicit glyph, including Question or an invalid raw scalar, is
+forwarded unchanged. Divider groups bypass resolution. Resolver errors fail the
+page draw; the existing host callback isolation permanently disables a page
+whose callback returns that failure. Mods need one rebuild to adopt this API
+path, after which future vocabulary changes are host-only. The header-only
+resolver remains useful for offline decisions, but
+`ResolveAutomaticIconGlyph` should not be used for host-authoritative drawing
+because its vocabulary remains compiled into the mod.
 
 ## External Open and Virtual Files
 

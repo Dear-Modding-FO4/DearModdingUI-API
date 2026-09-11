@@ -111,6 +111,34 @@ Build the example directly:
 xmake build example-plugin
 ```
 
+### Host-owned automatic icons
+
+Use the client query when procedural drawing needs the host's current icon
+vocabulary:
+
+```cpp
+bool DrawDisplayHeading(dmui::Client& client)
+{
+    const auto glyph = client.ResolveIconGlyph(
+        "Display Settings", nullptr, "Graphics");
+    if (!glyph)
+        return false;
+    return client.DrawSectionHeader(
+        "Display Settings",
+        *glyph ? *glyph : DearModdingUI::PhosphorGlyph::kQuestion);
+}
+```
+
+An engaged zero means the host found no match. A missing optional host entry or
+other failure returns `std::nullopt`; the wrapper never falls back to its local
+header vocabulary. `SettingGroup` performs this query automatically whenever
+its `glyph` is zero. Mods need one rebuild to adopt this path, then later host
+vocabulary updates apply without rebuilding the mod. Explicit nonzero glyphs
+and divider groups bypass automatic resolution. The underlying C query is
+thread-safe and performs no rendering. The C++ wrapper has no render-thread
+requirement, but calls sharing one `Client` must be serialized because they
+update its `LastResult()`.
+
 ---
 
 ## Documentation
@@ -129,7 +157,7 @@ xmake build example-plugin
 | `<DearModdingUI/Presentation.h>` | UI layout scopes, choice controls, and styled text helpers. |
 | `<DearModdingUI/API.h>` | Pure C ABI declarations for host interaction. |
 | `<DearModdingUI/CUIAPI.h>` | Low-level C function table for drawing primitives. |
-| `<DearModdingUI/IconGlyphs.h>` | Phosphor glyph constants and the catalog-driven semantic icon resolver. |
+| `<DearModdingUI/IconGlyphs.h>` | Phosphor glyph constants and offline catalog snapshot utilities. Prefer the host query for automatic client drawing. |
 
 ---
 

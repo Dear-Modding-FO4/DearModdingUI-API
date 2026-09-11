@@ -15,6 +15,13 @@ int main()
 	DMUI_HostAPI api{};
 	api.createImage = nullptr;
 	api.updateImage = nullptr;
+	api.resolveIconGlyph = nullptr;
+	const DMUI_IconResolutionRequest iconRequest{
+		sizeof(DMUI_IconResolutionRequest),
+		"wrench",
+		"Graphics Settings",
+		"General"
+	};
 	const DMUI_CategoryDescriptor category{
 		DMUI_CATEGORY_DESCRIPTOR_ICON_SIZE,
 		"lighting",
@@ -36,6 +43,7 @@ int main()
 		"sliders-horizontal"
 	};
 	return descriptor.structSize == DMUI_IMAGE_DESCRIPTOR_0_1_SIZE &&
+			iconRequest.structSize == DMUI_ICON_RESOLUTION_REQUEST_0_1_SIZE &&
 			category.structSize == sizeof(category) &&
 			page.structSize == sizeof(page) ?
 		0 :

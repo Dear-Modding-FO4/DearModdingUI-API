@@ -5,7 +5,7 @@
 
 // The single ABI layout guard for DMUI_HostAPI; the host compiles this file too.
 #if UINTPTR_MAX == UINT64_MAX
-static_assert(sizeof(DMUI_HostAPI) == 440);
+static_assert(sizeof(DMUI_HostAPI) == 448);
 static_assert(offsetof(DMUI_HostAPI, structSize) == 0);
 static_assert(offsetof(DMUI_HostAPI, hostAbiVersion) == 4);
 static_assert(offsetof(DMUI_HostAPI, apiVersion) == 8);
@@ -62,6 +62,7 @@ static_assert(offsetof(DMUI_HostAPI, updateImage) == 408);
 static_assert(offsetof(DMUI_HostAPI, registerCategory) == 416);
 static_assert(offsetof(DMUI_HostAPI, openExternal) == 424);
 static_assert(offsetof(DMUI_HostAPI, queryUIAPI) == 432);
+static_assert(offsetof(DMUI_HostAPI, resolveIconGlyph) == 440);
 static_assert(DMUI_HOST_API_REGISTER_CLIENT_SIZE == 24);
 static_assert(DMUI_HOST_API_SELECT_PAGE_SIZE == 72);
 static_assert(DMUI_HOST_API_ATTACH_SWAP_CHAIN_SIZE == 80);
@@ -109,7 +110,16 @@ static_assert(DMUI_HOST_API_CREATE_IMAGE_SIZE == 408);
 static_assert(DMUI_HOST_API_UPDATE_IMAGE_SIZE == 416);
 static_assert(DMUI_HOST_API_REGISTER_CATEGORY_SIZE == 424);
 static_assert(DMUI_HOST_API_OPEN_EXTERNAL_SIZE == 432);
-static_assert(DMUI_HOST_API_QUERY_UI_API_SIZE == sizeof(DMUI_HostAPI));
+static_assert(DMUI_HOST_API_QUERY_UI_API_SIZE == 440);
+static_assert(DMUI_HOST_API_RESOLVE_ICON_GLYPH_SIZE == sizeof(DMUI_HostAPI));
+static_assert(sizeof(DMUI_IconResolutionRequest) == 32);
+static_assert(offsetof(DMUI_IconResolutionRequest, structSize) == 0);
+static_assert(offsetof(DMUI_IconResolutionRequest, explicitName) == 8);
+static_assert(offsetof(DMUI_IconResolutionRequest, primaryMetadata) == 16);
+static_assert(offsetof(DMUI_IconResolutionRequest, secondaryMetadata) == 24);
+static_assert(
+	DMUI_ICON_RESOLUTION_REQUEST_0_1_SIZE ==
+	sizeof(DMUI_IconResolutionRequest));
 static_assert(sizeof(DMUI_PageDescriptor) == 72);
 static_assert(DMUI_PAGE_DESCRIPTOR_0_1_SIZE == 64);
 static_assert(DMUI_PAGE_DESCRIPTOR_ICON_SIZE == 72);

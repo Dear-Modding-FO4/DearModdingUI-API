@@ -2089,6 +2089,36 @@ namespace dmui
 			return lastResult_ == DMUI_RESULT_OK;
 		}
 
+		[[nodiscard]] std::optional<char32_t> ResolveIconGlyph(
+			const char* a_primaryMetadata,
+			const char* a_explicitName = nullptr,
+			const char* a_secondaryMetadata = nullptr) noexcept
+		{
+			if (!IsConnected())
+			{
+				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+				return std::nullopt;
+			}
+			if (api_->structSize < DMUI_HOST_API_RESOLVE_ICON_GLYPH_SIZE ||
+				!api_->resolveIconGlyph)
+			{
+				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
+				return std::nullopt;
+			}
+
+			const DMUI_IconResolutionRequest request{
+				sizeof(DMUI_IconResolutionRequest),
+				a_explicitName,
+				a_primaryMetadata,
+				a_secondaryMetadata
+			};
+			uint32_t glyph{};
+			lastResult_ = api_->resolveIconGlyph(&request, &glyph);
+			if (lastResult_ != DMUI_RESULT_OK)
+				return std::nullopt;
+			return static_cast<char32_t>(glyph);
+		}
+
 		[[nodiscard]] bool DrawBulletText(const char* a_text) noexcept
 		{
 			if (!IsConnected())
@@ -3607,10 +3637,17 @@ namespace dmui
 			else
 			{
 				const auto label = a_group.label.empty() ? key : a_group.label;
-				const auto glyph = DearModdingUI::ResolveAutomaticIconGlyph(
-					a_group.glyph,
-					label,
-					DearModdingUI::PhosphorGlyph::kQuestion);
+				auto glyph = a_group.glyph;
+				if (!glyph)
+				{
+					const auto resolved =
+						a_client.ResolveIconGlyph(label.c_str());
+					if (!resolved)
+						return false;
+					glyph = *resolved ?
+						*resolved :
+						DearModdingUI::PhosphorGlyph::kQuestion;
+				}
 				if (!a_client.DrawCollapsingSectionHeader(
 						key.c_str(),
 						label.c_str(),

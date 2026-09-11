@@ -787,6 +787,19 @@ typedef struct DMUI_DialogEvent
 #define DMUI_DIALOG_EVENT_0_1_SIZE \
 	((uint32_t)(offsetof(DMUI_DialogEvent, requiredTextCapacity) + sizeof(uint32_t)))
 
+typedef struct DMUI_IconResolutionRequest
+{
+	uint32_t structSize;
+	// Null or empty fields are equivalent. explicitName is limited to 128 bytes;
+	// metadata fields are limited to 256 bytes.
+	const char* explicitName;
+	const char* primaryMetadata;
+	const char* secondaryMetadata;
+} DMUI_IconResolutionRequest;
+
+#define DMUI_ICON_RESOLUTION_REQUEST_0_1_SIZE \
+	((uint32_t)(offsetof(DMUI_IconResolutionRequest, secondaryMetadata) + sizeof(const char*)))
+
 typedef DMUI_Result (DMUI_CALL *DMUI_RegisterClientFn)(
 	const DMUI_ClientDescriptor* descriptor,
 	DMUI_ClientHandle* client) DMUI_NOEXCEPT;
@@ -1038,6 +1051,11 @@ typedef DMUI_Result (DMUI_CALL *DMUI_QueryUIAPIFn)(
 	uint32_t minimumRevision,
 	uint32_t minimumTableSize,
 	DMUI_UIAPIInfo* info) DMUI_NOEXCEPT;
+// Pure, thread-safe query over immutable host icon data. A successful zero glyph
+// means no match; errors also leave glyph zero.
+typedef DMUI_Result (DMUI_CALL *DMUI_ResolveIconGlyphFn)(
+	const DMUI_IconResolutionRequest* request,
+	uint32_t* glyph) DMUI_NOEXCEPT;
 
 typedef struct DMUI_HostAPI
 {
@@ -1098,6 +1116,7 @@ typedef struct DMUI_HostAPI
 	DMUI_RegisterCategoryFn registerCategory;
 	DMUI_OpenExternalFn openExternal;
 	DMUI_QueryUIAPIFn queryUIAPI;
+	DMUI_ResolveIconGlyphFn resolveIconGlyph;
 } DMUI_HostAPI;
 
 #define DMUI_HOST_API_REGISTER_CLIENT_SIZE \
@@ -1196,6 +1215,8 @@ typedef struct DMUI_HostAPI
 	((uint32_t)(offsetof(DMUI_HostAPI, openExternal) + sizeof(DMUI_OpenExternalFn)))
 #define DMUI_HOST_API_QUERY_UI_API_SIZE \
 	((uint32_t)(offsetof(DMUI_HostAPI, queryUIAPI) + sizeof(DMUI_QueryUIAPIFn)))
+#define DMUI_HOST_API_RESOLVE_ICON_GLYPH_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, resolveIconGlyph) + sizeof(DMUI_ResolveIconGlyphFn)))
 
 #if defined(_MSC_VER)
 #pragma pack(pop)
