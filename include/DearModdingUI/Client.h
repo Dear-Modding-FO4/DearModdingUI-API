@@ -729,6 +729,13 @@ namespace dmui
 		Layout layout{ Layout::kLabelValue };
 	};
 
+	enum class FieldFeedbackSeverity : uint32_t
+	{
+		kInfo = DMUI_FIELD_FEEDBACK_SEVERITY_INFO,
+		kWarning = DMUI_FIELD_FEEDBACK_SEVERITY_WARNING,
+		kError = DMUI_FIELD_FEEDBACK_SEVERITY_ERROR
+	};
+
 	inline void DrawDivider() noexcept
 	{
 		ui::Separator();
@@ -1054,8 +1061,8 @@ namespace dmui
 	};
 
 	class FontGuard;
+	class FieldScope;
 	class SettingsTableScope;
-	class SettingsRowScope;
 
 	struct LabeledValueOptions
 	{
@@ -2413,10 +2420,10 @@ namespace dmui
 			return visible != 0;
 		}
 
-		[[nodiscard]] std::optional<bool> BeginSettingsRow(
+		[[nodiscard]] std::optional<bool> BeginField(
 			const char* a_id,
 			const char* a_label,
-			const char* a_description,
+			const char* a_description = nullptr,
 			RowPresentation::Layout a_layout =
 				RowPresentation::Layout::kLabelValue) noexcept
 		{
@@ -2425,73 +2432,81 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (api_->structSize < DMUI_HOST_API_END_SETTINGS_ROW_SIZE ||
-				!api_->endSettingsRow)
+			if (api_->structSize < DMUI_HOST_API_END_FIELD_SIZE ||
+				!api_->beginField || !api_->setFieldFeedback ||
+				!api_->endField)
 			{
 				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
 			}
-
+			const DMUI_FieldBeginOptions options{
+				sizeof(DMUI_FieldBeginOptions),
+				a_layout == RowPresentation::Layout::kFullSpan ?
+					DMUI_FIELD_LAYOUT_FULL_SPAN :
+					DMUI_FIELD_LAYOUT_LABEL_VALUE
+			};
 			uint32_t visible{};
-			if (api_->structSize >= DMUI_HOST_API_BEGIN_SETTINGS_ROW_EX_SIZE &&
-				api_->beginSettingsRowEx)
-			{
-				const DMUI_SettingsRowBeginOptions options{
-					sizeof(DMUI_SettingsRowBeginOptions),
-					a_layout == RowPresentation::Layout::kFullSpan ?
-						DMUI_SETTINGS_ROW_LAYOUT_FULL_SPAN :
-						DMUI_SETTINGS_ROW_LAYOUT_LABEL_VALUE
-				};
-				lastResult_ = api_->beginSettingsRowEx(
-					clientHandle_,
-					a_id,
-					a_label,
-					a_description,
-					&options,
-					&visible);
-			}
-			else if (api_->beginSettingsRow)
-			{
-				lastResult_ = api_->beginSettingsRow(
-					clientHandle_,
-					a_id,
-					a_label,
-					a_description,
-					&visible);
-			}
-			else
-			{
-				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
-				return std::nullopt;
-			}
+			lastResult_ = api_->beginField(
+				clientHandle_,
+				a_id,
+				a_label,
+				a_description,
+				&options,
+				&visible);
 			if (lastResult_ != DMUI_RESULT_OK)
 				return std::nullopt;
 			return visible != 0;
 		}
 
-		[[nodiscard]] std::optional<bool> EndSettingsRow(
-			bool a_resetVisible,
-			bool a_resetEnabled) noexcept
+		[[nodiscard]] bool SetFieldFeedback(
+			FieldFeedbackSeverity a_severity,
+			const char* a_message) noexcept
+		{
+			if (!IsConnected())
+				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			if (api_->structSize < DMUI_HOST_API_SET_FIELD_FEEDBACK_SIZE ||
+				!api_->setFieldFeedback)
+				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
+			const DMUI_FieldFeedback feedback{
+				sizeof(DMUI_FieldFeedback),
+				static_cast<DMUI_FieldFeedbackSeverity>(a_severity),
+				a_message
+			};
+			lastResult_ = api_->setFieldFeedback(
+				clientHandle_,
+				&feedback);
+			return lastResult_ == DMUI_RESULT_OK;
+		}
+
+		[[nodiscard]] bool ClearFieldFeedback() noexcept
+		{
+			return SetFieldFeedback(
+				FieldFeedbackSeverity::kInfo,
+				nullptr);
+		}
+
+		[[nodiscard]] std::optional<bool> EndField(
+			bool a_resetVisible = false,
+			bool a_resetEnabled = false) noexcept
 		{
 			if (!IsConnected())
 			{
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (api_->structSize < DMUI_HOST_API_END_SETTINGS_ROW_SIZE ||
-				!api_->endSettingsRow)
+			if (api_->structSize < DMUI_HOST_API_END_FIELD_SIZE ||
+				!api_->endField)
 			{
 				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
 			}
-
-			const DMUI_SettingsRowOptions options{
-				sizeof(DMUI_SettingsRowOptions),
+			const DMUI_FieldEndOptions options{
+				sizeof(DMUI_FieldEndOptions),
 				a_resetVisible ? 1u : 0u,
 				a_resetEnabled ? 1u : 0u
 			};
 			uint32_t resetPressed{};
-			lastResult_ = api_->endSettingsRow(
+			lastResult_ = api_->endField(
 				clientHandle_,
 				&options,
 				&resetPressed);
@@ -2586,8 +2601,8 @@ namespace dmui
 
 	private:
 		friend class FontGuard;
+		friend class FieldScope;
 		friend class SettingsTableScope;
-		friend class SettingsRowScope;
 		friend bool DrawStyledText(
 			Client&,
 			std::string_view,
@@ -2935,19 +2950,19 @@ namespace dmui
 		bool m_active{};
 	};
 
-	class SettingsRowScope
+	class FieldScope
 	{
 	public:
-		SettingsRowScope(
+		FieldScope(
 			Client& a_client,
 			const char* a_id,
 			const char* a_label,
-			const char* a_description,
+			const char* a_description = nullptr,
 			RowPresentation::Layout a_layout =
 				RowPresentation::Layout::kLabelValue) noexcept :
 			m_client(&a_client)
 		{
-			const auto begun = a_client.BeginSettingsRow(
+			const auto begun = a_client.BeginField(
 				a_id,
 				a_label,
 				a_description,
@@ -2961,7 +2976,7 @@ namespace dmui
 				m_resetPressed = false;
 		}
 
-		~SettingsRowScope() noexcept
+		~FieldScope() noexcept
 		{
 			if (!m_active)
 				return;
@@ -2971,10 +2986,10 @@ namespace dmui
 				m_client->SetPresentationResult(original);
 		}
 
-		SettingsRowScope(const SettingsRowScope&) = delete;
-		SettingsRowScope(SettingsRowScope&&) = delete;
-		SettingsRowScope& operator=(const SettingsRowScope&) = delete;
-		SettingsRowScope& operator=(SettingsRowScope&&) = delete;
+		FieldScope(const FieldScope&) = delete;
+		FieldScope(FieldScope&&) = delete;
+		FieldScope& operator=(const FieldScope&) = delete;
+		FieldScope& operator=(FieldScope&&) = delete;
 
 		[[nodiscard]] ScopeResult State() const noexcept
 		{
@@ -2991,6 +3006,22 @@ namespace dmui
 			return m_state.visible;
 		}
 
+		[[nodiscard]] bool SetFeedback(
+			FieldFeedbackSeverity a_severity,
+			const char* a_message) noexcept
+		{
+			if (!m_active)
+				return false;
+			return m_client->SetFieldFeedback(a_severity, a_message);
+		}
+
+		[[nodiscard]] bool ClearFeedback() noexcept
+		{
+			if (!m_active)
+				return false;
+			return m_client->ClearFieldFeedback();
+		}
+
 		[[nodiscard]] std::optional<bool> End(
 			bool a_resetVisible = false,
 			bool a_resetEnabled = false) noexcept
@@ -3002,7 +3033,7 @@ namespace dmui
 				return m_resetPressed;
 			}
 			m_active = false;
-			m_resetPressed = m_client->EndSettingsRow(
+			m_resetPressed = m_client->EndField(
 				a_resetVisible,
 				a_resetEnabled);
 			m_state.result = m_client->LastResult();
@@ -3504,7 +3535,7 @@ namespace dmui
 		}
 
 		[[nodiscard]] inline bool EndFallbackRow(
-			SettingsRowScope& a_row)
+			FieldScope& a_row)
 		{
 			{
 				const DisabledScope disabled;
@@ -3519,7 +3550,7 @@ namespace dmui
 		{
 			const auto& setting = *a_evaluated.setting;
 			const auto description = ResolveSettingDescription(setting);
-			SettingsRowScope row{
+			FieldScope row{
 				a_client,
 				setting.id.c_str(),
 				a_evaluated.label.c_str(),
@@ -3589,7 +3620,7 @@ namespace dmui
 			const EvaluatedAction& a_evaluated)
 		{
 			const auto& action = *a_evaluated.action;
-			SettingsRowScope row{
+			FieldScope row{
 				a_client,
 				action.id.c_str(),
 				a_evaluated.label.c_str(),

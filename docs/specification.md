@@ -60,10 +60,30 @@ Drawing wrappers record the first failure in a callback-scoped sticky result. Th
 
 ### Scopes and Choice Controls
 
-- `SettingsTableScope` and `SettingsRowScope`: RAII scopes managing the standard two-column layout. They end only the brackets they successfully opened. Idempotent `End()` calls return the cached state.
+- `SettingsTableScope`: Optional RAII grouping for the standard two-column settings layout.
+- `FieldScope`: The single RAII field bracket. Inside a settings table it creates the next row; outside one it owns equivalent standalone geometry. It ends only a bracket it successfully opened, and idempotent `End(showReset, resetEnabled)` calls return the cached Reset result.
 - `DisabledScope`: Manages `BeginDisabled` / `EndDisabled` pairs cleanly.
 - `TooltipScope`: Manages hover evaluation and `BeginTooltip` / `EndTooltip`.
 - `ChoiceOption<Value>`: Represents an option in `DrawChoice` with fields `value`, `label`, `key`, and `enabled`. Selection is type-deduced. If the active value does not match any entry, it renders an explicit "Unavailable" fallback without altering the underlying data.
+
+### Field Feedback
+
+`beginField` / `endField` work in settings-page and overlay-page drawing callbacks,
+inside a settings table or standalone. Dialog services expose no custom drawing
+callback. Only a successful begin with `visible != 0` requires an end.
+`DMUI_FieldBeginOptions` selects label/value (non-empty label required) or full-span
+geometry (label optional). Without a label column, under-label feedback uses the
+control region. `DMUI_FieldEndOptions` configures Reset; the client changes the value.
+
+`setFieldFeedback` accepts `DMUI_FieldFeedback`: Info, Warning, or Error plus a
+NUL-terminated UTF-8 message of at most 16 KiB. Text is copied until field end;
+the last call wins, and null/empty text or `ClearFeedback()` clears it. Supply it
+after edits for same-frame feedback; absence reserves no space. Invalid severity,
+size, ownership, or bracket state returns an error.
+
+The host only presents feedback, never validates values or controls saving.
+Users select placement (label, control, or strip; default strip) and severity colors.
+Text wraps with an inline severity prefix, so meaning is not color-only.
 
 ## Icon Resolution
 

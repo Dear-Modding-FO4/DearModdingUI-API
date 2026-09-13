@@ -139,7 +139,7 @@ namespace
 
 		// Setting 1: God rays checkbox
 		{
-			dmui::SettingsRowScope row{
+			dmui::FieldScope row{
 				a_client,
 				"god_rays",
 				"God Rays (Sunshafts)",
@@ -160,7 +160,7 @@ namespace
 
 		// Setting 2: Interior fog checkbox
 		{
-			dmui::SettingsRowScope row{
+			dmui::FieldScope row{
 				a_client,
 				"interior_fog",
 				"Interior Atmospheric Fog",
@@ -181,7 +181,7 @@ namespace
 
 		// Setting 3: God ray intensity slider
 		{
-			dmui::SettingsRowScope row{
+			dmui::FieldScope row{
 				a_client,
 				"ray_intensity",
 				"Light Shaft Intensity",
@@ -210,7 +210,7 @@ namespace
 
 		// Setting 4: Shadow softness slider
 		{
-			dmui::SettingsRowScope row{
+			dmui::FieldScope row{
 				a_client,
 				"shadow_softness",
 				"Ambient Shadow Softness",

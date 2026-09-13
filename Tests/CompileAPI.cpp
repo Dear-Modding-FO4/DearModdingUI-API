@@ -16,6 +16,9 @@ int main()
 	api.createImage = nullptr;
 	api.updateImage = nullptr;
 	api.resolveIconGlyph = nullptr;
+	api.beginField = nullptr;
+	api.setFieldFeedback = nullptr;
+	api.endField = nullptr;
 	const DMUI_IconResolutionRequest iconRequest{
 		sizeof(DMUI_IconResolutionRequest),
 		"wrench",

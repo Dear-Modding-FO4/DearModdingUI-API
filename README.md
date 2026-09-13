@@ -25,7 +25,7 @@ draw custom interfaces, and interact with the shared DearModdingUI host menu.
 - **Header-only C++ client**: Include `<DearModdingUI/Client.h>` to handle discovery, registration, and drawing.
 - **Stable C ABI**: Generated from `schema/ui-contract.json` with backward-compatibility baseline enforcement.
 - **Familiar drawing facade**: Draw controls using `dmui::ui::*` functions that mirror familiar ImGui APIs.
-- **Host theming and layouts**: Built-in helpers for standardized two-column settings rows, semantic color tones, and font scaling.
+- **Host theming and layouts**: Built-in helpers for standardized settings rows, standalone fields, semantic feedback, color tones, and font scaling.
 
 ---
 
@@ -100,7 +100,7 @@ void InitializeUI()
 A fully featured, compilable sample plugin is provided in [`examples/plugin/`](examples/plugin/):
 
 - **Multiple categories & icons**: Organizes pages under structured headings with custom Phosphor icon glyphs.
-- **Two-column settings tables**: Standardized layouts with row descriptions and reset buttons via `SettingsTableScope` and `SettingsRowScope`.
+- **Reusable fields**: `FieldScope` supports standalone controls and `SettingsTableScope` rows, with feedback and Reset.
 - **Dropdown choices**: Typed combo selectors using `DrawChoice`.
 - **Status & telemetry**: Status banners with `DrawStyledText`, live key-value readouts via `DrawLabeledValue`, and real-time graphs with `dmui::ui::PlotLines`.
 - **Global actions & notifications**: Registers palette commands and triggers toast notifications.

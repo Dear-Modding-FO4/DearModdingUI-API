@@ -33,25 +33,31 @@ dmui::ui::SliderScalar("##intensity", &intensity, &minVal, &maxVal, "%.2fx");
 
 ## Settings Tables and Rows
 
-To match the host theme, settings pages should format options using the standard two-column layout.
+Use `FieldScope` for labeled controls. An optional `SettingsTableScope` groups fields
+into standard two-column settings rows:
 
 ```cpp
 dmui::SettingsTableScope table{ client, "settings_table_id" };
 if (table.Visible())
 {
-    dmui::SettingsRowScope row{
+    dmui::FieldScope field{
         client,
         "setting_id",
         "Feature Name",
         "Detailed explanation of what this option does."
     };
 
-    if (row.Visible())
+    if (field.Visible())
     {
         dmui::ui::Checkbox("##setting_id", &currentValue);
+        if (needsRestart) {
+            field.SetFeedback(
+                dmui::FieldFeedbackSeverity::kInfo,
+                "Restart the game for changes to take effect.");
+        }
 
-        // row.End takes (canReset, isResetEnabled) and returns optional bool if clicked
-        const auto resetClicked = row.End(true, currentValue != defaultValue);
+        // End takes (showReset, resetEnabled) and reports whether Reset was clicked.
+        const auto resetClicked = field.End(true, currentValue != defaultValue);
         if (resetClicked.value_or(false)) {
             currentValue = defaultValue;
         }
@@ -60,6 +66,18 @@ if (table.Visible())
     table.End();
 }
 ```
+
+For standalone controls, use the same field without the table wrapper. Fields
+work in settings-page and overlay-page draw callbacks without a persistence binding.
+Feedback never changes value behavior; the client decides when to supply or clear
+it. See [Field Feedback](specification.md#field-feedback) for the full contract.
+
+### Host ABI 2 migration
+
+The prerelease `SettingsRowScope`, `BeginSettingsRow`, and `EndSettingsRow`
+interfaces were replaced by `FieldScope`, `BeginField`, and `EndField`.
+`FieldScope::End(showReset, resetEnabled)` preserves the former reset behavior.
+No change is needed to `SettingsTableScope`; ABI 1 clients must rebuild.
 
 ## Choice Dropdowns (`dmui::DrawChoice`)
 

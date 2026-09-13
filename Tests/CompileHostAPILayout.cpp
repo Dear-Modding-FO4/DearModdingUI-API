@@ -5,6 +5,7 @@
 
 // The single ABI layout guard for DMUI_HostAPI; the host compiles this file too.
 #if UINTPTR_MAX == UINT64_MAX
+static_assert(DMUI_HOST_ABI_CURRENT == DMUI_HOST_ABI_2);
 static_assert(sizeof(DMUI_HostAPI) == 448);
 static_assert(offsetof(DMUI_HostAPI, structSize) == 0);
 static_assert(offsetof(DMUI_HostAPI, hostAbiVersion) == 4);
@@ -35,10 +36,10 @@ static_assert(offsetof(DMUI_HostAPI, registerHotkeyAction) == 192);
 static_assert(offsetof(DMUI_HostAPI, queryHotkeyBinding) == 200);
 static_assert(offsetof(DMUI_HostAPI, unregisterHotkeyAction) == 208);
 static_assert(offsetof(DMUI_HostAPI, beginSettingsTable) == 216);
-static_assert(offsetof(DMUI_HostAPI, beginSettingsRow) == 224);
-static_assert(offsetof(DMUI_HostAPI, endSettingsRow) == 232);
-static_assert(offsetof(DMUI_HostAPI, endSettingsTable) == 240);
-static_assert(offsetof(DMUI_HostAPI, beginSettingsRowEx) == 248);
+static_assert(offsetof(DMUI_HostAPI, endSettingsTable) == 224);
+static_assert(offsetof(DMUI_HostAPI, beginField) == 232);
+static_assert(offsetof(DMUI_HostAPI, setFieldFeedback) == 240);
+static_assert(offsetof(DMUI_HostAPI, endField) == 248);
 static_assert(offsetof(DMUI_HostAPI, registerPageActivityObserver) == 256);
 static_assert(offsetof(DMUI_HostAPI, drawLinkRow) == 264);
 static_assert(offsetof(DMUI_HostAPI, drawFaq) == 272);
@@ -84,10 +85,10 @@ static_assert(DMUI_HOST_API_REGISTER_HOTKEY_ACTION_SIZE == 200);
 static_assert(DMUI_HOST_API_QUERY_HOTKEY_BINDING_SIZE == 208);
 static_assert(DMUI_HOST_API_UNREGISTER_HOTKEY_ACTION_SIZE == 216);
 static_assert(DMUI_HOST_API_BEGIN_SETTINGS_TABLE_SIZE == 224);
-static_assert(DMUI_HOST_API_BEGIN_SETTINGS_ROW_SIZE == 232);
-static_assert(DMUI_HOST_API_END_SETTINGS_ROW_SIZE == 240);
-static_assert(DMUI_HOST_API_END_SETTINGS_TABLE_SIZE == 248);
-static_assert(DMUI_HOST_API_BEGIN_SETTINGS_ROW_EX_SIZE == 256);
+static_assert(DMUI_HOST_API_END_SETTINGS_TABLE_SIZE == 232);
+static_assert(DMUI_HOST_API_BEGIN_FIELD_SIZE == 240);
+static_assert(DMUI_HOST_API_SET_FIELD_FEEDBACK_SIZE == 248);
+static_assert(DMUI_HOST_API_END_FIELD_SIZE == 256);
 static_assert(DMUI_HOST_API_REGISTER_PAGE_ACTIVITY_OBSERVER_SIZE == 264);
 static_assert(DMUI_HOST_API_DRAW_LINK_ROW_SIZE == 272);
 static_assert(DMUI_HOST_API_DRAW_FAQ_SIZE == 280);
@@ -144,4 +145,10 @@ static_assert(offsetof(DMUI_StyleMetrics, scrollbarSize) == 48);
 static_assert(offsetof(DMUI_StyleMetrics, fontSizeBase) == 52);
 static_assert(DMUI_STYLE_METRICS_0_1_SIZE == 52);
 static_assert(DMUI_STYLE_METRICS_FONT_SIZE_BASE_SIZE == sizeof(DMUI_StyleMetrics));
+static_assert(sizeof(DMUI_FieldBeginOptions) == 8);
+static_assert(DMUI_FIELD_BEGIN_OPTIONS_0_1_SIZE == sizeof(DMUI_FieldBeginOptions));
+static_assert(sizeof(DMUI_FieldEndOptions) == 12);
+static_assert(DMUI_FIELD_END_OPTIONS_0_1_SIZE == sizeof(DMUI_FieldEndOptions));
+static_assert(sizeof(DMUI_FieldFeedback) == 16);
+static_assert(DMUI_FIELD_FEEDBACK_0_1_SIZE == sizeof(DMUI_FieldFeedback));
 #endif
