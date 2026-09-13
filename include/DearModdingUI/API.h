@@ -30,8 +30,7 @@
 #define DMUI_API_VERSION_0_1 DMUI_MAKE_VERSION(0u, 1u)
 #define DMUI_API_VERSION_CURRENT DMUI_API_VERSION_0_1
 #define DMUI_HOST_ABI_1 1u
-#define DMUI_HOST_ABI_2 2u
-#define DMUI_HOST_ABI_CURRENT DMUI_HOST_ABI_2
+#define DMUI_HOST_ABI_CURRENT DMUI_HOST_ABI_1
 
 typedef uint32_t DMUI_Result;
 
@@ -261,6 +260,11 @@ typedef uint32_t DMUI_PageActivityKind;
 #define DMUI_PAGE_ACTIVITY_ACTIVATED 1u
 #define DMUI_PAGE_ACTIVITY_CHANGED 2u
 #define DMUI_PAGE_ACTIVITY_DEACTIVATED 3u
+
+typedef uint32_t DMUI_SettingsRowLayout;
+
+#define DMUI_SETTINGS_ROW_LAYOUT_LABEL_VALUE 0u
+#define DMUI_SETTINGS_ROW_LAYOUT_FULL_SPAN 1u
 
 typedef uint32_t DMUI_FieldLayout;
 
@@ -592,6 +596,25 @@ typedef struct DMUI_StyleMetrics
 	((uint32_t)(offsetof(DMUI_StyleMetrics, scrollbarSize) + sizeof(float)))
 #define DMUI_STYLE_METRICS_FONT_SIZE_BASE_SIZE \
 	((uint32_t)(offsetof(DMUI_StyleMetrics, fontSizeBase) + sizeof(float)))
+
+typedef struct DMUI_SettingsRowOptions
+{
+	uint32_t structSize;
+	uint32_t resetVisible;
+	uint32_t resetEnabled;
+} DMUI_SettingsRowOptions;
+
+#define DMUI_SETTINGS_ROW_OPTIONS_0_1_SIZE \
+	((uint32_t)(offsetof(DMUI_SettingsRowOptions, resetEnabled) + sizeof(uint32_t)))
+
+typedef struct DMUI_SettingsRowBeginOptions
+{
+	uint32_t structSize;
+	DMUI_SettingsRowLayout layout;
+} DMUI_SettingsRowBeginOptions;
+
+#define DMUI_SETTINGS_ROW_BEGIN_OPTIONS_0_1_SIZE \
+	((uint32_t)(offsetof(DMUI_SettingsRowBeginOptions, layout) + sizeof(DMUI_SettingsRowLayout)))
 
 typedef struct DMUI_FieldBeginOptions
 {
@@ -962,8 +985,25 @@ typedef DMUI_Result (DMUI_CALL *DMUI_BeginSettingsTableFn)(
 	DMUI_ClientHandle client,
 	const char* id,
 	uint32_t* visible) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_BeginSettingsRowFn)(
+	DMUI_ClientHandle client,
+	const char* id,
+	const char* label,
+	const char* description,
+	uint32_t* visible) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_EndSettingsRowFn)(
+	DMUI_ClientHandle client,
+	const DMUI_SettingsRowOptions* options,
+	uint32_t* resetPressed) DMUI_NOEXCEPT;
 typedef DMUI_Result (DMUI_CALL *DMUI_EndSettingsTableFn)(
 	DMUI_ClientHandle client) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_BeginSettingsRowExFn)(
+	DMUI_ClientHandle client,
+	const char* id,
+	const char* label,
+	const char* description,
+	const DMUI_SettingsRowBeginOptions* options,
+	uint32_t* visible) DMUI_NOEXCEPT;
 // Page activity observers are process-lifetime registrations invoked during shell drawing on the render thread.
 typedef DMUI_Result (DMUI_CALL *DMUI_RegisterPageActivityObserverFn)(
 	DMUI_ClientHandle client,
@@ -1111,10 +1151,10 @@ typedef struct DMUI_HostAPI
 	DMUI_QueryHotkeyBindingFn queryHotkeyBinding;
 	DMUI_UnregisterHotkeyActionFn unregisterHotkeyAction;
 	DMUI_BeginSettingsTableFn beginSettingsTable;
+	DMUI_BeginSettingsRowFn beginSettingsRow;
+	DMUI_EndSettingsRowFn endSettingsRow;
 	DMUI_EndSettingsTableFn endSettingsTable;
-	DMUI_BeginFieldFn beginField;
-	DMUI_SetFieldFeedbackFn setFieldFeedback;
-	DMUI_EndFieldFn endField;
+	DMUI_BeginSettingsRowExFn beginSettingsRowEx;
 	DMUI_RegisterPageActivityObserverFn registerPageActivityObserver;
 	DMUI_DrawLinkRowFn drawLinkRow;
 	DMUI_DrawFaqFn drawFaq;
@@ -1139,6 +1179,9 @@ typedef struct DMUI_HostAPI
 	DMUI_OpenExternalFn openExternal;
 	DMUI_QueryUIAPIFn queryUIAPI;
 	DMUI_ResolveIconGlyphFn resolveIconGlyph;
+	DMUI_BeginFieldFn beginField;
+	DMUI_SetFieldFeedbackFn setFieldFeedback;
+	DMUI_EndFieldFn endField;
 } DMUI_HostAPI;
 
 #define DMUI_HOST_API_REGISTER_CLIENT_SIZE \
@@ -1183,14 +1226,14 @@ typedef struct DMUI_HostAPI
 	((uint32_t)(offsetof(DMUI_HostAPI, unregisterHotkeyAction) + sizeof(DMUI_UnregisterHotkeyActionFn)))
 #define DMUI_HOST_API_BEGIN_SETTINGS_TABLE_SIZE \
 	((uint32_t)(offsetof(DMUI_HostAPI, beginSettingsTable) + sizeof(DMUI_BeginSettingsTableFn)))
+#define DMUI_HOST_API_BEGIN_SETTINGS_ROW_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, beginSettingsRow) + sizeof(DMUI_BeginSettingsRowFn)))
+#define DMUI_HOST_API_END_SETTINGS_ROW_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, endSettingsRow) + sizeof(DMUI_EndSettingsRowFn)))
 #define DMUI_HOST_API_END_SETTINGS_TABLE_SIZE \
 	((uint32_t)(offsetof(DMUI_HostAPI, endSettingsTable) + sizeof(DMUI_EndSettingsTableFn)))
-#define DMUI_HOST_API_BEGIN_FIELD_SIZE \
-	((uint32_t)(offsetof(DMUI_HostAPI, beginField) + sizeof(DMUI_BeginFieldFn)))
-#define DMUI_HOST_API_SET_FIELD_FEEDBACK_SIZE \
-	((uint32_t)(offsetof(DMUI_HostAPI, setFieldFeedback) + sizeof(DMUI_SetFieldFeedbackFn)))
-#define DMUI_HOST_API_END_FIELD_SIZE \
-	((uint32_t)(offsetof(DMUI_HostAPI, endField) + sizeof(DMUI_EndFieldFn)))
+#define DMUI_HOST_API_BEGIN_SETTINGS_ROW_EX_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, beginSettingsRowEx) + sizeof(DMUI_BeginSettingsRowExFn)))
 #define DMUI_HOST_API_REGISTER_PAGE_ACTIVITY_OBSERVER_SIZE \
 	((uint32_t)(offsetof(DMUI_HostAPI, registerPageActivityObserver) + sizeof(DMUI_RegisterPageActivityObserverFn)))
 #define DMUI_HOST_API_DRAW_LINK_ROW_SIZE \
@@ -1239,6 +1282,13 @@ typedef struct DMUI_HostAPI
 	((uint32_t)(offsetof(DMUI_HostAPI, queryUIAPI) + sizeof(DMUI_QueryUIAPIFn)))
 #define DMUI_HOST_API_RESOLVE_ICON_GLYPH_SIZE \
 	((uint32_t)(offsetof(DMUI_HostAPI, resolveIconGlyph) + sizeof(DMUI_ResolveIconGlyphFn)))
+#define DMUI_HOST_API_BEGIN_FIELD_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, beginField) + sizeof(DMUI_BeginFieldFn)))
+#define DMUI_HOST_API_SET_FIELD_FEEDBACK_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, setFieldFeedback) + sizeof(DMUI_SetFieldFeedbackFn)))
+#define DMUI_HOST_API_END_FIELD_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, endField) + sizeof(DMUI_EndFieldFn)))
+
 #if defined(_MSC_VER)
 #pragma pack(pop)
 #endif

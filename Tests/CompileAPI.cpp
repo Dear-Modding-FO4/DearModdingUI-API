@@ -16,6 +16,9 @@ int main()
 	api.createImage = nullptr;
 	api.updateImage = nullptr;
 	api.resolveIconGlyph = nullptr;
+	api.beginSettingsRow = nullptr;
+	api.endSettingsRow = nullptr;
+	api.beginSettingsRowEx = nullptr;
 	api.beginField = nullptr;
 	api.setFieldFeedback = nullptr;
 	api.endField = nullptr;

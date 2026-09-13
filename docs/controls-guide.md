@@ -72,12 +72,12 @@ work in settings-page and overlay-page draw callbacks without a persistence bind
 Feedback never changes value behavior; the client decides when to supply or clear
 it. See [Field Feedback](specification.md#field-feedback) for the full contract.
 
-### Host ABI 2 migration
+### Compatibility
 
-The prerelease `SettingsRowScope`, `BeginSettingsRow`, and `EndSettingsRow`
-interfaces were replaced by `FieldScope`, `BeginField`, and `EndField`.
-`FieldScope::End(showReset, resetEnabled)` preserves the former reset behavior.
-No change is needed to `SettingsTableScope`; ABI 1 clients must rebuild.
+Existing `SettingsRowScope`, `BeginSettingsRow`, and `EndSettingsRow` code works
+unchanged. `FieldScope` is optional for standalone fields and feedback. Older ABI 1
+hosts remain usable; field calls report unsupported when the appended entries are
+absent. Only binaries built against the withdrawn prerelease ABI 2 layout must rebuild.
 
 ## Choice Dropdowns (`dmui::DrawChoice`)
 
