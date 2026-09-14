@@ -736,6 +736,12 @@ namespace dmui
 		kError = DMUI_FIELD_FEEDBACK_SEVERITY_ERROR
 	};
 
+	struct FieldFeedback
+	{
+		FieldFeedbackSeverity severity{ FieldFeedbackSeverity::kInfo };
+		std::string message;
+	};
+
 	inline void DrawDivider() noexcept
 	{
 		ui::Separator();
@@ -763,6 +769,7 @@ namespace dmui
 		bool showReset{ true };
 		RowPresentation presentation;
 		std::function<std::string()> resolveDescription;
+		std::function<std::optional<FieldFeedback>()> resolveFeedback;
 	};
 
 	struct SettingsActionRow
@@ -3743,14 +3750,35 @@ namespace dmui
 				}));
 		}
 
+		[[nodiscard]] inline std::optional<bool> EndSettingRow(
+			Client& a_client,
+			const SettingDescriptor& a_setting,
+			SettingsRowScope& a_row,
+			bool a_resetVisible = false,
+			bool a_resetEnabled = false)
+		{
+			if (a_setting.resolveFeedback)
+			{
+				auto feedback = a_setting.resolveFeedback();
+				if (feedback && !feedback->message.empty() &&
+					!a_client.SetFieldFeedback(
+						feedback->severity,
+						feedback->message.c_str()))
+					return std::nullopt;
+			}
+			return a_row.End(a_resetVisible, a_resetEnabled);
+		}
+
 		[[nodiscard]] inline bool EndFallbackRow(
+			Client& a_client,
+			const SettingDescriptor& a_setting,
 			SettingsRowScope& a_row)
 		{
 			{
 				const DisabledScope disabled;
 				ui::TextUnformatted("Unsupported setting control.");
 			}
-			return a_row.End(false, false).has_value();
+			return EndSettingRow(a_client, a_setting, a_row).has_value();
 		}
 
 		[[nodiscard]] inline bool DrawSettingRow(
@@ -3774,7 +3802,7 @@ namespace dmui
 			const auto presentation =
 				ResolveSettingControlPresentation(setting.control);
 			if (!presentation.supported)
-				return EndFallbackRow(row);
+				return EndFallbackRow(a_client, setting, row);
 
 			const auto enabled =
 				!setting.isEnabled || setting.isEnabled();
@@ -3783,12 +3811,12 @@ namespace dmui
 				const auto& control =
 					std::get<ReadOnlySettingControl>(setting.control);
 				if (!control.draw)
-					return EndFallbackRow(row);
+					return EndFallbackRow(a_client, setting, row);
 				{
 					const DisabledScope disabled{ !enabled };
 					control.draw();
 				}
-				return row.End(false, false).has_value();
+				return EndSettingRow(a_client, setting, row).has_value();
 			}
 
 			if (!setting.binding.get ||
@@ -3796,7 +3824,7 @@ namespace dmui
 				!SettingValueMatchesControl(
 					setting.control,
 					setting.defaultValue))
-				return EndFallbackRow(row);
+				return EndFallbackRow(a_client, setting, row);
 
 			auto value = setting.binding.get();
 			if (!SettingValueMatchesControl(setting.control, value))
@@ -3815,8 +3843,12 @@ namespace dmui
 				!IsSettingDefault(setting, value);
 			const auto resetEnabled =
 				resetVisible && enabled && modified;
-			const auto reset =
-				row.End(resetVisible, resetEnabled);
+			const auto reset = EndSettingRow(
+				a_client,
+				setting,
+				row,
+				resetVisible,
+				resetEnabled);
 			if (!reset)
 				return false;
 			if (*reset)

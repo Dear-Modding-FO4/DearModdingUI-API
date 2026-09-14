@@ -72,6 +72,10 @@ work in settings-page and overlay-page draw callbacks without a persistence bind
 Feedback never changes value behavior; the client decides when to supply or clear
 it. See [Field Feedback](specification.md#field-feedback) for the full contract.
 
+`SettingDescriptor::resolveFeedback` returns optional `FieldFeedback` each visible
+frame, after control edits and before row end. Keep it fast and side-effect-free;
+Reset is reflected next frame.
+
 ### Compatibility
 
 Existing `SettingsRowScope`, `BeginSettingsRow`, and `EndSettingsRow` code works
