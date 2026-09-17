@@ -23,7 +23,8 @@ Drawing wrappers record the first failure in a callback-scoped sticky result. Th
 table. `PreflightHostAPI` verifies every function through that byte size before
 registration, in addition to semantic service checks and stable UI preflight.
 Set it to `DMUI_HOST_API_DRAW_TEXT_VIEW_SIZE` when the viewer and preceding host
-widgets are required.
+widgets are required, or `DMUI_HOST_API_DRAW_SEARCH_INPUT_BUFFER_SIZE` when
+growable C++ search input is required.
 
 API feature version 0.2 adds the text-view descriptors and monospace font role.
 The host table is only appended, so the host ABI remains ABI 1. Clients that do
@@ -46,10 +47,39 @@ are not rejected solely for compiling against the newer feature header.
 `DMUI_DrawSearchInputFn` edits the caller buffer directly. Capacity includes
 the NUL terminator and must be no greater than `INT_MAX`. Editing never truncates
 the existing value. New input is limited to the remaining capacity and may be
-inserted partially, clipped at a complete UTF-8 boundary. The C++ wrapper
-instead takes a maximum UTF-8 byte count excluding the terminator; it rejects
-an existing value beyond that maximum and a maximum of `INT_MAX` or greater.
-Search strings cannot contain embedded NUL bytes.
+inserted partially, clipped at a complete UTF-8 boundary. Hosts retain this
+entry as the fixed-buffer form of the same editing core used by
+`DMUI_DrawSearchInputBufferFn`.
+
+`DMUI_DrawSearchInputBufferFn` accepts `DMUI_TextBuffer`. A null resize callback
+retains the fixed-capacity behavior. A nonnull callback may replace the
+frame-local writable allocation during the draw so a large edit completes in
+the same frame. The callback receives a minimum capacity including the NUL and
+returns storage of at least that size while preserving prior bytes. It is
+nonreentrant, cannot issue drawing calls, and is valid only for the active draw
+call. The host retains no buffer, callback, or userdata pointer. Callback
+failure must leave the prior allocation and input data/capacity values intact.
+
+`TextInputBuffer` is the reusable C++ owner for this contract. It copies the
+input into a small padded candidate, grows geometrically through the callback,
+and limits all capacities to `INT_MAX`. Construction and callback failures are
+reported as `DMUI_Result`. After a successful draw it shrinks the candidate to
+the terminating NUL without allocation and swaps it into the caller string, so
+resize and draw failures preserve the original value.
+
+`Client::DrawSearchInput(id, hint, text)` uses a growable `TextInputBuffer`
+without an application cap. The overload with `maximumBytes` uses a fixed
+buffer of `maximumBytes + 1` and no resize callback. It rejects an existing
+value beyond the maximum and a maximum of `INT_MAX` or greater. Fixed insertion
+may accept a UTF-8-safe prefix but never truncates existing text. Both overloads
+reject embedded NUL bytes, require the appended
+`drawSearchInputBuffer` operation, and do not fall back to the legacy fixed C
+entry.
+
+The bundled native input widget intentionally suppresses single-line glyph
+rendering above 2 MiB. This limits display work only; it is not a wrapper cap
+and does not change the growable storage contract or the `INT_MAX` capacity
+representation bound.
 
 ### Read-Only Text View
 

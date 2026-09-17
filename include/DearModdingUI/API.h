@@ -573,6 +573,32 @@ typedef struct DMUI_Vec2
 	float y;
 } DMUI_Vec2;
 
+// The callback is valid only for the active draw call and is nonreentrant.
+// It must not issue drawing calls. On success it returns writable storage of at
+// least minimumCapacity bytes while preserving the prior bytes. On failure the
+// previous allocation and the input data/capacity values remain valid and
+// unchanged. The host retains no pointer after the draw call.
+typedef DMUI_Result (DMUI_CALL *DMUI_ResizeTextBufferFn)(
+	void* userData,
+	size_t minimumCapacity,
+	char** data,
+	size_t* capacity) DMUI_NOEXCEPT;
+
+// capacity includes the terminating NUL and must be in [1, INT_MAX]. data must
+// be NUL-terminated within capacity. A null resize callback makes the buffer
+// fixed-capacity; otherwise the host may request same-frame growth.
+typedef struct DMUI_TextBuffer
+{
+	uint32_t structSize;
+	char* data;
+	size_t capacity;
+	DMUI_ResizeTextBufferFn resize;
+	void* userData;
+} DMUI_TextBuffer;
+
+#define DMUI_TEXT_BUFFER_0_2_SIZE \
+	((uint32_t)(offsetof(DMUI_TextBuffer, userData) + sizeof(void*)))
+
 #define DMUI_TEXT_VIEW_NO_OFFSET SIZE_MAX
 
 // All pointers are borrowed only for drawTextView. text is immutable UTF-8
@@ -948,6 +974,15 @@ typedef DMUI_Result (DMUI_CALL *DMUI_DrawSearchInputFn)(
 	char* buffer,
 	size_t capacity,
 	uint32_t* changed) DMUI_NOEXCEPT;
+// The text buffer is borrowed only for this render-thread draw call. With a
+// resize callback, insertion may grow the buffer and complete in the same
+// frame. Without one, the fixed-capacity insertion semantics above apply.
+typedef DMUI_Result (DMUI_CALL *DMUI_DrawSearchInputBufferFn)(
+	DMUI_ClientHandle client,
+	const char* id,
+	const char* hint,
+	DMUI_TextBuffer* buffer,
+	uint32_t* changed) DMUI_NOEXCEPT;
 // Render-thread-only, valid only inside the owning page draw callback. Invalid
 // line or match offsets and short structures are errors. Stale presentation
 // revisions reset the state to no active match or reveal request. The host
@@ -1239,6 +1274,7 @@ typedef struct DMUI_HostAPI
 	DMUI_SetFieldFeedbackFn setFieldFeedback;
 	DMUI_EndFieldFn endField;
 	DMUI_DrawTextViewFn drawTextView;
+	DMUI_DrawSearchInputBufferFn drawSearchInputBuffer;
 } DMUI_HostAPI;
 
 #define DMUI_HOST_API_REGISTER_CLIENT_SIZE \
@@ -1347,6 +1383,8 @@ typedef struct DMUI_HostAPI
 	((uint32_t)(offsetof(DMUI_HostAPI, endField) + sizeof(DMUI_EndFieldFn)))
 #define DMUI_HOST_API_DRAW_TEXT_VIEW_SIZE \
 	((uint32_t)(offsetof(DMUI_HostAPI, drawTextView) + sizeof(DMUI_DrawTextViewFn)))
+#define DMUI_HOST_API_DRAW_SEARCH_INPUT_BUFFER_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, drawSearchInputBuffer) + sizeof(DMUI_DrawSearchInputBufferFn)))
 
 #if defined(_MSC_VER)
 #pragma pack(pop)

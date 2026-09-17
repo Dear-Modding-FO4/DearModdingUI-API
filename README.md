@@ -101,6 +101,7 @@ A fully featured, compilable sample plugin is provided in [`examples/plugin/`](e
 
 - **Multiple categories & icons**: Organizes pages under structured headings with custom Phosphor icon glyphs.
 - **Reusable fields**: `FieldScope` supports standalone controls and `SettingsTableScope` rows, with feedback and Reset.
+- **Growable search input**: `Client::DrawSearchInput` accepts large same-frame edits without a default text cap.
 - **Large text viewing**: `TextViewRequest` borrows pre-indexed UTF-8 text for clipped, scrollable rendering and exact byte-offset navigation.
 - **Dropdown choices**: Typed combo selectors using `DrawChoice`.
 - **Status & telemetry**: Status banners with `DrawStyledText`, live key-value readouts via `DrawLabeledValue`, and real-time graphs with `dmui::ui::PlotLines`.
@@ -154,6 +155,7 @@ update its `LastResult()`.
 | Header | Description |
 |---|---|
 | `<DearModdingUI/Client.h>` | High-level C++ client interface. Handles discovery, callbacks, and registration. |
+| `<DearModdingUI/TextInput.h>` | Frame-local owned text buffer with transactional fixed or growable storage. |
 | `<DearModdingUI/TextView.h>` | Large-text request state, match navigation, and wrapped jump-button layout. |
 | `<DearModdingUI/UI.h>` | Safe C++ drawing facade (`dmui::ui::*`). |
 | `<DearModdingUI/Presentation.h>` | UI layout scopes, choice controls, and styled text helpers. |

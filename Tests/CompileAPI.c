@@ -18,6 +18,16 @@ DMUI_ImageDescriptor image_descriptor = {
 DMUI_CreateImageFn create_image;
 DMUI_UpdateImageFn update_image;
 DMUI_ResolveIconGlyphFn resolve_icon_glyph;
+DMUI_DrawSearchInputBufferFn draw_search_input_buffer;
+DMUI_ResizeTextBufferFn resize_text_buffer;
+
+DMUI_TextBuffer text_buffer = {
+	DMUI_TEXT_BUFFER_0_2_SIZE,
+	0,
+	1u,
+	0,
+	0
+};
 
 DMUI_IconResolutionRequest icon_request = {
 	DMUI_ICON_RESOLUTION_REQUEST_0_1_SIZE,

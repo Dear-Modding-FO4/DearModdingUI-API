@@ -2,6 +2,7 @@
 
 #include <DearModdingUI/Presentation.h>
 #include <DearModdingUI/SettingsActions.h>
+#include <DearModdingUI/TextInput.h>
 #include <DearModdingUI/TextView.h>
 #include <DearModdingUI/UI.h>
 #include <DearModdingUI/VisualDecisions.h>
@@ -177,6 +178,9 @@ namespace dmui
 		DMUI_REQUIRE_HOST_ENTRY(setFieldFeedback, DMUI_HOST_API_SET_FIELD_FEEDBACK_SIZE);
 		DMUI_REQUIRE_HOST_ENTRY(endField, DMUI_HOST_API_END_FIELD_SIZE);
 		DMUI_REQUIRE_HOST_ENTRY(drawTextView, DMUI_HOST_API_DRAW_TEXT_VIEW_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(
+			drawSearchInputBuffer,
+			DMUI_HOST_API_DRAW_SEARCH_INPUT_BUFFER_SIZE);
 #undef DMUI_REQUIRE_HOST_ENTRY
 		return DMUI_RESULT_OK;
 	}
@@ -2267,56 +2271,26 @@ namespace dmui
 		[[nodiscard]] std::optional<bool> DrawSearchInput(
 			const char* a_id,
 			const char* a_hint,
+			std::string& a_search) noexcept
+		{
+			return DrawSearchInputImpl(
+				a_id,
+				a_hint,
+				a_search,
+				std::nullopt);
+		}
+
+		[[nodiscard]] std::optional<bool> DrawSearchInput(
+			const char* a_id,
+			const char* a_hint,
 			std::string& a_search,
 			size_t a_maximumBytes) noexcept
 		{
-			if (!IsConnected())
-			{
-				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-				return std::nullopt;
-			}
-			if (a_search.find('\0') != std::string::npos ||
-				a_search.size() > a_maximumBytes ||
-				a_maximumBytes >=
-					static_cast<size_t>((std::numeric_limits<int>::max)()))
-			{
-				Fail(DMUI_RESULT_INVALID_ARGUMENT);
-				return std::nullopt;
-			}
-			if (api_->structSize < DMUI_HOST_API_DRAW_SEARCH_INPUT_SIZE ||
-				!api_->drawSearchInput)
-			{
-				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
-				return std::nullopt;
-			}
-			try
-			{
-				std::vector<char> buffer(a_maximumBytes + 1);
-				std::copy(a_search.begin(), a_search.end(), buffer.begin());
-				uint32_t changed{};
-				lastResult_ = api_->drawSearchInput(
-					clientHandle_,
-					a_id,
-					a_hint,
-					buffer.data(),
-					buffer.size(),
-					&changed);
-				if (lastResult_ != DMUI_RESULT_OK)
-					return std::nullopt;
-				if (changed)
-					a_search.assign(buffer.data());
-				return changed != 0;
-			}
-			catch (const std::bad_alloc&)
-			{
-				Fail(DMUI_RESULT_RESOURCE_EXHAUSTED);
-				return std::nullopt;
-			}
-			catch (...)
-			{
-				Fail(DMUI_RESULT_CALLBACK_FAILED);
-				return std::nullopt;
-			}
+			return DrawSearchInputImpl(
+				a_id,
+				a_hint,
+				a_search,
+				a_maximumBytes);
 		}
 
 		[[nodiscard]] bool DrawTextView(
@@ -2886,6 +2860,47 @@ namespace dmui
 			LabeledValueOptions) noexcept;
 
 		using GetAPIFn = const DMUI_HostAPI* (DMUI_CALL*)(uint32_t) noexcept;
+
+		[[nodiscard]] std::optional<bool> DrawSearchInputImpl(
+			const char* a_id,
+			const char* a_hint,
+			std::string& a_search,
+			std::optional<size_t> a_maximumBytes) noexcept
+		{
+			if (!IsConnected())
+			{
+				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+				return std::nullopt;
+			}
+
+			TextInputBuffer buffer{ a_search, a_maximumBytes };
+			if (buffer.Result() != DMUI_RESULT_OK)
+			{
+				Fail(buffer.Result());
+				return std::nullopt;
+			}
+			if (api_->structSize <
+					DMUI_HOST_API_DRAW_SEARCH_INPUT_BUFFER_SIZE ||
+				!api_->drawSearchInputBuffer)
+			{
+				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
+				return std::nullopt;
+			}
+
+			uint32_t changed{};
+			lastResult_ = api_->drawSearchInputBuffer(
+				clientHandle_,
+				a_id,
+				a_hint,
+				buffer.Get(),
+				&changed);
+			if (lastResult_ != DMUI_RESULT_OK)
+				return std::nullopt;
+			lastResult_ = buffer.CommitTo(a_search);
+			if (lastResult_ != DMUI_RESULT_OK)
+				return std::nullopt;
+			return changed != 0;
+		}
 
 		struct PageRegistration
 		{

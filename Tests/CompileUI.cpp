@@ -65,6 +65,7 @@ void CompileStableUI()
 	dmui::TextViewState textState;
 
 	(void)client.HostPresent();
+	(void)client.DrawSearchInput("search", "Search", search);
 	(void)client.DrawSearchInput("search", "Search", search, 255);
 	(void)client.DrawTextView("preview", textRequest, textState);
 	(void)dmui::ui::BeginCombo("combo", "preview");

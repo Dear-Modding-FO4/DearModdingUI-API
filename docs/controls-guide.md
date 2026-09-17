@@ -33,12 +33,32 @@ dmui::ui::SliderScalar("##intensity", &intensity, &minVal, &maxVal, "%.2fx");
 
 ### Search and Read-Only Text
 
-`Client::DrawSearchInput` takes an explicit maximum UTF-8 byte count, excluding
-the terminating NUL. It rejects an existing string longer than that maximum,
-embedded NUL bytes, and a maximum of `INT_MAX` or greater. The raw C capacity,
-including the terminator, cannot exceed `INT_MAX`. Editing never truncates the
-existing value. New input is limited to the remaining capacity, so a paste may
-be inserted partially, clipped at a complete UTF-8 boundary.
+`Client::DrawSearchInput(id, hint, text)` is growable by default, with no
+application-level byte cap. It starts with a small frame-local writable buffer
+and can complete a large paste in the same frame by growing up to the backend
+limit of `INT_MAX` bytes including the terminating NUL. The caller's string is
+updated transactionally only after a successful draw; a resize or draw failure
+leaves it unchanged.
+
+The bundled backend currently suppresses single-line glyph rendering once the
+buffer exceeds 2 MiB. This is a display safeguard in the native input widget,
+not a wrapper storage cap; editing storage remains growable up to the backend
+capacity bound.
+
+Pass an explicit maximum UTF-8 byte count to request fixed-capacity behavior:
+
+```cpp
+client.DrawSearchInput("search", "Search", query, 512);
+```
+
+This allocates 513 writable bytes including the terminator and supplies no
+resize callback. New input is limited to the remaining capacity, so a paste may
+be inserted partially at a complete UTF-8 boundary. Existing text is never
+truncated. Both forms reject embedded NUL bytes. The bounded form also rejects
+an existing string longer than the maximum or a maximum of `INT_MAX` or greater.
+Both C++ overloads require the appended
+`DMUI_HOST_API_DRAW_SEARCH_INPUT_BUFFER_SIZE` host-table prefix and do not fall
+back to a separate editing implementation.
 
 For large immutable text, pass existing storage and indexes to the host-owned
 viewer:
