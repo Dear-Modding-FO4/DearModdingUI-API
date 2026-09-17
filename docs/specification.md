@@ -19,6 +19,17 @@ The required table prefix ends at `NewLine`. Subsequent slots are optional and a
 
 Drawing wrappers record the first failure in a callback-scoped sticky result. The trampoline passes this result back to the host, which disables the malfunctioning callback. Scope-end operations continue to dispatch so nested stacks unwind cleanly.
 
+`ClientOptions::minimumHostAPISize` applies the same prefix rule to the host
+table. `PreflightHostAPI` verifies every function through that byte size before
+registration, in addition to semantic service checks and stable UI preflight.
+Set it to `DMUI_HOST_API_DRAW_TEXT_VIEW_SIZE` when the viewer and preceding host
+widgets are required.
+
+API feature version 0.2 adds the text-view descriptors and monospace font role.
+The host table is only appended, so the host ABI remains ABI 1. Clients that do
+not require the appended viewer slot keep the default registration prefix and
+are not rejected solely for compiling against the newer feature header.
+
 ## Drawing Operations and Type Mapping
 
 | Dear ImGui Type | DearModdingUI Equivalent | Notes |
@@ -31,6 +42,42 @@ Drawing wrappers record the first failure in a callback-scoped sticky result. Th
 | `PushFont` | `dmui::FontGuard` | Takes a `DMUI_FontRole`, never raw font pointers. |
 
 `InputText`, `InputTextWithHint`, and `InputTextMultiline` accept standard buffer, capacity, and flag parameters, but omit native callback and userdata pointers across the ABI boundary.
+
+`DMUI_DrawSearchInputFn` edits the caller buffer directly. Capacity includes
+the NUL terminator and must be no greater than `INT_MAX`. Editing never truncates
+the existing value. New input is limited to the remaining capacity and may be
+inserted partially, clipped at a complete UTF-8 boundary. The C++ wrapper
+instead takes a maximum UTF-8 byte count excluding the terminator; it rejects
+an existing value beyond that maximum and a maximum of `INT_MAX` or greater.
+Search strings cannot contain embedded NUL bytes.
+
+### Read-Only Text View
+
+`drawTextView` owns the child region, vertical and horizontal scrolling,
+visible-line clipping, monospace font selection, and match highlighting.
+`DMUI_TextViewDescriptor` borrows immutable UTF-8 text, complete line-start
+offsets, sorted overlapping match offsets, a shared match byte length, stable
+content/search revisions, and the viewport. It performs no I/O or parsing and
+retains none of those pointers. Text cannot contain embedded NUL bytes. A
+nonzero match byte length is valid with zero match offsets, representing a
+nonempty query with no matches.
+
+`DMUI_TextViewState` contains only caller presentation state: revision identity,
+the active match index, and a one-shot byte offset to reveal. The C++ helpers
+reset stale state, wrap previous/next match selection, and route section or
+source navigation through the same reveal field. Stale state is reset rather
+than rejected. A direct section or source reveal clears the active search match.
+Invalid line, match, active, or reveal offsets return `DMUI_RESULT_INVALID_ARGUMENT`.
+
+`DrawTextViewNavigation` lays out a caller-owned span of section or source
+buttons with wrapping derived from `DMUI_StyleMetrics`. Each button is clamped
+to the available pane width. Clipped labels expose their full literal text,
+including `##`, in a hover tooltip. A projection supplies each label and byte
+offset; the helper introduces no separate anchor model.
+
+`DMUI_FONT_ROLE_MONOSPACE` is provisioned through the host's
+`AddFontDefaultVector` path. It never falls back to a configured proportional
+font family.
 
 ## Presentation Helpers
 

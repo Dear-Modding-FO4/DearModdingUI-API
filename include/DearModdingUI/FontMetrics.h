@@ -28,6 +28,7 @@ namespace DearModdingUI::Theme
 		kHeading,
 		kSubheading,
 		kSubtext,
+		kMonospace,
 		kCount
 	};
 
@@ -46,7 +47,9 @@ namespace DearModdingUI::Theme
 			FontRoleDefaults{ "title", "Jost", "SemiBold", "Jost\\Jost-SemiBold.ttf", 1.3f },
 			FontRoleDefaults{ "heading", "Jost", "Regular", "Jost\\Jost-Regular.ttf", 1.0f },
 			FontRoleDefaults{ "subheading", "Jost", "Regular", "Jost\\Jost-Regular.ttf", 1.0f },
-			FontRoleDefaults{ "subtext", "Jost", "Regular", "Jost\\Jost-Regular.ttf", 0.9f }
+			FontRoleDefaults{ "subtext", "Jost", "Regular", "Jost\\Jost-Regular.ttf", 0.9f },
+			// The empty file selects the host's AddFontDefaultVector path.
+			FontRoleDefaults{ "monospace", "ImGui", "Regular", "", 0.9f }
 		};
 
 	[[nodiscard]] inline float ResolveFontSize(uint32_t a_backBufferHeight) noexcept

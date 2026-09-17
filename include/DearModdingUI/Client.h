@@ -2,6 +2,7 @@
 
 #include <DearModdingUI/Presentation.h>
 #include <DearModdingUI/SettingsActions.h>
+#include <DearModdingUI/TextView.h>
 #include <DearModdingUI/UI.h>
 #include <DearModdingUI/VisualDecisions.h>
 #include <DearModdingUI/Win32Discovery.h>
@@ -58,6 +59,7 @@ namespace dmui
 		DMUI_HostServices requiredServices{ DMUI_HOST_SERVICE_NONE };
 		uint32_t minimumUIRevision{ DMUI_UI_REVISION_1 };
 		uint32_t minimumUIAPISize{ DMUI_UI_API_REQUIRED_SIZE };
+		uint32_t minimumHostAPISize{ DMUI_HOST_API_REGISTER_CLIENT_SIZE };
 	};
 
 	struct HostServices
@@ -67,6 +69,117 @@ namespace dmui
 		uint32_t uiRevision{};
 		uint32_t uiTableSize{};
 	};
+
+	[[nodiscard]] inline DMUI_Result ValidateHostOperationsThroughSize(
+		const DMUI_HostAPI* a_api,
+		uint32_t a_minimumSize) noexcept
+	{
+		if (!a_api)
+			return DMUI_RESULT_UNSUPPORTED_ABI;
+		if (a_minimumSize < DMUI_HOST_API_REGISTER_CLIENT_SIZE ||
+			a_minimumSize > sizeof(DMUI_HostAPI))
+			return DMUI_RESULT_INVALID_DESCRIPTOR;
+		if (a_api->structSize < a_minimumSize)
+			return DMUI_RESULT_STRUCT_TOO_SMALL;
+
+#define DMUI_REQUIRE_HOST_ENTRY(member, sizeName) \
+	if (a_minimumSize >= sizeName && !a_api->member) \
+		return DMUI_RESULT_UNSUPPORTED_ABI
+		DMUI_REQUIRE_HOST_ENTRY(registerClient, DMUI_HOST_API_REGISTER_CLIENT_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(
+			registerPage,
+			offsetof(DMUI_HostAPI, registerPage) + sizeof(DMUI_RegisterPageFn));
+		DMUI_REQUIRE_HOST_ENTRY(
+			queryState,
+			offsetof(DMUI_HostAPI, queryState) + sizeof(DMUI_QueryStateFn));
+		DMUI_REQUIRE_HOST_ENTRY(
+			requestFrame,
+			offsetof(DMUI_HostAPI, requestFrame) + sizeof(DMUI_RequestFrameFn));
+		DMUI_REQUIRE_HOST_ENTRY(
+			releaseFrame,
+			offsetof(DMUI_HostAPI, releaseFrame) + sizeof(DMUI_ReleaseFrameFn));
+		DMUI_REQUIRE_HOST_ENTRY(
+			isMenuVisible,
+			offsetof(DMUI_HostAPI, isMenuVisible) + sizeof(DMUI_IsMenuVisibleFn));
+		DMUI_REQUIRE_HOST_ENTRY(selectPage, DMUI_HOST_API_SELECT_PAGE_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(attachSwapChain, DMUI_HOST_API_ATTACH_SWAP_CHAIN_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(registerAction, DMUI_HOST_API_REGISTER_ACTION_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(setStatus, DMUI_HOST_API_SET_STATUS_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(getThemeColors, DMUI_HOST_API_GET_THEME_COLORS_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(pushFont, DMUI_HOST_API_PUSH_FONT_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(popFont, DMUI_HOST_API_POP_FONT_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(drawSectionHeader, DMUI_HOST_API_DRAW_SECTION_HEADER_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(drawSearchInput, DMUI_HOST_API_DRAW_SEARCH_INPUT_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(
+			drawCollapsingSectionHeader,
+			DMUI_HOST_API_DRAW_COLLAPSING_SECTION_HEADER_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(
+			drawSettingsActionButton,
+			DMUI_HOST_API_DRAW_SETTINGS_ACTION_BUTTON_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(
+			settingsActionButtonWidth,
+			DMUI_HOST_API_SETTINGS_ACTION_BUTTON_WIDTH_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(
+			settingsActionButtonExtent,
+			DMUI_HOST_API_SETTINGS_ACTION_BUTTON_EXTENT_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(
+			registerFrameObserver,
+			DMUI_HOST_API_REGISTER_FRAME_OBSERVER_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(queryVideoMemory, DMUI_HOST_API_QUERY_VIDEO_MEMORY_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(drawBulletText, DMUI_HOST_API_DRAW_BULLET_TEXT_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(
+			registerHotkeyAction,
+			DMUI_HOST_API_REGISTER_HOTKEY_ACTION_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(
+			queryHotkeyBinding,
+			DMUI_HOST_API_QUERY_HOTKEY_BINDING_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(
+			unregisterHotkeyAction,
+			DMUI_HOST_API_UNREGISTER_HOTKEY_ACTION_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(beginSettingsTable, DMUI_HOST_API_BEGIN_SETTINGS_TABLE_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(beginSettingsRow, DMUI_HOST_API_BEGIN_SETTINGS_ROW_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(endSettingsRow, DMUI_HOST_API_END_SETTINGS_ROW_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(endSettingsTable, DMUI_HOST_API_END_SETTINGS_TABLE_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(beginSettingsRowEx, DMUI_HOST_API_BEGIN_SETTINGS_ROW_EX_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(
+			registerPageActivityObserver,
+			DMUI_HOST_API_REGISTER_PAGE_ACTIVITY_OBSERVER_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(drawLinkRow, DMUI_HOST_API_DRAW_LINK_ROW_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(drawFaq, DMUI_HOST_API_DRAW_FAQ_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(reportDiagnostic, DMUI_HOST_API_REPORT_DIAGNOSTIC_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(queryServices, DMUI_HOST_API_QUERY_SERVICES_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(
+			setHotkeyActionEnabled,
+			DMUI_HOST_API_SET_HOTKEY_ACTION_ENABLED_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(importD3D11Image, DMUI_HOST_API_IMPORT_D3D11_IMAGE_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(drawImage, DMUI_HOST_API_DRAW_IMAGE_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(releaseImage, DMUI_HOST_API_RELEASE_IMAGE_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(queryImage, DMUI_HOST_API_QUERY_IMAGE_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(configureOverlay, DMUI_HOST_API_CONFIGURE_OVERLAY_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(queryOverlay, DMUI_HOST_API_QUERY_OVERLAY_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(postNotification, DMUI_HOST_API_POST_NOTIFICATION_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(
+			drawAnnotatedPlot,
+			DMUI_HOST_API_DRAW_ANNOTATED_PLOT_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(requestDialog, DMUI_HOST_API_REQUEST_DIALOG_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(pollDialogEvent, DMUI_HOST_API_POLL_DIALOG_EVENT_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(
+			resolveDialogSubmission,
+			DMUI_HOST_API_RESOLVE_DIALOG_SUBMISSION_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(cancelDialog, DMUI_HOST_API_CANCEL_DIALOG_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(createImage, DMUI_HOST_API_CREATE_IMAGE_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(updateImage, DMUI_HOST_API_UPDATE_IMAGE_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(registerCategory, DMUI_HOST_API_REGISTER_CATEGORY_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(openExternal, DMUI_HOST_API_OPEN_EXTERNAL_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(queryUIAPI, DMUI_HOST_API_QUERY_UI_API_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(resolveIconGlyph, DMUI_HOST_API_RESOLVE_ICON_GLYPH_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(beginField, DMUI_HOST_API_BEGIN_FIELD_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(setFieldFeedback, DMUI_HOST_API_SET_FIELD_FEEDBACK_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(endField, DMUI_HOST_API_END_FIELD_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(drawTextView, DMUI_HOST_API_DRAW_TEXT_VIEW_SIZE);
+#undef DMUI_REQUIRE_HOST_ENTRY
+		return DMUI_RESULT_OK;
+	}
 
 	[[nodiscard]] inline DMUI_Result PreflightHostAPI(
 		const DMUI_HostAPI* a_api,
@@ -80,11 +193,11 @@ namespace dmui
 			*a_uiAPI = nullptr;
 		if (!a_api)
 			return DMUI_RESULT_UNSUPPORTED_ABI;
-		constexpr auto registerClientSize =
-			offsetof(DMUI_HostAPI, registerClient) +
-			sizeof(DMUI_RegisterClientFn);
-		if (a_api->structSize < registerClientSize || !a_api->registerClient)
-			return DMUI_RESULT_STRUCT_TOO_SMALL;
+		const auto hostOperations = ValidateHostOperationsThroughSize(
+			a_api,
+			a_options.minimumHostAPISize);
+		if (hostOperations != DMUI_RESULT_OK)
+			return hostOperations;
 		if (a_api->hostAbiVersion != DMUI_HOST_ABI_CURRENT)
 			return DMUI_RESULT_UNSUPPORTED_ABI;
 		if ((a_options.capabilities &
@@ -2154,11 +2267,20 @@ namespace dmui
 		[[nodiscard]] std::optional<bool> DrawSearchInput(
 			const char* a_id,
 			const char* a_hint,
-			std::string& a_search) noexcept
+			std::string& a_search,
+			size_t a_maximumBytes) noexcept
 		{
 			if (!IsConnected())
 			{
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+				return std::nullopt;
+			}
+			if (a_search.find('\0') != std::string::npos ||
+				a_search.size() > a_maximumBytes ||
+				a_maximumBytes >=
+					static_cast<size_t>((std::numeric_limits<int>::max)()))
+			{
+				Fail(DMUI_RESULT_INVALID_ARGUMENT);
 				return std::nullopt;
 			}
 			if (api_->structSize < DMUI_HOST_API_DRAW_SEARCH_INPUT_SIZE ||
@@ -2167,11 +2289,9 @@ namespace dmui
 				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
 			}
-
 			try
 			{
-				const auto capacity = a_search.size() < 255 ? 256 : a_search.size() + 1;
-				std::vector<char> buffer(capacity);
+				std::vector<char> buffer(a_maximumBytes + 1);
 				std::copy(a_search.begin(), a_search.end(), buffer.begin());
 				uint32_t changed{};
 				lastResult_ = api_->drawSearchInput(
@@ -2197,6 +2317,55 @@ namespace dmui
 				Fail(DMUI_RESULT_CALLBACK_FAILED);
 				return std::nullopt;
 			}
+		}
+
+		[[nodiscard]] bool DrawTextView(
+			const char* a_id,
+			const TextViewRequest& a_request,
+			TextViewState& a_state) noexcept
+		{
+			if (!IsConnected())
+				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			if (api_->structSize < DMUI_HOST_API_DRAW_TEXT_VIEW_SIZE ||
+				!api_->drawTextView)
+				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
+
+			auto presentation = a_state;
+			SynchronizeTextViewState(a_request, presentation);
+			DMUI_TextViewDescriptor descriptor{
+				sizeof(DMUI_TextViewDescriptor),
+				a_id,
+				a_request.text.data(),
+				a_request.text.size(),
+				a_request.lineOffsets.data(),
+				a_request.lineOffsets.size(),
+				a_request.matchByteOffsets.data(),
+				a_request.matchByteOffsets.size(),
+				a_request.matchByteLength,
+				a_request.contentRevision,
+				a_request.matchRevision,
+				a_request.viewport
+			};
+			DMUI_TextViewState state{
+				sizeof(DMUI_TextViewState),
+				presentation.contentRevision,
+				presentation.matchRevision,
+				presentation.activeMatch,
+				presentation.revealByteOffset
+			};
+			lastResult_ = api_->drawTextView(
+				clientHandle_,
+				&descriptor,
+				&state);
+			if (lastResult_ != DMUI_RESULT_OK)
+				return false;
+			a_state = {
+				state.contentRevision,
+				state.matchRevision,
+				state.activeMatch,
+				state.revealByteOffset
+			};
+			return true;
 		}
 
 		[[nodiscard]] bool DrawCollapsingSectionHeader(

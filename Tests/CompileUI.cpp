@@ -1,7 +1,9 @@
 #include <DearModdingUI/Client.h>
 #include <DearModdingUI/UI.h>
 
+#include <array>
 #include <cstdint>
+#include <string>
 #include <type_traits>
 
 static_assert(std::is_standard_layout_v<dmui::ui::Vec2>);
@@ -12,6 +14,15 @@ static_assert(
 	static_cast<uint32_t>(dmui::ui::Color::kText) ==
 		DMUI_UI_COLOR_TEXT);
 static_assert(DMUI_UI_COLOR_TEXT != 0u);
+constexpr dmui::ClientOptions kPositionalClientOptions{
+	DMUI_CLIENT_CAPABILITY_NONE,
+	DMUI_HOST_SERVICE_NONE,
+	DMUI_UI_REVISION_1,
+	DMUI_UI_API_REQUIRED_SIZE
+};
+static_assert(
+	kPositionalClientOptions.minimumHostAPISize ==
+	DMUI_HOST_API_REGISTER_CLIENT_SIZE);
 
 [[nodiscard]] dmui::ChoiceSettingControl CompileUnmatchedChoiceLabel()
 {
@@ -35,15 +46,27 @@ void CompileStableUI()
 				DMUI_HOST_SERVICE_FRAME_CONTROL |
 				DMUI_HOST_SERVICE_IMAGE_RESOURCES,
 			.minimumUIRevision = DMUI_UI_REVISION_1,
-			.minimumUIAPISize = DMUI_UI_API_REQUIRED_SIZE
+			.minimumUIAPISize = DMUI_UI_API_REQUIRED_SIZE,
+			.minimumHostAPISize = DMUI_HOST_API_REGISTER_CLIENT_SIZE
 		}
 	};
 
 	bool selected{};
 	char multiline[128]{};
 	const float values[]{ 1.0f, 2.0f };
+	std::string search;
+	const std::array<size_t, 1> lineOffsets{ 0 };
+	const dmui::TextViewRequest textRequest{
+		.text = "Preview",
+		.lineOffsets = lineOffsets,
+		.contentRevision = 1,
+		.matchRevision = 1
+	};
+	dmui::TextViewState textState;
 
 	(void)client.HostPresent();
+	(void)client.DrawSearchInput("search", "Search", search, 255);
+	(void)client.DrawTextView("preview", textRequest, textState);
 	(void)dmui::ui::BeginCombo("combo", "preview");
 	dmui::ui::EndCombo();
 	(void)dmui::ui::Button("button");

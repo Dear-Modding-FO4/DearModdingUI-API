@@ -6,7 +6,7 @@
 // The single ABI layout guard for DMUI_HostAPI; the host compiles this file too.
 #if UINTPTR_MAX == UINT64_MAX
 static_assert(DMUI_HOST_ABI_CURRENT == DMUI_HOST_ABI_1);
-static_assert(sizeof(DMUI_HostAPI) == 472);
+static_assert(sizeof(DMUI_HostAPI) == 480);
 static_assert(offsetof(DMUI_HostAPI, structSize) == 0);
 static_assert(offsetof(DMUI_HostAPI, hostAbiVersion) == 4);
 static_assert(offsetof(DMUI_HostAPI, apiVersion) == 8);
@@ -67,6 +67,7 @@ static_assert(offsetof(DMUI_HostAPI, resolveIconGlyph) == 440);
 static_assert(offsetof(DMUI_HostAPI, beginField) == 448);
 static_assert(offsetof(DMUI_HostAPI, setFieldFeedback) == 456);
 static_assert(offsetof(DMUI_HostAPI, endField) == 464);
+static_assert(offsetof(DMUI_HostAPI, drawTextView) == 472);
 static_assert(DMUI_HOST_API_REGISTER_CLIENT_SIZE == 24);
 static_assert(DMUI_HOST_API_SELECT_PAGE_SIZE == 72);
 static_assert(DMUI_HOST_API_ATTACH_SWAP_CHAIN_SIZE == 80);
@@ -118,7 +119,12 @@ static_assert(DMUI_HOST_API_QUERY_UI_API_SIZE == 440);
 static_assert(DMUI_HOST_API_RESOLVE_ICON_GLYPH_SIZE == 448);
 static_assert(DMUI_HOST_API_BEGIN_FIELD_SIZE == 456);
 static_assert(DMUI_HOST_API_SET_FIELD_FEEDBACK_SIZE == 464);
-static_assert(DMUI_HOST_API_END_FIELD_SIZE == sizeof(DMUI_HostAPI));
+static_assert(DMUI_HOST_API_END_FIELD_SIZE == 472);
+static_assert(DMUI_HOST_API_DRAW_TEXT_VIEW_SIZE == sizeof(DMUI_HostAPI));
+static_assert(sizeof(DMUI_TextViewDescriptor) == 96);
+static_assert(DMUI_TEXT_VIEW_DESCRIPTOR_0_2_SIZE == 96);
+static_assert(sizeof(DMUI_TextViewState) == 40);
+static_assert(DMUI_TEXT_VIEW_STATE_0_2_SIZE == 40);
 static_assert(sizeof(DMUI_IconResolutionRequest) == 32);
 static_assert(offsetof(DMUI_IconResolutionRequest, structSize) == 0);
 static_assert(offsetof(DMUI_IconResolutionRequest, explicitName) == 8);

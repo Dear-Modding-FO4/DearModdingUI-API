@@ -31,6 +31,69 @@ float maxVal = 2.0f;
 dmui::ui::SliderScalar("##intensity", &intensity, &minVal, &maxVal, "%.2fx");
 ```
 
+### Search and Read-Only Text
+
+`Client::DrawSearchInput` takes an explicit maximum UTF-8 byte count, excluding
+the terminating NUL. It rejects an existing string longer than that maximum,
+embedded NUL bytes, and a maximum of `INT_MAX` or greater. The raw C capacity,
+including the terminator, cannot exceed `INT_MAX`. Editing never truncates the
+existing value. New input is limited to the remaining capacity, so a paste may
+be inserted partially, clipped at a complete UTF-8 boundary.
+
+For large immutable text, pass existing storage and indexes to the host-owned
+viewer:
+
+```cpp
+dmui::TextViewRequest request{
+    .text = reportText,
+    .lineOffsets = lineOffsets,
+    .matchByteOffsets = matchOffsets,
+    .matchByteLength = query.size(),
+    .contentRevision = reportGeneration,
+    .matchRevision = searchGeneration,
+    .viewport = { 0.0f, 420.0f }
+};
+
+static dmui::TextViewState state;
+if (nextPressed) {
+    dmui::SelectNextTextMatch(request, state);
+}
+if (sectionPressed) {
+    dmui::RevealTextOffset(request, state, sectionByteOffset);
+}
+client.DrawTextView("report-preview", request, state);
+```
+
+The arrays and text are borrowed only for the draw call. Line offsets enumerate
+every line start, including the final empty line after a trailing newline.
+Match offsets are sorted byte offsets and may overlap. Revisions invalidate
+stale active-match and reveal state by resetting it, not by failing the draw.
+All offsets must be UTF-8 boundaries, and text cannot contain embedded NUL
+bytes. A nonempty query may legitimately produce an empty match-offset span
+while retaining its nonzero byte length. Revealing a section or source offset
+clears the active search-match selection.
+
+`DrawTextViewNavigation` draws a caller-owned set of section or source jumps as
+buttons that wrap according to `DMUI_StyleMetrics`. Button widths are clamped to
+the available pane, and clipped labels retain their full text in a hover tooltip.
+Labels are rendered literally, including `##`. The projection returns a pair-like
+label and byte offset, so callers retain their own navigation model:
+
+```cpp
+const auto metrics = client.GetStyleMetrics();
+if (metrics) {
+    dmui::DrawTextViewNavigation(
+        "report-jumps",
+        std::span<const Section>{ sections },
+        *metrics,
+        request,
+        state,
+        [](const Section& section) {
+            return std::pair{ std::string_view{ section.label }, section.offset };
+        });
+}
+```
+
 ## Settings Tables and Rows
 
 Use `FieldScope` for labeled controls. An optional `SettingsTableScope` groups fields
@@ -79,9 +142,10 @@ Reset is reflected next frame.
 ### Compatibility
 
 Existing `SettingsRowScope`, `BeginSettingsRow`, and `EndSettingsRow` code works
-unchanged. `FieldScope` is optional for standalone fields and feedback. Older ABI 1
-hosts remain usable; field calls report unsupported when the appended entries are
-absent. Only binaries built against the withdrawn prerelease ABI 2 layout must rebuild.
+unchanged. `FieldScope` is optional for standalone fields and feedback. Appended
+host-table entries, the search-capacity wrapper, and the appended monospace font
+role retain host ABI 1. Clients that require the text viewer opt into its table
+prefix with `ClientOptions::minimumHostAPISize`.
 
 ## Choice Dropdowns (`dmui::DrawChoice`)
 
@@ -165,6 +229,10 @@ Available roles:
 - `DMUI_FONT_ROLE_HEADING`
 - `DMUI_FONT_ROLE_SUBHEADING`
 - `DMUI_FONT_ROLE_SUBTEXT`
+- `DMUI_FONT_ROLE_MONOSPACE`
+
+The monospace role is always the host's built-in default-vector font, provisioned
+through `AddFontDefaultVector`. It does not fall back to a proportional family.
 
 ## Notifications and Status
 
