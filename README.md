@@ -25,7 +25,7 @@ draw custom interfaces, and interact with the shared DearModdingUI host menu.
 - **Header-only C++ client**: Include `<DearModdingUI/Client.h>` to handle discovery, registration, and drawing.
 - **Stable C ABI**: Generated from `schema/ui-contract.json` with backward-compatibility baseline enforcement.
 - **Familiar drawing facade**: Draw controls using `dmui::ui::*` functions that mirror familiar ImGui APIs.
-- **Host theming and layouts**: Built-in helpers for standardized two-column settings rows, semantic color tones, and font scaling.
+- **Host theming and layouts**: Built-in helpers for standardized settings rows, standalone fields, semantic feedback, color tones, and font scaling.
 
 ---
 
@@ -100,7 +100,9 @@ void InitializeUI()
 A fully featured, compilable sample plugin is provided in [`examples/plugin/`](examples/plugin/):
 
 - **Multiple categories & icons**: Organizes pages under structured headings with custom Phosphor icon glyphs.
-- **Two-column settings tables**: Standardized layouts with row descriptions and reset buttons via `SettingsTableScope` and `SettingsRowScope`.
+- **Reusable fields**: `FieldScope` supports standalone controls and `SettingsTableScope` rows, with feedback and Reset.
+- **Growable search input**: `Client::DrawSearchInput` accepts large same-frame edits without a default text cap.
+- **Large text viewing**: `TextViewRequest` borrows pre-indexed UTF-8 text for clipped, scrollable rendering and exact byte-offset navigation.
 - **Dropdown choices**: Typed combo selectors using `DrawChoice`.
 - **Status & telemetry**: Status banners with `DrawStyledText`, live key-value readouts via `DrawLabeledValue`, and real-time graphs with `dmui::ui::PlotLines`.
 - **Global actions & notifications**: Registers palette commands and triggers toast notifications.
@@ -110,6 +112,34 @@ Build the example directly:
 ```powershell
 xmake build example-plugin
 ```
+
+### Host-owned automatic icons
+
+Use the client query when procedural drawing needs the host's current icon
+vocabulary:
+
+```cpp
+bool DrawDisplayHeading(dmui::Client& client)
+{
+    const auto glyph = client.ResolveIconGlyph(
+        "Display Settings", nullptr, "Graphics");
+    if (!glyph)
+        return false;
+    return client.DrawSectionHeader(
+        "Display Settings",
+        *glyph ? *glyph : DearModdingUI::PhosphorGlyph::kQuestion);
+}
+```
+
+An engaged zero means the host found no match. A missing optional host entry or
+other failure returns `std::nullopt`; the wrapper never falls back to its local
+header vocabulary. `SettingGroup` performs this query automatically whenever
+its `glyph` is zero. Mods need one rebuild to adopt this path, then later host
+vocabulary updates apply without rebuilding the mod. Explicit nonzero glyphs
+and divider groups bypass automatic resolution. The underlying C query is
+thread-safe and performs no rendering. The C++ wrapper has no render-thread
+requirement, but calls sharing one `Client` must be serialized because they
+update its `LastResult()`.
 
 ---
 
@@ -125,12 +155,14 @@ xmake build example-plugin
 | Header | Description |
 |---|---|
 | `<DearModdingUI/Client.h>` | High-level C++ client interface. Handles discovery, callbacks, and registration. |
+| `<DearModdingUI/TextInput.h>` | Frame-local owned text buffer with transactional fixed or growable storage. |
+| `<DearModdingUI/TextView.h>` | Large-text request state, match navigation, and wrapped jump-button layout. |
 | `<DearModdingUI/UI.h>` | Safe C++ drawing facade (`dmui::ui::*`). |
 | `<DearModdingUI/Presentation.h>` | Presentation umbrella for layout geometry, UI scopes, choice controls, and styled text helpers. |
 | `<DearModdingUI/Presentation/Layout.h>` | Reusable, renderer-independent geometry for icons, rows, and trailing actions. Also remains available through the legacy `<DearModdingUI/VisualDecisions.h>` include. |
 | `<DearModdingUI/API.h>` | Pure C ABI declarations for host interaction. |
 | `<DearModdingUI/CUIAPI.h>` | Low-level C function table for drawing primitives. |
-| `<DearModdingUI/IconGlyphs.h>` | Phosphor glyph constants and the catalog-driven semantic icon resolver. |
+| `<DearModdingUI/IconGlyphs.h>` | Phosphor glyph constants and offline catalog snapshot utilities. Prefer the host query for automatic client drawing. |
 
 ---
 

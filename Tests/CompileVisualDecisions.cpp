@@ -4,7 +4,7 @@
 #error VisualDecisions must not depend on Dear ImGui
 #endif
 
-static_assert(DearModdingUI::Theme::kFontRoleDefaults.size() == 5);
+static_assert(DearModdingUI::Theme::kFontRoleDefaults.size() == 6);
 static_assert(
 	DearModdingUI::ShouldDrawHeaderClose(false, true));
 

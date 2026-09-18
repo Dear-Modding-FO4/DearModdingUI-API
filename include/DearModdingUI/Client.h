@@ -3,6 +3,8 @@
 #include <DearModdingUI/Presentation/Layout.h>
 #include <DearModdingUI/Presentation.h>
 #include <DearModdingUI/SettingsActions.h>
+#include <DearModdingUI/TextInput.h>
+#include <DearModdingUI/TextView.h>
 #include <DearModdingUI/UI.h>
 #include <DearModdingUI/Win32Discovery.h>
 
@@ -58,6 +60,7 @@ namespace dmui
 		DMUI_HostServices requiredServices{ DMUI_HOST_SERVICE_NONE };
 		uint32_t minimumUIRevision{ DMUI_UI_REVISION_1 };
 		uint32_t minimumUIAPISize{ DMUI_UI_API_REQUIRED_SIZE };
+		uint32_t minimumHostAPISize{ DMUI_HOST_API_REGISTER_CLIENT_SIZE };
 	};
 
 	struct HostServices
@@ -67,6 +70,120 @@ namespace dmui
 		uint32_t uiRevision{};
 		uint32_t uiTableSize{};
 	};
+
+	[[nodiscard]] inline DMUI_Result ValidateHostOperationsThroughSize(
+		const DMUI_HostAPI* a_api,
+		uint32_t a_minimumSize) noexcept
+	{
+		if (!a_api)
+			return DMUI_RESULT_UNSUPPORTED_ABI;
+		if (a_minimumSize < DMUI_HOST_API_REGISTER_CLIENT_SIZE ||
+			a_minimumSize > sizeof(DMUI_HostAPI))
+			return DMUI_RESULT_INVALID_DESCRIPTOR;
+		if (a_api->structSize < a_minimumSize)
+			return DMUI_RESULT_STRUCT_TOO_SMALL;
+
+#define DMUI_REQUIRE_HOST_ENTRY(member, sizeName) \
+	if (a_minimumSize >= sizeName && !a_api->member) \
+		return DMUI_RESULT_UNSUPPORTED_ABI
+		DMUI_REQUIRE_HOST_ENTRY(registerClient, DMUI_HOST_API_REGISTER_CLIENT_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(
+			registerPage,
+			offsetof(DMUI_HostAPI, registerPage) + sizeof(DMUI_RegisterPageFn));
+		DMUI_REQUIRE_HOST_ENTRY(
+			queryState,
+			offsetof(DMUI_HostAPI, queryState) + sizeof(DMUI_QueryStateFn));
+		DMUI_REQUIRE_HOST_ENTRY(
+			requestFrame,
+			offsetof(DMUI_HostAPI, requestFrame) + sizeof(DMUI_RequestFrameFn));
+		DMUI_REQUIRE_HOST_ENTRY(
+			releaseFrame,
+			offsetof(DMUI_HostAPI, releaseFrame) + sizeof(DMUI_ReleaseFrameFn));
+		DMUI_REQUIRE_HOST_ENTRY(
+			isMenuVisible,
+			offsetof(DMUI_HostAPI, isMenuVisible) + sizeof(DMUI_IsMenuVisibleFn));
+		DMUI_REQUIRE_HOST_ENTRY(selectPage, DMUI_HOST_API_SELECT_PAGE_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(attachSwapChain, DMUI_HOST_API_ATTACH_SWAP_CHAIN_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(registerAction, DMUI_HOST_API_REGISTER_ACTION_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(setStatus, DMUI_HOST_API_SET_STATUS_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(getThemeColors, DMUI_HOST_API_GET_THEME_COLORS_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(pushFont, DMUI_HOST_API_PUSH_FONT_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(popFont, DMUI_HOST_API_POP_FONT_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(drawSectionHeader, DMUI_HOST_API_DRAW_SECTION_HEADER_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(drawSearchInput, DMUI_HOST_API_DRAW_SEARCH_INPUT_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(
+			drawCollapsingSectionHeader,
+			DMUI_HOST_API_DRAW_COLLAPSING_SECTION_HEADER_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(
+			drawSettingsActionButton,
+			DMUI_HOST_API_DRAW_SETTINGS_ACTION_BUTTON_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(
+			settingsActionButtonWidth,
+			DMUI_HOST_API_SETTINGS_ACTION_BUTTON_WIDTH_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(
+			settingsActionButtonExtent,
+			DMUI_HOST_API_SETTINGS_ACTION_BUTTON_EXTENT_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(
+			registerFrameObserver,
+			DMUI_HOST_API_REGISTER_FRAME_OBSERVER_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(queryVideoMemory, DMUI_HOST_API_QUERY_VIDEO_MEMORY_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(drawBulletText, DMUI_HOST_API_DRAW_BULLET_TEXT_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(
+			registerHotkeyAction,
+			DMUI_HOST_API_REGISTER_HOTKEY_ACTION_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(
+			queryHotkeyBinding,
+			DMUI_HOST_API_QUERY_HOTKEY_BINDING_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(
+			unregisterHotkeyAction,
+			DMUI_HOST_API_UNREGISTER_HOTKEY_ACTION_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(beginSettingsTable, DMUI_HOST_API_BEGIN_SETTINGS_TABLE_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(beginSettingsRow, DMUI_HOST_API_BEGIN_SETTINGS_ROW_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(endSettingsRow, DMUI_HOST_API_END_SETTINGS_ROW_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(endSettingsTable, DMUI_HOST_API_END_SETTINGS_TABLE_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(beginSettingsRowEx, DMUI_HOST_API_BEGIN_SETTINGS_ROW_EX_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(
+			registerPageActivityObserver,
+			DMUI_HOST_API_REGISTER_PAGE_ACTIVITY_OBSERVER_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(drawLinkRow, DMUI_HOST_API_DRAW_LINK_ROW_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(drawFaq, DMUI_HOST_API_DRAW_FAQ_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(reportDiagnostic, DMUI_HOST_API_REPORT_DIAGNOSTIC_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(queryServices, DMUI_HOST_API_QUERY_SERVICES_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(
+			setHotkeyActionEnabled,
+			DMUI_HOST_API_SET_HOTKEY_ACTION_ENABLED_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(importD3D11Image, DMUI_HOST_API_IMPORT_D3D11_IMAGE_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(drawImage, DMUI_HOST_API_DRAW_IMAGE_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(releaseImage, DMUI_HOST_API_RELEASE_IMAGE_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(queryImage, DMUI_HOST_API_QUERY_IMAGE_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(configureOverlay, DMUI_HOST_API_CONFIGURE_OVERLAY_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(queryOverlay, DMUI_HOST_API_QUERY_OVERLAY_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(postNotification, DMUI_HOST_API_POST_NOTIFICATION_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(
+			drawAnnotatedPlot,
+			DMUI_HOST_API_DRAW_ANNOTATED_PLOT_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(requestDialog, DMUI_HOST_API_REQUEST_DIALOG_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(pollDialogEvent, DMUI_HOST_API_POLL_DIALOG_EVENT_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(
+			resolveDialogSubmission,
+			DMUI_HOST_API_RESOLVE_DIALOG_SUBMISSION_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(cancelDialog, DMUI_HOST_API_CANCEL_DIALOG_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(createImage, DMUI_HOST_API_CREATE_IMAGE_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(updateImage, DMUI_HOST_API_UPDATE_IMAGE_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(registerCategory, DMUI_HOST_API_REGISTER_CATEGORY_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(openExternal, DMUI_HOST_API_OPEN_EXTERNAL_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(queryUIAPI, DMUI_HOST_API_QUERY_UI_API_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(resolveIconGlyph, DMUI_HOST_API_RESOLVE_ICON_GLYPH_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(beginField, DMUI_HOST_API_BEGIN_FIELD_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(setFieldFeedback, DMUI_HOST_API_SET_FIELD_FEEDBACK_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(endField, DMUI_HOST_API_END_FIELD_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(drawTextView, DMUI_HOST_API_DRAW_TEXT_VIEW_SIZE);
+		DMUI_REQUIRE_HOST_ENTRY(
+			drawSearchInputBuffer,
+			DMUI_HOST_API_DRAW_SEARCH_INPUT_BUFFER_SIZE);
+#undef DMUI_REQUIRE_HOST_ENTRY
+		return DMUI_RESULT_OK;
+	}
 
 	[[nodiscard]] inline DMUI_Result PreflightHostAPI(
 		const DMUI_HostAPI* a_api,
@@ -80,11 +197,11 @@ namespace dmui
 			*a_uiAPI = nullptr;
 		if (!a_api)
 			return DMUI_RESULT_UNSUPPORTED_ABI;
-		constexpr auto registerClientSize =
-			offsetof(DMUI_HostAPI, registerClient) +
-			sizeof(DMUI_RegisterClientFn);
-		if (a_api->structSize < registerClientSize || !a_api->registerClient)
-			return DMUI_RESULT_STRUCT_TOO_SMALL;
+		const auto hostOperations = ValidateHostOperationsThroughSize(
+			a_api,
+			a_options.minimumHostAPISize);
+		if (hostOperations != DMUI_RESULT_OK)
+			return hostOperations;
 		if (a_api->hostAbiVersion != DMUI_HOST_ABI_CURRENT)
 			return DMUI_RESULT_UNSUPPORTED_ABI;
 		if ((a_options.capabilities &
@@ -729,6 +846,19 @@ namespace dmui
 		Layout layout{ Layout::kLabelValue };
 	};
 
+	enum class FieldFeedbackSeverity : uint32_t
+	{
+		kInfo = DMUI_FIELD_FEEDBACK_SEVERITY_INFO,
+		kWarning = DMUI_FIELD_FEEDBACK_SEVERITY_WARNING,
+		kError = DMUI_FIELD_FEEDBACK_SEVERITY_ERROR
+	};
+
+	struct FieldFeedback
+	{
+		FieldFeedbackSeverity severity{ FieldFeedbackSeverity::kInfo };
+		std::string message;
+	};
+
 	inline void DrawDivider() noexcept
 	{
 		ui::Separator();
@@ -756,6 +886,7 @@ namespace dmui
 		bool showReset{ true };
 		RowPresentation presentation;
 		std::function<std::string()> resolveDescription;
+		std::function<std::optional<FieldFeedback>()> resolveFeedback;
 	};
 
 	struct SettingsActionRow
@@ -1054,8 +1185,14 @@ namespace dmui
 	};
 
 	class FontGuard;
+	class FieldScope;
 	class SettingsTableScope;
 	class SettingsRowScope;
+	namespace presentation_detail
+	{
+		template <auto>
+		class FieldScopeState;
+	}
 
 	struct LabeledValueOptions
 	{
@@ -2089,6 +2226,36 @@ namespace dmui
 			return lastResult_ == DMUI_RESULT_OK;
 		}
 
+		[[nodiscard]] std::optional<char32_t> ResolveIconGlyph(
+			const char* a_primaryMetadata,
+			const char* a_explicitName = nullptr,
+			const char* a_secondaryMetadata = nullptr) noexcept
+		{
+			if (!IsConnected())
+			{
+				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+				return std::nullopt;
+			}
+			if (api_->structSize < DMUI_HOST_API_RESOLVE_ICON_GLYPH_SIZE ||
+				!api_->resolveIconGlyph)
+			{
+				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
+				return std::nullopt;
+			}
+
+			const DMUI_IconResolutionRequest request{
+				sizeof(DMUI_IconResolutionRequest),
+				a_explicitName,
+				a_primaryMetadata,
+				a_secondaryMetadata
+			};
+			uint32_t glyph{};
+			lastResult_ = api_->resolveIconGlyph(&request, &glyph);
+			if (lastResult_ != DMUI_RESULT_OK)
+				return std::nullopt;
+			return static_cast<char32_t>(glyph);
+		}
+
 		[[nodiscard]] bool DrawBulletText(const char* a_text) noexcept
 		{
 			if (!IsConnected())
@@ -2106,47 +2273,73 @@ namespace dmui
 			const char* a_hint,
 			std::string& a_search) noexcept
 		{
-			if (!IsConnected())
-			{
-				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-				return std::nullopt;
-			}
-			if (api_->structSize < DMUI_HOST_API_DRAW_SEARCH_INPUT_SIZE ||
-				!api_->drawSearchInput)
-			{
-				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
-				return std::nullopt;
-			}
+			return DrawSearchInputImpl(
+				a_id,
+				a_hint,
+				a_search,
+				std::nullopt);
+		}
 
-			try
-			{
-				const auto capacity = a_search.size() < 255 ? 256 : a_search.size() + 1;
-				std::vector<char> buffer(capacity);
-				std::copy(a_search.begin(), a_search.end(), buffer.begin());
-				uint32_t changed{};
-				lastResult_ = api_->drawSearchInput(
-					clientHandle_,
-					a_id,
-					a_hint,
-					buffer.data(),
-					buffer.size(),
-					&changed);
-				if (lastResult_ != DMUI_RESULT_OK)
-					return std::nullopt;
-				if (changed)
-					a_search.assign(buffer.data());
-				return changed != 0;
-			}
-			catch (const std::bad_alloc&)
-			{
-				Fail(DMUI_RESULT_RESOURCE_EXHAUSTED);
-				return std::nullopt;
-			}
-			catch (...)
-			{
-				Fail(DMUI_RESULT_CALLBACK_FAILED);
-				return std::nullopt;
-			}
+		[[nodiscard]] std::optional<bool> DrawSearchInput(
+			const char* a_id,
+			const char* a_hint,
+			std::string& a_search,
+			size_t a_maximumBytes) noexcept
+		{
+			return DrawSearchInputImpl(
+				a_id,
+				a_hint,
+				a_search,
+				a_maximumBytes);
+		}
+
+		[[nodiscard]] bool DrawTextView(
+			const char* a_id,
+			const TextViewRequest& a_request,
+			TextViewState& a_state) noexcept
+		{
+			if (!IsConnected())
+				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			if (api_->structSize < DMUI_HOST_API_DRAW_TEXT_VIEW_SIZE ||
+				!api_->drawTextView)
+				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
+
+			auto presentation = a_state;
+			SynchronizeTextViewState(a_request, presentation);
+			DMUI_TextViewDescriptor descriptor{
+				sizeof(DMUI_TextViewDescriptor),
+				a_id,
+				a_request.text.data(),
+				a_request.text.size(),
+				a_request.lineOffsets.data(),
+				a_request.lineOffsets.size(),
+				a_request.matchByteOffsets.data(),
+				a_request.matchByteOffsets.size(),
+				a_request.matchByteLength,
+				a_request.contentRevision,
+				a_request.matchRevision,
+				a_request.viewport
+			};
+			DMUI_TextViewState state{
+				sizeof(DMUI_TextViewState),
+				presentation.contentRevision,
+				presentation.matchRevision,
+				presentation.activeMatch,
+				presentation.revealByteOffset
+			};
+			lastResult_ = api_->drawTextView(
+				clientHandle_,
+				&descriptor,
+				&state);
+			if (lastResult_ != DMUI_RESULT_OK)
+				return false;
+			a_state = {
+				state.contentRevision,
+				state.matchRevision,
+				state.activeMatch,
+				state.revealByteOffset
+			};
+			return true;
 		}
 
 		[[nodiscard]] bool DrawCollapsingSectionHeader(
@@ -2470,6 +2663,101 @@ namespace dmui
 			return resetPressed != 0;
 		}
 
+		[[nodiscard]] std::optional<bool> BeginField(
+			const char* a_id,
+			const char* a_label,
+			const char* a_description = nullptr,
+			RowPresentation::Layout a_layout =
+				RowPresentation::Layout::kLabelValue) noexcept
+		{
+			if (!IsConnected())
+			{
+				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+				return std::nullopt;
+			}
+			if (api_->structSize < DMUI_HOST_API_END_FIELD_SIZE ||
+				!api_->beginField || !api_->setFieldFeedback ||
+				!api_->endField)
+			{
+				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
+				return std::nullopt;
+			}
+			const DMUI_FieldBeginOptions options{
+				sizeof(DMUI_FieldBeginOptions),
+				a_layout == RowPresentation::Layout::kFullSpan ?
+					DMUI_FIELD_LAYOUT_FULL_SPAN :
+					DMUI_FIELD_LAYOUT_LABEL_VALUE
+			};
+			uint32_t visible{};
+			lastResult_ = api_->beginField(
+				clientHandle_,
+				a_id,
+				a_label,
+				a_description,
+				&options,
+				&visible);
+			if (lastResult_ != DMUI_RESULT_OK)
+				return std::nullopt;
+			return visible != 0;
+		}
+
+		[[nodiscard]] bool SetFieldFeedback(
+			FieldFeedbackSeverity a_severity,
+			const char* a_message) noexcept
+		{
+			if (!IsConnected())
+				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			if (api_->structSize < DMUI_HOST_API_SET_FIELD_FEEDBACK_SIZE ||
+				!api_->setFieldFeedback)
+				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
+			const DMUI_FieldFeedback feedback{
+				sizeof(DMUI_FieldFeedback),
+				static_cast<DMUI_FieldFeedbackSeverity>(a_severity),
+				a_message
+			};
+			lastResult_ = api_->setFieldFeedback(
+				clientHandle_,
+				&feedback);
+			return lastResult_ == DMUI_RESULT_OK;
+		}
+
+		[[nodiscard]] bool ClearFieldFeedback() noexcept
+		{
+			return SetFieldFeedback(
+				FieldFeedbackSeverity::kInfo,
+				nullptr);
+		}
+
+		[[nodiscard]] std::optional<bool> EndField(
+			bool a_resetVisible = false,
+			bool a_resetEnabled = false) noexcept
+		{
+			if (!IsConnected())
+			{
+				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+				return std::nullopt;
+			}
+			if (api_->structSize < DMUI_HOST_API_END_FIELD_SIZE ||
+				!api_->endField)
+			{
+				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
+				return std::nullopt;
+			}
+			const DMUI_FieldEndOptions options{
+				sizeof(DMUI_FieldEndOptions),
+				a_resetVisible ? 1u : 0u,
+				a_resetEnabled ? 1u : 0u
+			};
+			uint32_t resetPressed{};
+			lastResult_ = api_->endField(
+				clientHandle_,
+				&options,
+				&resetPressed);
+			if (lastResult_ != DMUI_RESULT_OK)
+				return std::nullopt;
+			return resetPressed != 0;
+		}
+
 		[[nodiscard]] bool EndSettingsTable() noexcept
 		{
 			if (!IsConnected())
@@ -2556,8 +2844,11 @@ namespace dmui
 
 	private:
 		friend class FontGuard;
+		friend class FieldScope;
 		friend class SettingsTableScope;
 		friend class SettingsRowScope;
+		template <auto>
+		friend class presentation_detail::FieldScopeState;
 		friend bool DrawStyledText(
 			Client&,
 			std::string_view,
@@ -2569,6 +2860,47 @@ namespace dmui
 			LabeledValueOptions) noexcept;
 
 		using GetAPIFn = const DMUI_HostAPI* (DMUI_CALL*)(uint32_t) noexcept;
+
+		[[nodiscard]] std::optional<bool> DrawSearchInputImpl(
+			const char* a_id,
+			const char* a_hint,
+			std::string& a_search,
+			std::optional<size_t> a_maximumBytes) noexcept
+		{
+			if (!IsConnected())
+			{
+				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+				return std::nullopt;
+			}
+
+			TextInputBuffer buffer{ a_search, a_maximumBytes };
+			if (buffer.Result() != DMUI_RESULT_OK)
+			{
+				Fail(buffer.Result());
+				return std::nullopt;
+			}
+			if (api_->structSize <
+					DMUI_HOST_API_DRAW_SEARCH_INPUT_BUFFER_SIZE ||
+				!api_->drawSearchInputBuffer)
+			{
+				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
+				return std::nullopt;
+			}
+
+			uint32_t changed{};
+			lastResult_ = api_->drawSearchInputBuffer(
+				clientHandle_,
+				a_id,
+				a_hint,
+				buffer.Get(),
+				&changed);
+			if (lastResult_ != DMUI_RESULT_OK)
+				return std::nullopt;
+			lastResult_ = buffer.CommitTo(a_search);
+			if (lastResult_ != DMUI_RESULT_OK)
+				return std::nullopt;
+			return changed != 0;
+		}
 
 		struct PageRegistration
 		{
@@ -2905,8 +3237,100 @@ namespace dmui
 		bool m_active{};
 	};
 
-	class SettingsRowScope
+	namespace presentation_detail
 	{
+		template <auto EndOperation>
+		class FieldScopeState
+		{
+		protected:
+			FieldScopeState(
+				Client& a_client,
+				std::optional<bool> a_begun) noexcept :
+				m_client(&a_client)
+			{
+				m_state.result = a_begun ?
+					DMUI_RESULT_OK :
+					a_client.LastResult();
+				m_state.visible = a_begun.value_or(false);
+				m_active =
+					m_state.result == DMUI_RESULT_OK && m_state.visible;
+				if (m_state.result == DMUI_RESULT_OK && !m_state.visible)
+					m_resetPressed = false;
+			}
+
+			~FieldScopeState() noexcept
+			{
+				if (!m_active)
+					return;
+				const auto original = m_client->LastResult();
+				(void)EndScope();
+				if (original != DMUI_RESULT_OK)
+					m_client->SetPresentationResult(original);
+			}
+
+			FieldScopeState(const FieldScopeState&) = delete;
+			FieldScopeState(FieldScopeState&&) = delete;
+			FieldScopeState& operator=(const FieldScopeState&) = delete;
+			FieldScopeState& operator=(FieldScopeState&&) = delete;
+
+			[[nodiscard]] ScopeResult ScopeState() const noexcept
+			{
+				return m_state;
+			}
+
+			[[nodiscard]] DMUI_Result ScopeResultCode() const noexcept
+			{
+				return m_state.result;
+			}
+
+			[[nodiscard]] bool ScopeVisible() const noexcept
+			{
+				return m_state.visible;
+			}
+
+			[[nodiscard]] std::optional<bool> EndScope(
+				bool a_resetVisible = false,
+				bool a_resetEnabled = false) noexcept
+			{
+				if (!m_active)
+				{
+					if (m_state.result != DMUI_RESULT_OK)
+						return std::nullopt;
+					return m_resetPressed;
+				}
+				m_active = false;
+				m_resetPressed = (m_client->*EndOperation)(
+					a_resetVisible,
+					a_resetEnabled);
+				m_state.result = m_client->LastResult();
+				return m_resetPressed;
+			}
+
+			[[nodiscard]] bool Active() const noexcept
+			{
+				return m_active;
+			}
+
+			[[nodiscard]] Client& Owner() const noexcept
+			{
+				return *m_client;
+			}
+
+		private:
+			Client* m_client;
+			ScopeResult m_state;
+			bool m_active{};
+			std::optional<bool> m_resetPressed;
+		};
+	}
+
+	class SettingsRowScope :
+		private presentation_detail::FieldScopeState<
+			&Client::EndSettingsRow>
+	{
+		using ScopeStateBase = presentation_detail::FieldScopeState<
+			&Client::EndSettingsRow>;
+
 	public:
 		SettingsRowScope(
 			Client& a_client,
@@ -2915,31 +3339,16 @@ namespace dmui
 			const char* a_description,
 			RowPresentation::Layout a_layout =
 				RowPresentation::Layout::kLabelValue) noexcept :
-			m_client(&a_client)
-		{
-			const auto begun = a_client.BeginSettingsRow(
-				a_id,
-				a_label,
-				a_description,
-				a_layout);
-			m_state.result = begun ?
-				DMUI_RESULT_OK :
-				a_client.LastResult();
-			m_state.visible = begun.value_or(false);
-			m_active = m_state.result == DMUI_RESULT_OK && m_state.visible;
-			if (m_state.result == DMUI_RESULT_OK && !m_state.visible)
-				m_resetPressed = false;
-		}
+			ScopeStateBase(
+				a_client,
+				a_client.BeginSettingsRow(
+					a_id,
+					a_label,
+					a_description,
+					a_layout))
+		{}
 
-		~SettingsRowScope() noexcept
-		{
-			if (!m_active)
-				return;
-			const auto original = m_client->LastResult();
-			(void)End();
-			if (original != DMUI_RESULT_OK)
-				m_client->SetPresentationResult(original);
-		}
+		~SettingsRowScope() noexcept = default;
 
 		SettingsRowScope(const SettingsRowScope&) = delete;
 		SettingsRowScope(SettingsRowScope&&) = delete;
@@ -2948,42 +3357,94 @@ namespace dmui
 
 		[[nodiscard]] ScopeResult State() const noexcept
 		{
-			return m_state;
+			return ScopeState();
 		}
 
 		[[nodiscard]] DMUI_Result Result() const noexcept
 		{
-			return m_state.result;
+			return ScopeResultCode();
 		}
 
 		[[nodiscard]] bool Visible() const noexcept
 		{
-			return m_state.visible;
+			return ScopeVisible();
 		}
 
 		[[nodiscard]] std::optional<bool> End(
 			bool a_resetVisible = false,
 			bool a_resetEnabled = false) noexcept
 		{
-			if (!m_active)
-			{
-				if (m_state.result != DMUI_RESULT_OK)
-					return std::nullopt;
-				return m_resetPressed;
-			}
-			m_active = false;
-			m_resetPressed = m_client->EndSettingsRow(
-				a_resetVisible,
-				a_resetEnabled);
-			m_state.result = m_client->LastResult();
-			return m_resetPressed;
+			return EndScope(a_resetVisible, a_resetEnabled);
+		}
+	};
+
+	class FieldScope :
+		private presentation_detail::FieldScopeState<&Client::EndField>
+	{
+		using ScopeStateBase =
+			presentation_detail::FieldScopeState<&Client::EndField>;
+
+	public:
+		FieldScope(
+			Client& a_client,
+			const char* a_id,
+			const char* a_label,
+			const char* a_description = nullptr,
+			RowPresentation::Layout a_layout =
+				RowPresentation::Layout::kLabelValue) noexcept :
+			ScopeStateBase(
+				a_client,
+				a_client.BeginField(
+					a_id,
+					a_label,
+					a_description,
+					a_layout))
+		{}
+
+		~FieldScope() noexcept = default;
+
+		FieldScope(const FieldScope&) = delete;
+		FieldScope(FieldScope&&) = delete;
+		FieldScope& operator=(const FieldScope&) = delete;
+		FieldScope& operator=(FieldScope&&) = delete;
+
+		[[nodiscard]] ScopeResult State() const noexcept
+		{
+			return ScopeState();
 		}
 
-	private:
-		Client* m_client;
-		ScopeResult m_state;
-		bool m_active{};
-		std::optional<bool> m_resetPressed;
+		[[nodiscard]] DMUI_Result Result() const noexcept
+		{
+			return ScopeResultCode();
+		}
+
+		[[nodiscard]] bool Visible() const noexcept
+		{
+			return ScopeVisible();
+		}
+
+		[[nodiscard]] bool SetFeedback(
+			FieldFeedbackSeverity a_severity,
+			const char* a_message) noexcept
+		{
+			if (!Active())
+				return false;
+			return Owner().SetFieldFeedback(a_severity, a_message);
+		}
+
+		[[nodiscard]] bool ClearFeedback() noexcept
+		{
+			if (!Active())
+				return false;
+			return Owner().ClearFieldFeedback();
+		}
+
+		[[nodiscard]] std::optional<bool> End(
+			bool a_resetVisible = false,
+			bool a_resetEnabled = false) noexcept
+		{
+			return EndScope(a_resetVisible, a_resetEnabled);
+		}
 	};
 
 	namespace presentation_detail
@@ -3473,14 +3934,35 @@ namespace dmui
 				}));
 		}
 
+		[[nodiscard]] inline std::optional<bool> EndSettingRow(
+			Client& a_client,
+			const SettingDescriptor& a_setting,
+			SettingsRowScope& a_row,
+			bool a_resetVisible = false,
+			bool a_resetEnabled = false)
+		{
+			if (a_setting.resolveFeedback)
+			{
+				auto feedback = a_setting.resolveFeedback();
+				if (feedback && !feedback->message.empty() &&
+					!a_client.SetFieldFeedback(
+						feedback->severity,
+						feedback->message.c_str()))
+					return std::nullopt;
+			}
+			return a_row.End(a_resetVisible, a_resetEnabled);
+		}
+
 		[[nodiscard]] inline bool EndFallbackRow(
+			Client& a_client,
+			const SettingDescriptor& a_setting,
 			SettingsRowScope& a_row)
 		{
 			{
 				const DisabledScope disabled;
 				ui::TextUnformatted("Unsupported setting control.");
 			}
-			return a_row.End(false, false).has_value();
+			return EndSettingRow(a_client, a_setting, a_row).has_value();
 		}
 
 		[[nodiscard]] inline bool DrawSettingRow(
@@ -3504,7 +3986,7 @@ namespace dmui
 			const auto presentation =
 				ResolveSettingControlPresentation(setting.control);
 			if (!presentation.supported)
-				return EndFallbackRow(row);
+				return EndFallbackRow(a_client, setting, row);
 
 			const auto enabled =
 				!setting.isEnabled || setting.isEnabled();
@@ -3513,12 +3995,12 @@ namespace dmui
 				const auto& control =
 					std::get<ReadOnlySettingControl>(setting.control);
 				if (!control.draw)
-					return EndFallbackRow(row);
+					return EndFallbackRow(a_client, setting, row);
 				{
 					const DisabledScope disabled{ !enabled };
 					control.draw();
 				}
-				return row.End(false, false).has_value();
+				return EndSettingRow(a_client, setting, row).has_value();
 			}
 
 			if (!setting.binding.get ||
@@ -3526,7 +4008,7 @@ namespace dmui
 				!SettingValueMatchesControl(
 					setting.control,
 					setting.defaultValue))
-				return EndFallbackRow(row);
+				return EndFallbackRow(a_client, setting, row);
 
 			auto value = setting.binding.get();
 			if (!SettingValueMatchesControl(setting.control, value))
@@ -3545,8 +4027,12 @@ namespace dmui
 				!IsSettingDefault(setting, value);
 			const auto resetEnabled =
 				resetVisible && enabled && modified;
-			const auto reset =
-				row.End(resetVisible, resetEnabled);
+			const auto reset = EndSettingRow(
+				a_client,
+				setting,
+				row,
+				resetVisible,
+				resetEnabled);
 			if (!reset)
 				return false;
 			if (*reset)
@@ -3607,10 +4093,17 @@ namespace dmui
 			else
 			{
 				const auto label = a_group.label.empty() ? key : a_group.label;
-				const auto glyph = DearModdingUI::ResolveAutomaticIconGlyph(
-					a_group.glyph,
-					label,
-					DearModdingUI::PhosphorGlyph::kQuestion);
+				auto glyph = a_group.glyph;
+				if (!glyph)
+				{
+					const auto resolved =
+						a_client.ResolveIconGlyph(label.c_str());
+					if (!resolved)
+						return false;
+					glyph = *resolved ?
+						*resolved :
+						DearModdingUI::PhosphorGlyph::kQuestion;
+				}
 				if (!a_client.DrawCollapsingSectionHeader(
 						key.c_str(),
 						label.c_str(),

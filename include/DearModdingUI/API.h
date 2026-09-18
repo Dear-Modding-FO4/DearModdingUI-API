@@ -28,7 +28,8 @@
 #define DMUI_VERSION_MINOR(version) ((uint32_t)(version) & 0xFFFFu)
 
 #define DMUI_API_VERSION_0_1 DMUI_MAKE_VERSION(0u, 1u)
-#define DMUI_API_VERSION_CURRENT DMUI_API_VERSION_0_1
+#define DMUI_API_VERSION_0_2 DMUI_MAKE_VERSION(0u, 2u)
+#define DMUI_API_VERSION_CURRENT DMUI_API_VERSION_0_2
 #define DMUI_HOST_ABI_1 1u
 #define DMUI_HOST_ABI_CURRENT DMUI_HOST_ABI_1
 
@@ -194,7 +195,8 @@ typedef uint32_t DMUI_FontRole;
 #define DMUI_FONT_ROLE_HEADING 2u
 #define DMUI_FONT_ROLE_SUBHEADING 3u
 #define DMUI_FONT_ROLE_SUBTEXT 4u
-#define DMUI_FONT_ROLE_COUNT 5u
+#define DMUI_FONT_ROLE_MONOSPACE 5u
+#define DMUI_FONT_ROLE_COUNT 6u
 
 typedef uint32_t DMUI_SettingsAction;
 
@@ -265,6 +267,18 @@ typedef uint32_t DMUI_SettingsRowLayout;
 
 #define DMUI_SETTINGS_ROW_LAYOUT_LABEL_VALUE 0u
 #define DMUI_SETTINGS_ROW_LAYOUT_FULL_SPAN 1u
+
+typedef uint32_t DMUI_FieldLayout;
+
+#define DMUI_FIELD_LAYOUT_LABEL_VALUE 0u
+#define DMUI_FIELD_LAYOUT_FULL_SPAN 1u
+
+typedef uint32_t DMUI_FieldFeedbackSeverity;
+
+#define DMUI_FIELD_FEEDBACK_SEVERITY_INFO 0u
+#define DMUI_FIELD_FEEDBACK_SEVERITY_WARNING 1u
+#define DMUI_FIELD_FEEDBACK_SEVERITY_ERROR 2u
+#define DMUI_FIELD_FEEDBACK_MAX_MESSAGE_BYTES 16384u
 
 typedef uint32_t DMUI_HotkeyContextPolicy;
 
@@ -559,6 +573,75 @@ typedef struct DMUI_Vec2
 	float y;
 } DMUI_Vec2;
 
+// The callback is valid only for the active draw call and is nonreentrant.
+// It must not issue drawing calls. On success it returns writable storage of at
+// least minimumCapacity bytes while preserving the prior bytes. On failure the
+// previous allocation and the input data/capacity values remain valid and
+// unchanged. The host retains no pointer after the draw call.
+typedef DMUI_Result (DMUI_CALL *DMUI_ResizeTextBufferFn)(
+	void* userData,
+	size_t minimumCapacity,
+	char** data,
+	size_t* capacity) DMUI_NOEXCEPT;
+
+// capacity includes the terminating NUL and must be in [1, INT_MAX]. data must
+// be NUL-terminated within capacity. A null resize callback makes the buffer
+// fixed-capacity; otherwise the host may request same-frame growth.
+typedef struct DMUI_TextBuffer
+{
+	uint32_t structSize;
+	char* data;
+	size_t capacity;
+	DMUI_ResizeTextBufferFn resize;
+	void* userData;
+} DMUI_TextBuffer;
+
+#define DMUI_TEXT_BUFFER_0_2_SIZE \
+	((uint32_t)(offsetof(DMUI_TextBuffer, userData) + sizeof(void*)))
+
+#define DMUI_TEXT_VIEW_NO_OFFSET SIZE_MAX
+
+// All pointers are borrowed only for drawTextView. text is immutable UTF-8
+// without embedded NUL bytes. lineOffsets contains every line start, beginning
+// with zero; a final textLength offset represents a trailing blank line. Match
+// offsets are sorted, may overlap, and all use the shared matchByteLength.
+// matchByteLength may remain nonzero when matchCount is zero.
+// Revisions must change whenever their corresponding borrowed content changes.
+typedef struct DMUI_TextViewDescriptor
+{
+	uint32_t structSize;
+	const char* id;
+	const char* text;
+	size_t textLength;
+	const size_t* lineOffsets;
+	size_t lineCount;
+	const size_t* matchByteOffsets;
+	size_t matchCount;
+	size_t matchByteLength;
+	uint64_t contentRevision;
+	uint64_t matchRevision;
+	DMUI_Vec2 viewport;
+} DMUI_TextViewDescriptor;
+
+#define DMUI_TEXT_VIEW_DESCRIPTOR_0_2_SIZE \
+	((uint32_t)(offsetof(DMUI_TextViewDescriptor, viewport) + sizeof(DMUI_Vec2)))
+
+// activeMatch and revealByteOffset use DMUI_TEXT_VIEW_NO_OFFSET for no value.
+// revealByteOffset is a one-shot request and is reset by a successful draw.
+// Callers must set the state revisions to the descriptor revisions before
+// issuing a reveal directly; the C++ helpers do this automatically.
+typedef struct DMUI_TextViewState
+{
+	uint32_t structSize;
+	uint64_t contentRevision;
+	uint64_t matchRevision;
+	size_t activeMatch;
+	size_t revealByteOffset;
+} DMUI_TextViewState;
+
+#define DMUI_TEXT_VIEW_STATE_0_2_SIZE \
+	((uint32_t)(offsetof(DMUI_TextViewState, revealByteOffset) + sizeof(size_t)))
+
 typedef struct DMUI_Vec4
 {
 	float x;
@@ -603,6 +686,35 @@ typedef struct DMUI_SettingsRowBeginOptions
 
 #define DMUI_SETTINGS_ROW_BEGIN_OPTIONS_0_1_SIZE \
 	((uint32_t)(offsetof(DMUI_SettingsRowBeginOptions, layout) + sizeof(DMUI_SettingsRowLayout)))
+
+typedef struct DMUI_FieldBeginOptions
+{
+	uint32_t structSize;
+	DMUI_FieldLayout layout;
+} DMUI_FieldBeginOptions;
+
+#define DMUI_FIELD_BEGIN_OPTIONS_0_1_SIZE \
+	((uint32_t)(offsetof(DMUI_FieldBeginOptions, layout) + sizeof(DMUI_FieldLayout)))
+
+typedef struct DMUI_FieldEndOptions
+{
+	uint32_t structSize;
+	uint32_t resetVisible;
+	uint32_t resetEnabled;
+} DMUI_FieldEndOptions;
+
+#define DMUI_FIELD_END_OPTIONS_0_1_SIZE \
+	((uint32_t)(offsetof(DMUI_FieldEndOptions, resetEnabled) + sizeof(uint32_t)))
+
+typedef struct DMUI_FieldFeedback
+{
+	uint32_t structSize;
+	DMUI_FieldFeedbackSeverity severity;
+	const char* message;
+} DMUI_FieldFeedback;
+
+#define DMUI_FIELD_FEEDBACK_0_1_SIZE \
+	((uint32_t)(offsetof(DMUI_FieldFeedback, message) + sizeof(const char*)))
 
 typedef struct DMUI_ThemeColors
 {
@@ -787,6 +899,19 @@ typedef struct DMUI_DialogEvent
 #define DMUI_DIALOG_EVENT_0_1_SIZE \
 	((uint32_t)(offsetof(DMUI_DialogEvent, requiredTextCapacity) + sizeof(uint32_t)))
 
+typedef struct DMUI_IconResolutionRequest
+{
+	uint32_t structSize;
+	// Null or empty fields are equivalent. explicitName is limited to 128 bytes;
+	// metadata fields are limited to 256 bytes.
+	const char* explicitName;
+	const char* primaryMetadata;
+	const char* secondaryMetadata;
+} DMUI_IconResolutionRequest;
+
+#define DMUI_ICON_RESOLUTION_REQUEST_0_1_SIZE \
+	((uint32_t)(offsetof(DMUI_IconResolutionRequest, secondaryMetadata) + sizeof(const char*)))
+
 typedef DMUI_Result (DMUI_CALL *DMUI_RegisterClientFn)(
 	const DMUI_ClientDescriptor* descriptor,
 	DMUI_ClientHandle* client) DMUI_NOEXCEPT;
@@ -836,9 +961,12 @@ typedef DMUI_Result (DMUI_CALL *DMUI_DrawSectionHeaderFn)(
 typedef DMUI_Result (DMUI_CALL *DMUI_DrawBulletTextFn)(
 	DMUI_ClientHandle client,
 	const char* text) DMUI_NOEXCEPT;
-// buffer must be NUL-terminated within capacity bytes, and capacity zero is invalid.
-// On success, buffer stays NUL-terminated and output longer than capacity is truncated to fit.
-// changed is set when the edited text differs from the input, including a truncated edit.
+// buffer must be NUL-terminated within capacity bytes, capacity must be in
+// [1, INT_MAX], and the logical input value cannot contain embedded NUL bytes.
+// Editing never truncates the existing value. New input is limited to the
+// remaining capacity and may be inserted partially, clipped at a complete UTF-8
+// boundary. On success buffer remains NUL-terminated and changed reports whether
+// the accepted value differs from the input value.
 typedef DMUI_Result (DMUI_CALL *DMUI_DrawSearchInputFn)(
 	DMUI_ClientHandle client,
 	const char* id,
@@ -846,6 +974,23 @@ typedef DMUI_Result (DMUI_CALL *DMUI_DrawSearchInputFn)(
 	char* buffer,
 	size_t capacity,
 	uint32_t* changed) DMUI_NOEXCEPT;
+// The text buffer is borrowed only for this render-thread draw call. With a
+// resize callback, insertion may grow the buffer and complete in the same
+// frame. Without one, the fixed-capacity insertion semantics above apply.
+typedef DMUI_Result (DMUI_CALL *DMUI_DrawSearchInputBufferFn)(
+	DMUI_ClientHandle client,
+	const char* id,
+	const char* hint,
+	DMUI_TextBuffer* buffer,
+	uint32_t* changed) DMUI_NOEXCEPT;
+// Render-thread-only, valid only inside the owning page draw callback. Invalid
+// line or match offsets and short structures are errors. Stale presentation
+// revisions reset the state to no active match or reveal request. The host
+// retains no borrowed pointer after the call.
+typedef DMUI_Result (DMUI_CALL *DMUI_DrawTextViewFn)(
+	DMUI_ClientHandle client,
+	const DMUI_TextViewDescriptor* descriptor,
+	DMUI_TextViewState* state) DMUI_NOEXCEPT;
 typedef DMUI_Result (DMUI_CALL *DMUI_DrawCollapsingSectionHeaderFn)(
 	DMUI_ClientHandle client,
 	const char* key,
@@ -1038,6 +1183,32 @@ typedef DMUI_Result (DMUI_CALL *DMUI_QueryUIAPIFn)(
 	uint32_t minimumRevision,
 	uint32_t minimumTableSize,
 	DMUI_UIAPIInfo* info) DMUI_NOEXCEPT;
+// Pure, thread-safe query over immutable host icon data. A successful zero glyph
+// means no match; errors also leave glyph zero.
+typedef DMUI_Result (DMUI_CALL *DMUI_ResolveIconGlyphFn)(
+	const DMUI_IconResolutionRequest* request,
+	uint32_t* glyph) DMUI_NOEXCEPT;
+// Field brackets are render-thread-only and valid in drawing page callbacks.
+// Inside a settings table, the field becomes its next row. Outside a settings
+// table, it owns equivalent standalone geometry. A visible begin must be
+// balanced by endField. Labels are required for LABEL_VALUE and optional for
+// FULL_SPAN.
+typedef DMUI_Result (DMUI_CALL *DMUI_BeginFieldFn)(
+	DMUI_ClientHandle client,
+	const char* id,
+	const char* label,
+	const char* description,
+	const DMUI_FieldBeginOptions* options,
+	uint32_t* visible) DMUI_NOEXCEPT;
+// Feedback is copied by the host and retained only until the current field ends.
+// A null or empty message clears feedback previously supplied for that field.
+typedef DMUI_Result (DMUI_CALL *DMUI_SetFieldFeedbackFn)(
+	DMUI_ClientHandle client,
+	const DMUI_FieldFeedback* feedback) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_EndFieldFn)(
+	DMUI_ClientHandle client,
+	const DMUI_FieldEndOptions* options,
+	uint32_t* resetPressed) DMUI_NOEXCEPT;
 
 typedef struct DMUI_HostAPI
 {
@@ -1098,6 +1269,12 @@ typedef struct DMUI_HostAPI
 	DMUI_RegisterCategoryFn registerCategory;
 	DMUI_OpenExternalFn openExternal;
 	DMUI_QueryUIAPIFn queryUIAPI;
+	DMUI_ResolveIconGlyphFn resolveIconGlyph;
+	DMUI_BeginFieldFn beginField;
+	DMUI_SetFieldFeedbackFn setFieldFeedback;
+	DMUI_EndFieldFn endField;
+	DMUI_DrawTextViewFn drawTextView;
+	DMUI_DrawSearchInputBufferFn drawSearchInputBuffer;
 } DMUI_HostAPI;
 
 #define DMUI_HOST_API_REGISTER_CLIENT_SIZE \
@@ -1196,6 +1373,18 @@ typedef struct DMUI_HostAPI
 	((uint32_t)(offsetof(DMUI_HostAPI, openExternal) + sizeof(DMUI_OpenExternalFn)))
 #define DMUI_HOST_API_QUERY_UI_API_SIZE \
 	((uint32_t)(offsetof(DMUI_HostAPI, queryUIAPI) + sizeof(DMUI_QueryUIAPIFn)))
+#define DMUI_HOST_API_RESOLVE_ICON_GLYPH_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, resolveIconGlyph) + sizeof(DMUI_ResolveIconGlyphFn)))
+#define DMUI_HOST_API_BEGIN_FIELD_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, beginField) + sizeof(DMUI_BeginFieldFn)))
+#define DMUI_HOST_API_SET_FIELD_FEEDBACK_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, setFieldFeedback) + sizeof(DMUI_SetFieldFeedbackFn)))
+#define DMUI_HOST_API_END_FIELD_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, endField) + sizeof(DMUI_EndFieldFn)))
+#define DMUI_HOST_API_DRAW_TEXT_VIEW_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, drawTextView) + sizeof(DMUI_DrawTextViewFn)))
+#define DMUI_HOST_API_DRAW_SEARCH_INPUT_BUFFER_SIZE \
+	((uint32_t)(offsetof(DMUI_HostAPI, drawSearchInputBuffer) + sizeof(DMUI_DrawSearchInputBufferFn)))
 
 #if defined(_MSC_VER)
 #pragma pack(pop)

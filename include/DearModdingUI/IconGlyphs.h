@@ -248,45 +248,129 @@ namespace DearModdingUI
 					1;
 		}
 
-		inline void AddMetadataMatches(
-			BestMatch& a_match,
-			std::string_view a_metadata)
+		[[nodiscard]] inline bool HasMetadataTerm(
+			std::string_view a_term) noexcept
 		{
-			const auto normalized = NormalizeIconName(a_metadata);
-			if (normalized.empty())
+			for (const auto& mappings : {
+					std::span<const IconPhraseMapping>{ kPhosphorIconGlyphs },
+					std::span<const IconPhraseMapping>{ kPhosphorIconAliases },
+					std::span<const IconPhraseMapping>{
+						kPhosphorIconDomainTerms },
+					std::span<const IconPhraseMapping>{ kPhosphorIconTags } })
+			{
+				const auto first = std::ranges::lower_bound(
+					mappings,
+					a_term,
+					{},
+					&IconPhraseMapping::phrase);
+				if (first != mappings.end() && first->phrase == a_term)
+					return true;
+			}
+			return false;
+		}
+
+		[[nodiscard]] inline std::string SingularMetadataWord(
+			std::string_view a_word)
+		{
+			if (a_word.size() <= 3 ||
+				a_word.ends_with("ss") ||
+				a_word.ends_with("us") ||
+				a_word.ends_with("is"))
+				return {};
+
+			std::string candidate;
+			candidate.reserve(a_word.size());
+			const auto tryCandidate =
+				[&](size_t a_removed, char a_replacement = '\0') {
+				candidate.assign(
+					a_word.substr(0, a_word.size() - a_removed));
+				if (a_replacement)
+					candidate.push_back(a_replacement);
+				return HasMetadataTerm(candidate);
+			};
+			if (a_word.ends_with("ies") && tryCandidate(3, 'y'))
+				return candidate;
+			if ((a_word.ends_with("sses") ||
+				a_word.ends_with("zzes") ||
+				a_word.ends_with("ches") ||
+				a_word.ends_with("shes") ||
+				a_word.ends_with("xes")) &&
+				tryCandidate(2))
+				return candidate;
+			if (a_word.ends_with('s') && tryCandidate(1))
+				return candidate;
+			if (a_word.ends_with("es") && tryCandidate(2))
+				return candidate;
+			return {};
+		}
+
+		[[nodiscard]] inline std::string SingularizeMetadataWords(
+			std::string_view a_normalized)
+		{
+			std::string singular;
+			singular.reserve(a_normalized.size());
+			bool changed = false;
+			for (size_t begin = 0; begin < a_normalized.size();)
+			{
+				const auto separator = a_normalized.find('-', begin);
+				const auto end = separator == std::string::npos ?
+					a_normalized.size() :
+					separator;
+				const auto word = a_normalized.substr(begin, end - begin);
+				auto wordForm = SingularMetadataWord(word);
+				if (wordForm.empty())
+					singular.append(word);
+				else
+				{
+					singular.append(wordForm);
+					changed = true;
+				}
+				if (separator == std::string::npos)
+					break;
+				singular.push_back('-');
+				begin = separator + 1;
+			}
+			return changed ? singular : std::string{};
+		}
+
+		inline void AddNormalizedMetadataMatches(
+			BestMatch& a_match,
+			std::string_view a_normalized)
+		{
+			if (a_normalized.empty())
 				return;
 
-			const auto fullWordCount = WordCount(normalized);
+			const auto fullWordCount = WordCount(a_normalized);
 			AddMatches(
 				a_match,
 				kPhosphorIconGlyphs,
-				normalized,
+				a_normalized,
 				{ 3, fullWordCount, 2 });
 			AddMatches(
 				a_match,
 				kPhosphorIconAliases,
-				normalized,
+				a_normalized,
 				{ 3, fullWordCount, 2 });
 			AddMatches(
 				a_match,
 				kPhosphorIconDomainTerms,
-				normalized,
+				a_normalized,
 				{ 3, fullWordCount, 1 });
 
-			for (size_t begin = 0; begin < normalized.size();)
+			for (size_t begin = 0; begin < a_normalized.size();)
 			{
 				size_t end = begin;
 				size_t words{};
-				while (end < normalized.size())
+				while (end < a_normalized.size())
 				{
-					const auto separator = normalized.find('-', end);
+					const auto separator = a_normalized.find('-', end);
 					end = separator == std::string::npos ?
-						normalized.size() :
+						a_normalized.size() :
 						separator;
 					++words;
 					const auto phrase =
-						std::string_view{ normalized }.substr(begin, end - begin);
-					if (phrase.size() > 1 || normalized.size() == 1)
+						a_normalized.substr(begin, end - begin);
+					if (phrase.size() > 1 || a_normalized.size() == 1)
 					{
 						AddMatches(
 							a_match,
@@ -313,11 +397,20 @@ namespace DearModdingUI
 						break;
 					end = separator + 1;
 				}
-				const auto next = normalized.find('-', begin);
+				const auto next = a_normalized.find('-', begin);
 				if (next == std::string::npos)
 					break;
 				begin = next + 1;
 			}
+		}
+
+		inline void AddMetadataMatches(
+			BestMatch& a_match,
+			std::string_view a_metadata)
+		{
+			AddNormalizedMetadataMatches(
+				a_match,
+				NormalizeIconName(a_metadata));
 		}
 
 		[[nodiscard]] inline BestMatch EvaluateGroup(
@@ -326,6 +419,17 @@ namespace DearModdingUI
 			BestMatch match;
 			for (const auto value : a_metadata)
 				AddMetadataMatches(match, value);
+			if (match.glyph)
+				return match;
+
+			for (const auto value : a_metadata)
+			{
+				const auto normalized = NormalizeIconName(value);
+				if (const auto singular =
+						SingularizeMetadataWords(normalized);
+					!singular.empty())
+					AddNormalizedMetadataMatches(match, singular);
+			}
 			return match;
 		}
 

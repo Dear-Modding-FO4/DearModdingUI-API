@@ -5,7 +5,8 @@
 
 // The single ABI layout guard for DMUI_HostAPI; the host compiles this file too.
 #if UINTPTR_MAX == UINT64_MAX
-static_assert(sizeof(DMUI_HostAPI) == 440);
+static_assert(DMUI_HOST_ABI_CURRENT == DMUI_HOST_ABI_1);
+static_assert(sizeof(DMUI_HostAPI) == 488);
 static_assert(offsetof(DMUI_HostAPI, structSize) == 0);
 static_assert(offsetof(DMUI_HostAPI, hostAbiVersion) == 4);
 static_assert(offsetof(DMUI_HostAPI, apiVersion) == 8);
@@ -62,6 +63,12 @@ static_assert(offsetof(DMUI_HostAPI, updateImage) == 408);
 static_assert(offsetof(DMUI_HostAPI, registerCategory) == 416);
 static_assert(offsetof(DMUI_HostAPI, openExternal) == 424);
 static_assert(offsetof(DMUI_HostAPI, queryUIAPI) == 432);
+static_assert(offsetof(DMUI_HostAPI, resolveIconGlyph) == 440);
+static_assert(offsetof(DMUI_HostAPI, beginField) == 448);
+static_assert(offsetof(DMUI_HostAPI, setFieldFeedback) == 456);
+static_assert(offsetof(DMUI_HostAPI, endField) == 464);
+static_assert(offsetof(DMUI_HostAPI, drawTextView) == 472);
+static_assert(offsetof(DMUI_HostAPI, drawSearchInputBuffer) == 480);
 static_assert(DMUI_HOST_API_REGISTER_CLIENT_SIZE == 24);
 static_assert(DMUI_HOST_API_SELECT_PAGE_SIZE == 72);
 static_assert(DMUI_HOST_API_ATTACH_SWAP_CHAIN_SIZE == 80);
@@ -109,7 +116,34 @@ static_assert(DMUI_HOST_API_CREATE_IMAGE_SIZE == 408);
 static_assert(DMUI_HOST_API_UPDATE_IMAGE_SIZE == 416);
 static_assert(DMUI_HOST_API_REGISTER_CATEGORY_SIZE == 424);
 static_assert(DMUI_HOST_API_OPEN_EXTERNAL_SIZE == 432);
-static_assert(DMUI_HOST_API_QUERY_UI_API_SIZE == sizeof(DMUI_HostAPI));
+static_assert(DMUI_HOST_API_QUERY_UI_API_SIZE == 440);
+static_assert(DMUI_HOST_API_RESOLVE_ICON_GLYPH_SIZE == 448);
+static_assert(DMUI_HOST_API_BEGIN_FIELD_SIZE == 456);
+static_assert(DMUI_HOST_API_SET_FIELD_FEEDBACK_SIZE == 464);
+static_assert(DMUI_HOST_API_END_FIELD_SIZE == 472);
+static_assert(DMUI_HOST_API_DRAW_TEXT_VIEW_SIZE == 480);
+static_assert(
+	DMUI_HOST_API_DRAW_SEARCH_INPUT_BUFFER_SIZE ==
+	sizeof(DMUI_HostAPI));
+static_assert(sizeof(DMUI_TextBuffer) == 40);
+static_assert(offsetof(DMUI_TextBuffer, structSize) == 0);
+static_assert(offsetof(DMUI_TextBuffer, data) == 8);
+static_assert(offsetof(DMUI_TextBuffer, capacity) == 16);
+static_assert(offsetof(DMUI_TextBuffer, resize) == 24);
+static_assert(offsetof(DMUI_TextBuffer, userData) == 32);
+static_assert(DMUI_TEXT_BUFFER_0_2_SIZE == sizeof(DMUI_TextBuffer));
+static_assert(sizeof(DMUI_TextViewDescriptor) == 96);
+static_assert(DMUI_TEXT_VIEW_DESCRIPTOR_0_2_SIZE == 96);
+static_assert(sizeof(DMUI_TextViewState) == 40);
+static_assert(DMUI_TEXT_VIEW_STATE_0_2_SIZE == 40);
+static_assert(sizeof(DMUI_IconResolutionRequest) == 32);
+static_assert(offsetof(DMUI_IconResolutionRequest, structSize) == 0);
+static_assert(offsetof(DMUI_IconResolutionRequest, explicitName) == 8);
+static_assert(offsetof(DMUI_IconResolutionRequest, primaryMetadata) == 16);
+static_assert(offsetof(DMUI_IconResolutionRequest, secondaryMetadata) == 24);
+static_assert(
+	DMUI_ICON_RESOLUTION_REQUEST_0_1_SIZE ==
+	sizeof(DMUI_IconResolutionRequest));
 static_assert(sizeof(DMUI_PageDescriptor) == 72);
 static_assert(DMUI_PAGE_DESCRIPTOR_0_1_SIZE == 64);
 static_assert(DMUI_PAGE_DESCRIPTOR_ICON_SIZE == 72);
@@ -134,4 +168,18 @@ static_assert(offsetof(DMUI_StyleMetrics, scrollbarSize) == 48);
 static_assert(offsetof(DMUI_StyleMetrics, fontSizeBase) == 52);
 static_assert(DMUI_STYLE_METRICS_0_1_SIZE == 52);
 static_assert(DMUI_STYLE_METRICS_FONT_SIZE_BASE_SIZE == sizeof(DMUI_StyleMetrics));
+static_assert(sizeof(DMUI_SettingsRowBeginOptions) == 8);
+static_assert(
+	DMUI_SETTINGS_ROW_BEGIN_OPTIONS_0_1_SIZE ==
+	sizeof(DMUI_SettingsRowBeginOptions));
+static_assert(sizeof(DMUI_SettingsRowOptions) == 12);
+static_assert(
+	DMUI_SETTINGS_ROW_OPTIONS_0_1_SIZE ==
+	sizeof(DMUI_SettingsRowOptions));
+static_assert(sizeof(DMUI_FieldBeginOptions) == 8);
+static_assert(DMUI_FIELD_BEGIN_OPTIONS_0_1_SIZE == sizeof(DMUI_FieldBeginOptions));
+static_assert(sizeof(DMUI_FieldEndOptions) == 12);
+static_assert(DMUI_FIELD_END_OPTIONS_0_1_SIZE == sizeof(DMUI_FieldEndOptions));
+static_assert(sizeof(DMUI_FieldFeedback) == 16);
+static_assert(DMUI_FIELD_FEEDBACK_0_1_SIZE == sizeof(DMUI_FieldFeedback));
 #endif
