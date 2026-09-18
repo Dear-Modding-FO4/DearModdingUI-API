@@ -1,5 +1,6 @@
 #pragma once
 
+#include <DearModdingUI/Presentation/Layout.h>
 #include <DearModdingUI/PresentationCore.h>
 #include <DearModdingUI/UI.h>
 

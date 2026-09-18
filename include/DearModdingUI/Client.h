@@ -1,9 +1,9 @@
 #pragma once
 
+#include <DearModdingUI/Presentation/Layout.h>
 #include <DearModdingUI/Presentation.h>
 #include <DearModdingUI/SettingsActions.h>
 #include <DearModdingUI/UI.h>
-#include <DearModdingUI/VisualDecisions.h>
 #include <DearModdingUI/Win32Discovery.h>
 
 #include <algorithm>

@@ -126,7 +126,8 @@ xmake build example-plugin
 |---|---|
 | `<DearModdingUI/Client.h>` | High-level C++ client interface. Handles discovery, callbacks, and registration. |
 | `<DearModdingUI/UI.h>` | Safe C++ drawing facade (`dmui::ui::*`). |
-| `<DearModdingUI/Presentation.h>` | UI layout scopes, choice controls, and styled text helpers. |
+| `<DearModdingUI/Presentation.h>` | Presentation umbrella for layout geometry, UI scopes, choice controls, and styled text helpers. |
+| `<DearModdingUI/Presentation/Layout.h>` | Reusable, renderer-independent geometry for icons, rows, and trailing actions. Also remains available through the legacy `<DearModdingUI/VisualDecisions.h>` include. |
 | `<DearModdingUI/API.h>` | Pure C ABI declarations for host interaction. |
 | `<DearModdingUI/CUIAPI.h>` | Low-level C function table for drawing primitives. |
 | `<DearModdingUI/IconGlyphs.h>` | Phosphor glyph constants and the catalog-driven semantic icon resolver. |
