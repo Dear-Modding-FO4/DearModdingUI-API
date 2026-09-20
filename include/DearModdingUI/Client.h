@@ -7,6 +7,7 @@
 #include <DearModdingUI/TextView.h>
 #include <DearModdingUI/UI.h>
 #include <DearModdingUI/Win32Discovery.h>
+#include <DearModdingUI/Localization.h>
 
 #include <algorithm>
 #include <array>
