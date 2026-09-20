@@ -9,6 +9,10 @@
 #include <unordered_map>
 #include <filesystem>
 
+#define _W32_IMPORT(a_ret, a_name, ...)                                            \
+	extern "C" __declspec(dllimport) a_ret __stdcall W32_IMPL_##a_name(...) noexcept; \
+	__pragma(comment(linker, "/alternatename:__imp_W32_IMPL_" #a_name "=__imp_" #a_name))
+
 namespace dmui
 {
 	namespace localize
@@ -17,9 +21,8 @@ namespace dmui
 		{
 			using namespace std::literals;
 
-			extern "C" __declspec(dllimport) int32_t __stdcall WideCharToMultiByte(
-				uint32_t, uint32_t, const wchar_t*, int32_t, char*, int32_t, const char*, int32_t*);
-
+			_W32_IMPORT(int32_t, WideCharToMultiByte, uint32_t, uint32_t, const wchar_t*, int32_t, char*, int32_t, const char*, int32_t*);
+			
 			constexpr static std::string WHITESPACEA = " \n\r\t\f\v";
 
 			// Trim from the start (left trim)
@@ -47,7 +50,7 @@ namespace dmui
 			inline bool UTF16_TO_UTF8(const std::wstring_view a_in, std::string& a_out) noexcept
 			{
 				const auto cvt = [&](char* a_dst, std::size_t a_length) {
-					return WideCharToMultiByte(
+					return W32_IMPL_WideCharToMultiByte(
 						65001u,
 						0,
 						a_in.data(),
@@ -413,3 +416,5 @@ namespace dmui
 		};
 	}
 }
+
+#undef _W32_IMPORT
