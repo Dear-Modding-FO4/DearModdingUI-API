@@ -17,6 +17,9 @@ namespace dmui
 		{
 			using namespace std::literals;
 
+			extern "C" __declspec(dllimport) int32_t __stdcall WideCharToMultiByte(
+				uint32_t, uint32_t, const wchar_t*, int32_t, char*, int32_t, const char*, int32_t*);
+
 			constexpr static std::string WHITESPACEA = " \n\r\t\f\v";
 
 			// Trim from the start (left trim)
@@ -39,6 +42,34 @@ namespace dmui
 			{
 				RightTrim(s);
 				LeftTrim(s);
+			}
+
+			inline bool UTF16_TO_UTF8(const std::wstring_view a_in, std::string& a_out) noexcept
+			{
+				const auto cvt = [&](char* a_dst, std::size_t a_length) {
+					return WideCharToMultiByte(
+						65001u,
+						0,
+						a_in.data(),
+						static_cast<int>(a_in.length()),
+						a_dst,
+						static_cast<int>(a_length),
+						nullptr,
+						nullptr);
+				};
+
+				const auto len = cvt(nullptr, 0);
+				if (len == 0) {
+					return false;
+				}
+
+				std::string out(len, '\0');
+				if (cvt(out.data(), out.length()) == 0) {
+					return false;
+				}
+
+				a_out = out;
+				return true;
 			}
 
 			enum class Encoding : int8_t
@@ -192,7 +223,7 @@ namespace dmui
 						a_stm.read(u16.data(), a_size - 2);
 
 						std::string u8, line;
-						REX::UTF16_TO_UTF8(reinterpret_cast<const wchar_t*>(u16.c_str()), u8);
+						UTF16_TO_UTF8(reinterpret_cast<const wchar_t*>(u16.c_str()), u8);
 
 						std::stringstream sstm(u8);
 
@@ -238,7 +269,7 @@ namespace dmui
 						swap_bytes(u16.data(), u16.size());
 
 						std::string u8, line;
-						REX::UTF16_TO_UTF8(reinterpret_cast<const wchar_t*>(u16.c_str()), u8);
+						UTF16_TO_UTF8(reinterpret_cast<const wchar_t*>(u16.c_str()), u8);
 
 						std::stringstream sstm(u8);
 
