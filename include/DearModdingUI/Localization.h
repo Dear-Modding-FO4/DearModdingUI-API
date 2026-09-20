@@ -1,13 +1,11 @@
 #pragma once
 
-#include <REX/REX.h>
-#include <RE/S/Setting.h>
-
 #include <string>
 #include <vector>
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <format>
 #include <unordered_map>
 #include <filesystem>
 
@@ -18,34 +16,6 @@ namespace dmui
 		namespace detail
 		{
 			using namespace std::literals;
-
-			static std::string GetRuntimePath() noexcept
-			{
-				static const std::string path = []() {
-					std::array<char, 4096> buffer{};
-					const auto             length = REX::W32::GetModuleFileNameA(
-                        REX::W32::GetModuleHandleA(nullptr),
-                        buffer.data(),
-                        static_cast<uint32_t>(buffer.size()));
-					assert(length != 0 && length < buffer.size());
-					return length && length < buffer.size() ?
-					           std::string{ buffer.data(), length } :
-					           std::string{};
-				}();
-				return path;
-			}
-
-			static std::string GetRuntimeDirectory() noexcept
-			{
-				static const std::string directory = []() {
-					const auto path = GetRuntimePath();
-					const auto lastSlash = path.rfind('\\');
-					return lastSlash != std::string::npos ?
-					           path.substr(0, lastSlash + 1) :
-					           std::string{};
-				}();
-				return directory;
-			}
 
 			constexpr static std::string WHITESPACEA = " \n\r\t\f\v";
 
@@ -118,7 +88,7 @@ namespace dmui
 
 			struct ILocalizeStore
 			{
-				virtual void        Init(const std::string& a_file, bool a_isMultilang = false) noexcept = 0;
+				virtual bool        Init(const std::string& a_file) noexcept = 0;
 				virtual bool        Exists() const noexcept = 0;
 				virtual void        Add(ILocalizeString* a_setting) noexcept = 0;
 				virtual void        Load() = 0;
@@ -156,48 +126,10 @@ namespace dmui
 				std::string                   lang;
 				std::vector<ILocalizeString*> localizes;
 			public:
-				// Initialization must be in the kGameDataReady stage if you uses a_isMultilang as true
-				void Init(const std::string& a_file, bool a_isMultilang = false) noexcept override
+				bool Init(const std::string& a_file) noexcept override
 				{
 					file = a_file;
-
-					if (std::filesystem::path(file).is_relative())
-						file.insert(0, GetRuntimeDirectory());
-
-					if (a_isMultilang)
-					{
-						if (lang.empty())
-						{
-							// Retrieve the global collection of INI settings
-							auto settings = RE::INISettingCollection::GetSingleton();
-							if (!settings)
-							{
-								REX::WARN("RE::INISettingCollection::GetSingleton return nullptr"sv);
-								return;
-							}
-
-							// Look up the SLanguage:General setting
-							// Yeah, exactly SLanguage:General this Bethesda
-							auto setting = settings->GetSetting("SLanguage:General");
-
-							if (setting && (setting->GetType() == RE::Setting::SETTING_TYPE::kString))
-							{
-								lang = setting->GetString().data();
-								lang.insert(0, "_");
-							}
-							else
-							{
-								REX::WARN("RE::INISettingCollection::GetSetting no found \"SLanguage:General\" setting"sv);
-								return;
-							}
-						}
-
-						auto it = file.find_last_of('.');
-						if (it == std::string::npos)
-							file += lang.data();
-						else
-							file.insert(it, lang.data());
-					}
+					return true;
 				}
 
 				bool Exists() const noexcept override { return file.length() ? std::filesystem::exists(file) : false; }
@@ -242,7 +174,7 @@ namespace dmui
 
 						return true;
 					} catch (const std::exception& e) {
-						REX::ERROR("An exception occurred while reading the file: \"{}\" message: \"{}\" "sv,
+						LatestError = std::format("An exception occurred while reading the file: \"{}\" message: \"{}\" "sv,
 							a_filePath, e.what());
 						return false;
 					}
@@ -281,7 +213,7 @@ namespace dmui
 
 						return true;
 					} catch (const std::exception& e) {
-						REX::ERROR("An exception occurred while reading the file: \"{}\" message: \"{}\" "sv,
+						LatestError = std::format("An exception occurred while reading the file: \"{}\" message: \"{}\" "sv,
 							a_filePath, e.what());
 						return false;
 					}
@@ -327,32 +259,36 @@ namespace dmui
 
 						return true;
 					} catch (const std::exception& e) {
-						REX::ERROR("An exception occurred while reading the file: \"{}\" message: \"{}\" "sv,
+						LatestError = std::format("An exception occurred while reading the file: \"{}\" message: \"{}\" "sv,
 							a_filePath, e.what());
 						return false;
 					}
 				}
 
+				std::string LatestError{};
 			public:
 				constexpr LocalizationFileLoader() = default;
+
+				constexpr std::string LatestErrorMsg() const noexcept { return LatestError; }
 
 				// Reads and parses the localization file line-by-line
 				bool LoadLanguageFile(const std::string& a_filePath)
 				{
-					if (!std::filesystem::exists(a_filePath)) {
-						REX::WARN("No found localization file: {}"sv, a_filePath);
+					if (!std::filesystem::exists(a_filePath))
+					{
+						LatestError = std::format("No found localization file: {}"sv, a_filePath);
 						return false;
 					}
 
 					auto fileSize = std::filesystem::file_size(a_filePath);
 					if (fileSize <= 4) {
-						REX::WARN("Incorrect file, too small size: {}"sv, a_filePath);
+						LatestError = std::format("Incorrect file, too small size: {}"sv, a_filePath);
 						return false;
 					}
 
 					auto encoding = CheckBom(a_filePath);
 					if ((encoding == Encoding::UTF32_BE) || (encoding == Encoding::UTF32_LE)) {
-						REX::ERROR("The file contains a bom and the file encoding is not supported: {}"sv, a_filePath);
+						LatestError = std::format("The file contains a bom and the file encoding is not supported: {}"sv, a_filePath);
 						return false;
 					}
 
@@ -360,7 +296,7 @@ namespace dmui
 
 					std::ifstream file(a_filePath, std::ios::binary);
 					if (!file.is_open()) {
-						REX::WARN("Failed to open localization file: {}"sv, a_filePath);
+						LatestError = std::format("Failed to open localization file: {}"sv, a_filePath);
 						return false;
 					}
 
@@ -399,10 +335,24 @@ namespace dmui
 		}
 
 		class LocalizationManager :
-			public detail::LocalizeStore,
-			public REX::TSingleton<LocalizationManager>
+			public detail::LocalizeStore
 		{
+		protected:
+			LocalizationManager() = default;
+			~LocalizationManager() = default;
+
+			LocalizationManager(const LocalizationManager&) = delete;
+			LocalizationManager(LocalizationManager&&) = delete;
+
+			LocalizationManager& operator=(const LocalizationManager&) = delete;
+			LocalizationManager& operator=(LocalizationManager&&) = delete;
 		public:
+			static LocalizationManager* GetSingleton()
+			{
+				static LocalizationManager singleton;
+				return std::addressof(singleton);
+			}
+
 			void Load() override
 			{
 				detail::LocalizationFileLoader loader;
