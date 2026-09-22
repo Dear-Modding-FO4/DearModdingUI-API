@@ -943,14 +943,14 @@ namespace dmui::ui
 		detail::Record(checked::Unindent(a_width));
 	}
 
-	inline void PushStyleVar(DMUI_UIVar a_var, float a_val) noexcept
+	inline void PushStyleVar(Var a_var, float a_val) noexcept
 	{
-		detail::Record(checked::PushStyleVar(a_var, a_val));
+		detail::Record(checked::PushStyleVar(static_cast<DMUI_UIVar>(a_var), a_val));
 	}
 
-	inline void PushStyleVar(DMUI_UIVar a_var, DMUI_Vec2& a_val) noexcept
+	inline void PushStyleVar(Var a_var, DMUI_Vec2& a_val) noexcept
 	{
-		detail::Record(checked::PushStyleVar(a_var, &a_val));
+		detail::Record(checked::PushStyleVar(static_cast<DMUI_UIVar>(a_var), &a_val));
 	}
 
 	inline void PopStyleVar(uint32_t a_count) noexcept
