@@ -1,4 +1,5 @@
 .xmake/
+vsxmake2022/
 build/
 .vs/
 __pycache__/
