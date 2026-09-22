@@ -78,6 +78,56 @@ namespace dmui::ui
 		kModalWindowDimBg = DMUI_UI_COLOR_MODAL_WINDOW_DIM_BG
 	};
 
+	enum class Var : uint32_t
+	{
+		kNone = 0u,
+		kAlpha = DMUI_UI_VAR_ALPHA,
+		kDisabledAlpha = DMUI_UI_VAR_DISABLEDALPHA,
+		kWindowPadding = DMUI_UI_VAR_WINDOWPADDING,
+		kWindowRounding = DMUI_UI_VAR_WINDOWROUNDING,
+		kWindowBorderSize = DMUI_UI_VAR_WINDOWBORDERSIZE,
+		kWindowMinSize = DMUI_UI_VAR_WINDOWMINSIZE,
+		kWindowTitleAlign = DMUI_UI_VAR_WINDOWTITLEALIGN,
+		kChildRounding = DMUI_UI_VAR_CHILDROUNDING,
+		kChildBorderSize = DMUI_UI_VAR_CHILDBORDERSIZE,
+		kPopupRounding = DMUI_UI_VAR_POPUPROUNDING,
+		kPopupBorderSize = DMUI_UI_VAR_POPUPBORDERSIZE,
+		kFramePadding = DMUI_UI_VAR_FRAMEPADDING,
+		kFrameRounding = DMUI_UI_VAR_FRAMEROUNDING,
+		kFrameBorderSize = DMUI_UI_VAR_FRAMEBORDERSIZE,
+		kItemSpacing = DMUI_UI_VAR_ITEMSPACING,
+		kItemInnerSpacing = DMUI_UI_VAR_ITEMINNERSPACING,
+		kIndentSpacing = DMUI_UI_VAR_INDENTSPACING,
+		kCellPadding = DMUI_UI_VAR_CELLPADDING,
+		kScrollbarSize = DMUI_UI_VAR_SCROLLBARSIZE,
+		kScrollbarRounding = DMUI_UI_VAR_SCROLLBARROUNDING,
+		kScrollbarPadding = DMUI_UI_VAR_SCROLLBARPADDING,
+		kGrabMinSize = DMUI_UI_VAR_GRABMINSIZE,
+		kGrabRounding = DMUI_UI_VAR_GRABROUNDING,
+		kImageRounding = DMUI_UI_VAR_IMAGEROUNDING,
+		kImageBorderSize = DMUI_UI_VAR_IMAGEBORDERSIZE,
+		kTabRounding = DMUI_UI_VAR_TABROUNDING,
+		kTabBorderSize = DMUI_UI_VAR_TABBORDERSIZE,
+		kTabMinWidthBase = DMUI_UI_VAR_TABMINWIDTHBASE,
+		kTabMinWidthShrink = DMUI_UI_VAR_TABMINWIDTHSHRINK,
+		kTabBarBorderSize = DMUI_UI_VAR_TABBARBORDERSIZE,
+		kTabBarOverlineSize = DMUI_UI_VAR_TABBAROVERLINESIZE,
+		kTableAngledHeadersAngle = DMUI_UI_VAR_TABLEANGLEDHEADERSANGLE,
+		kTableAngledHeadersTextAlign = DMUI_UI_VAR_TABLEANGLEDHEADERSTEXTALIGN,
+		kTreeLinesSize = DMUI_UI_VAR_TREELINESSIZE,
+		kTreeLinesRounding = DMUI_UI_VAR_TREELINESROUNDING,
+		kMenuItemRounding = DMUI_UI_VAR_MENUITEMROUNDING,
+		kSelectableRounding = DMUI_UI_VAR_SELECTABLEROUNDING,
+		kDragDropTargetRounding = DMUI_UI_VAR_DRAGDROPTARGETROUNDING,
+		kButtonTextAlign = DMUI_UI_VAR_BUTTONTEXTALIGN,
+		kSelectableTextAlign = DMUI_UI_VAR_SELECTABLETEXTALIGN,
+		kSeparatorSize = DMUI_UI_VAR_SEPARATORSIZE,
+		kSeparatorTextBorderSize = DMUI_UI_VAR_SEPARATORTEXTBORDERSIZE,
+		kSeparatorTextAlign = DMUI_UI_VAR_SEPARATORTEXTALIGN,
+		kSeparatorTextPadding = DMUI_UI_VAR_SEPARATORTEXTPADDING,
+		kDockingSeparatorSize = DMUI_UI_VAR_DOCKINGSEPARATORSIZE
+	};
+
 	enum class DataType : uint32_t
 	{
 		kNone = 0u,
@@ -1143,6 +1193,30 @@ namespace dmui::ui
 			return detail::Invoke(
 				DMUI_UI_API_UNINDENT_SIZE,
 				&DMUI_UIAPI::unindent, width);
+		}
+
+		[[nodiscard]] inline DMUI_Result PushStyleVar(
+			DMUI_UIVar a_var, float a_value) noexcept
+		{
+			return detail::Invoke(
+				DMUI_UI_API_PUSHSTYLEVARV1_SIZE,
+				&DMUI_UIAPI::pushStyleVarV1, a_var, a_value);
+		}
+
+		[[nodiscard]] inline DMUI_Result PushStyleVar(
+			DMUI_UIVar a_var, DMUI_Vec2* a_value) noexcept
+		{
+			return detail::Invoke(
+				DMUI_UI_API_PUSHSTYLEVARV2_SIZE,
+				&DMUI_UIAPI::pushStyleVarV2, a_var, a_value);
+		}
+
+		[[nodiscard]] inline DMUI_Result PushStyleVar(
+			uint32_t a_count) noexcept
+		{
+			return detail::Invoke(
+				DMUI_UI_API_POPSTYLEVAR_SIZE,
+				&DMUI_UIAPI::popStyleVar, a_count);
 		}
 
 		[[nodiscard]] inline DMUI_Result NewLine(
