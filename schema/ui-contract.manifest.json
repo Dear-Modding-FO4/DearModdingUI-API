@@ -2,7 +2,7 @@
   "contract": {
     "name": "DearModdingUI stable UI",
     "abi": 1,
-    "revision": 1,
+    "revision": 2,
     "namespace": "dmui::ui",
     "packedColor": "RRGGBBAA"
   },
@@ -943,6 +943,195 @@
           "value": 26
         }
       ],
+      "rejectedMask": 0
+    },
+    {
+      "name": "StyleVar",
+      "cName": "DMUI_UIStyleVar",
+      "kind": "value",
+      "values": [
+        {
+          "name": "Alpha",
+          "value": 2000
+        },
+        {
+          "name": "DisabledAlpha",
+          "value": 2001
+        },
+        {
+          "name": "WindowPadding",
+          "value": 2002
+        },
+        {
+          "name": "WindowRounding",
+          "value": 2003
+        },
+        {
+          "name": "WindowBorderSize",
+          "value": 2004
+        },
+        {
+          "name": "WindowMinSize",
+          "value": 2005
+        },
+        {
+          "name": "WindowTitleAlign",
+          "value": 2006
+        },
+        {
+          "name": "ChildRounding",
+          "value": 2007
+        },
+        {
+          "name": "ChildBorderSize",
+          "value": 2008
+        },
+        {
+          "name": "PopupRounding",
+          "value": 2009
+        },
+        {
+          "name": "PopupBorderSize",
+          "value": 2010
+        },
+        {
+          "name": "FramePadding",
+          "value": 2011
+        },
+        {
+          "name": "FrameRounding",
+          "value": 2012
+        },
+        {
+          "name": "FrameBorderSize",
+          "value": 2013
+        },
+        {
+          "name": "ItemSpacing",
+          "value": 2014
+        },
+        {
+          "name": "ItemInnerSpacing",
+          "value": 2015
+        },
+        {
+          "name": "IndentSpacing",
+          "value": 2016
+        },
+        {
+          "name": "CellPadding",
+          "value": 2017
+        },
+        {
+          "name": "ScrollbarSize",
+          "value": 2018
+        },
+        {
+          "name": "ScrollbarRounding",
+          "value": 2019
+        },
+        {
+          "name": "ScrollbarPadding",
+          "value": 2020
+        },
+        {
+          "name": "GrabMinSize",
+          "value": 2021
+        },
+        {
+          "name": "GrabRounding",
+          "value": 2022
+        },
+        {
+          "name": "ImageRounding",
+          "value": 2023
+        },
+        {
+          "name": "ImageBorderSize",
+          "value": 2024
+        },
+        {
+          "name": "TabRounding",
+          "value": 2025
+        },
+        {
+          "name": "TabBorderSize",
+          "value": 2026
+        },
+        {
+          "name": "TabMinWidthBase",
+          "value": 2027
+        },
+        {
+          "name": "TabMinWidthShrink",
+          "value": 2028
+        },
+        {
+          "name": "TabBarBorderSize",
+          "value": 2029
+        },
+        {
+          "name": "TabBarOverlineSize",
+          "value": 2030
+        },
+        {
+          "name": "TableAngledHeadersAngle",
+          "value": 2031
+        },
+        {
+          "name": "TableAngledHeadersTextAlign",
+          "value": 2032
+        },
+        {
+          "name": "TreeLinesSize",
+          "value": 2033
+        },
+        {
+          "name": "TreeLinesRounding",
+          "value": 2034
+        },
+        {
+          "name": "MenuItemRounding",
+          "value": 2035
+        },
+        {
+          "name": "SelectableRounding",
+          "value": 2036
+        },
+        {
+          "name": "DragDropTargetRounding",
+          "value": 2037
+        },
+        {
+          "name": "ButtonTextAlign",
+          "value": 2038
+        },
+        {
+          "name": "SelectableTextAlign",
+          "value": 2039
+        },
+        {
+          "name": "SeparatorSize",
+          "value": 2040
+        },
+        {
+          "name": "SeparatorTextBorderSize",
+          "value": 2041
+        },
+        {
+          "name": "SeparatorTextAlign",
+          "value": 2042
+        },
+        {
+          "name": "SeparatorTextPadding",
+          "value": 2043
+        },
+        {
+          "name": "DockingSeparatorSize",
+          "value": 2044
+        }
+      ],
+      "aliases": [],
       "rejectedMask": 0
     }
   ],
@@ -2391,6 +2580,65 @@
         [
           "uint32_t",
           "strideBytes"
+        ]
+      ]
+    },
+    {
+      "id": 64,
+      "name": "PushStyleVarFloat",
+      "field": "pushStyleVarFloat",
+      "kind": "void",
+      "required": false,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_UIStyleVar",
+          "styleVar"
+        ],
+        [
+          "float",
+          "value"
+        ]
+      ]
+    },
+    {
+      "id": 65,
+      "name": "PushStyleVarVec2",
+      "field": "pushStyleVarVec2",
+      "kind": "void",
+      "required": false,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_UIStyleVar",
+          "styleVar"
+        ],
+        [
+          "DMUI_Vec2",
+          "value"
+        ]
+      ]
+    },
+    {
+      "id": 66,
+      "name": "PopStyleVar",
+      "field": "popStyleVar",
+      "kind": "void",
+      "required": false,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "int32_t",
+          "count"
         ]
       ]
     }

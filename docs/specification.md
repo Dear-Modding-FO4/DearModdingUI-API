@@ -4,7 +4,7 @@ This document details the low-level contracts, binary layout requirements, threa
 
 ## Stable UI Contract and Schema
 
-`schema/ui-contract.json` defines the current C UI contract. The immutable `schema/ui-contract.manifest.json` serves as the published ABI-1 baseline: validation fails if an existing operation ID, slot, signature, requirement, enum family, or enum value changes.
+`schema/ui-contract.json` defines the current C UI contract. `schema/ui-contract.manifest.json` records the latest published ABI-1 revision: validation fails if an existing operation ID, slot, signature, requirement, enum family, or enum value changes. Pass `--update-baseline` to the generator when publishing a new revision.
 
 New operations or enum values must only be appended under a newer UI revision. The generated files are:
 - `CUIAPI.h`: The C function table structure.
@@ -15,7 +15,7 @@ The host translates every stable enum and flag symbolically. Values do not neces
 
 ### Optional Slots and Minimum Prefixes
 
-The required table prefix ends at `NewLine`. Subsequent slots are optional and additive (for example, revision 1 adds optional `PlotLines`). A client can connect to a host that supplies its required prefix even if a newer optional tail is absent. Invoking an unsupported operation returns `DMUI_RESULT_UNSUPPORTED_ABI`.
+The required table prefix ends at `NewLine`. Subsequent slots are optional and additive (revision 1 adds `PlotLines`; revision 2 adds `PushStyleVarFloat`, `PushStyleVarVec2`, and `PopStyleVar`). A client can connect to a host that supplies its required prefix even if a newer optional tail is absent. Invoking an unsupported operation returns `DMUI_RESULT_UNSUPPORTED_ABI`.
 
 Drawing wrappers record the first failure in a callback-scoped sticky result. The trampoline passes this result back to the host, which disables the malfunctioning callback. Scope-end operations continue to dispatch so nested stacks unwind cleanly.
 

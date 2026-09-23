@@ -7,7 +7,8 @@
 #define DMUI_UI_ABI_1 1u
 #define DMUI_UI_ABI_CURRENT DMUI_UI_ABI_1
 #define DMUI_UI_REVISION_1 1u
-#define DMUI_UI_REVISION_CURRENT DMUI_UI_REVISION_1
+#define DMUI_UI_REVISION_2 2u
+#define DMUI_UI_REVISION_CURRENT DMUI_UI_REVISION_2
 
 typedef uint32_t DMUI_UIColor;
 #define DMUI_UI_COLOR_NONE 0u
@@ -74,54 +75,6 @@ typedef uint32_t DMUI_UIColor;
 #define DMUI_UI_COLOR_NAV_WINDOWING_HIGHLIGHT 1060u
 #define DMUI_UI_COLOR_NAV_WINDOWING_DIM_BG 1061u
 #define DMUI_UI_COLOR_MODAL_WINDOW_DIM_BG 1062u
-
-typedef uint32_t DMUI_UIVar;
-#define DMUI_UI_VAR_NONE 0u
-#define DMUI_UI_VAR_ALPHA 2000u
-#define DMUI_UI_VAR_DISABLEDALPHA 2001u
-#define DMUI_UI_VAR_WINDOWPADDING 2002u
-#define DMUI_UI_VAR_WINDOWROUNDING 2003u
-#define DMUI_UI_VAR_WINDOWBORDERSIZE 2004u
-#define DMUI_UI_VAR_WINDOWMINSIZE 2005u
-#define DMUI_UI_VAR_WINDOWTITLEALIGN 2006u
-#define DMUI_UI_VAR_CHILDROUNDING 2007u
-#define DMUI_UI_VAR_CHILDBORDERSIZE 2008u
-#define DMUI_UI_VAR_POPUPROUNDING 2009u
-#define DMUI_UI_VAR_POPUPBORDERSIZE 2010u
-#define DMUI_UI_VAR_FRAMEPADDING 2011u
-#define DMUI_UI_VAR_FRAMEROUNDING 2012u
-#define DMUI_UI_VAR_FRAMEBORDERSIZE 2013u
-#define DMUI_UI_VAR_ITEMSPACING 2014u
-#define DMUI_UI_VAR_ITEMINNERSPACING 2015u
-#define DMUI_UI_VAR_INDENTSPACING 2016u
-#define DMUI_UI_VAR_CELLPADDING 2017u
-#define DMUI_UI_VAR_SCROLLBARSIZE 2018u
-#define DMUI_UI_VAR_SCROLLBARROUNDING 2019u
-#define DMUI_UI_VAR_SCROLLBARPADDING 2020u
-#define DMUI_UI_VAR_GRABMINSIZE 2021u
-#define DMUI_UI_VAR_GRABROUNDING 2022u
-#define DMUI_UI_VAR_IMAGEROUNDING 2023u
-#define DMUI_UI_VAR_IMAGEBORDERSIZE 2024u
-#define DMUI_UI_VAR_TABROUNDING 2025u
-#define DMUI_UI_VAR_TABBORDERSIZE 2026u
-#define DMUI_UI_VAR_TABMINWIDTHBASE 2027u
-#define DMUI_UI_VAR_TABMINWIDTHSHRINK 2028u
-#define DMUI_UI_VAR_TABBARBORDERSIZE 2029u
-#define DMUI_UI_VAR_TABBAROVERLINESIZE 2030u
-#define DMUI_UI_VAR_TABLEANGLEDHEADERSANGLE 2031u
-#define DMUI_UI_VAR_TABLEANGLEDHEADERSTEXTALIGN 2032u
-#define DMUI_UI_VAR_TREELINESSIZE 2033u
-#define DMUI_UI_VAR_TREELINESROUNDING 2034u
-#define DMUI_UI_VAR_MENUITEMROUNDING 2035u
-#define DMUI_UI_VAR_SELECTABLEROUNDING 2036u
-#define DMUI_UI_VAR_DRAGDROPTARGETROUNDING 2037u
-#define DMUI_UI_VAR_BUTTONTEXTALIGN 2038u
-#define DMUI_UI_VAR_SELECTABLETEXTALIGN 2039u
-#define DMUI_UI_VAR_SEPARATORSIZE 2040u
-#define DMUI_UI_VAR_SEPARATORTEXTBORDERSIZE 2041u
-#define DMUI_UI_VAR_SEPARATORTEXTALIGN 2042u
-#define DMUI_UI_VAR_SEPARATORTEXTPADDING 2043u
-#define DMUI_UI_VAR_DOCKINGSEPARATORSIZE 2044u
 
 typedef uint32_t DMUI_UIDataType;
 #define DMUI_UI_DATA_TYPE_NONE 0u
@@ -300,373 +253,421 @@ typedef uint32_t DMUI_UITreeNodeFlags;
 #define DMUI_UI_TREE_NODE_FLAGS_DRAW_LINES_TO_NODES 524288u
 #define DMUI_UI_TREE_NODE_FLAGS_COLLAPSING_HEADER 26u
 
-typedef DMUI_Result(DMUI_CALL* DMUI_UIGetStyleMetricsFn)(
-	DMUI_ClientHandle  client,
+typedef uint32_t DMUI_UIStyleVar;
+#define DMUI_UI_STYLE_VAR_NONE 0u
+#define DMUI_UI_STYLE_VAR_ALPHA 2000u
+#define DMUI_UI_STYLE_VAR_DISABLED_ALPHA 2001u
+#define DMUI_UI_STYLE_VAR_WINDOW_PADDING 2002u
+#define DMUI_UI_STYLE_VAR_WINDOW_ROUNDING 2003u
+#define DMUI_UI_STYLE_VAR_WINDOW_BORDER_SIZE 2004u
+#define DMUI_UI_STYLE_VAR_WINDOW_MIN_SIZE 2005u
+#define DMUI_UI_STYLE_VAR_WINDOW_TITLE_ALIGN 2006u
+#define DMUI_UI_STYLE_VAR_CHILD_ROUNDING 2007u
+#define DMUI_UI_STYLE_VAR_CHILD_BORDER_SIZE 2008u
+#define DMUI_UI_STYLE_VAR_POPUP_ROUNDING 2009u
+#define DMUI_UI_STYLE_VAR_POPUP_BORDER_SIZE 2010u
+#define DMUI_UI_STYLE_VAR_FRAME_PADDING 2011u
+#define DMUI_UI_STYLE_VAR_FRAME_ROUNDING 2012u
+#define DMUI_UI_STYLE_VAR_FRAME_BORDER_SIZE 2013u
+#define DMUI_UI_STYLE_VAR_ITEM_SPACING 2014u
+#define DMUI_UI_STYLE_VAR_ITEM_INNER_SPACING 2015u
+#define DMUI_UI_STYLE_VAR_INDENT_SPACING 2016u
+#define DMUI_UI_STYLE_VAR_CELL_PADDING 2017u
+#define DMUI_UI_STYLE_VAR_SCROLLBAR_SIZE 2018u
+#define DMUI_UI_STYLE_VAR_SCROLLBAR_ROUNDING 2019u
+#define DMUI_UI_STYLE_VAR_SCROLLBAR_PADDING 2020u
+#define DMUI_UI_STYLE_VAR_GRAB_MIN_SIZE 2021u
+#define DMUI_UI_STYLE_VAR_GRAB_ROUNDING 2022u
+#define DMUI_UI_STYLE_VAR_IMAGE_ROUNDING 2023u
+#define DMUI_UI_STYLE_VAR_IMAGE_BORDER_SIZE 2024u
+#define DMUI_UI_STYLE_VAR_TAB_ROUNDING 2025u
+#define DMUI_UI_STYLE_VAR_TAB_BORDER_SIZE 2026u
+#define DMUI_UI_STYLE_VAR_TAB_MIN_WIDTH_BASE 2027u
+#define DMUI_UI_STYLE_VAR_TAB_MIN_WIDTH_SHRINK 2028u
+#define DMUI_UI_STYLE_VAR_TAB_BAR_BORDER_SIZE 2029u
+#define DMUI_UI_STYLE_VAR_TAB_BAR_OVERLINE_SIZE 2030u
+#define DMUI_UI_STYLE_VAR_TABLE_ANGLED_HEADERS_ANGLE 2031u
+#define DMUI_UI_STYLE_VAR_TABLE_ANGLED_HEADERS_TEXT_ALIGN 2032u
+#define DMUI_UI_STYLE_VAR_TREE_LINES_SIZE 2033u
+#define DMUI_UI_STYLE_VAR_TREE_LINES_ROUNDING 2034u
+#define DMUI_UI_STYLE_VAR_MENU_ITEM_ROUNDING 2035u
+#define DMUI_UI_STYLE_VAR_SELECTABLE_ROUNDING 2036u
+#define DMUI_UI_STYLE_VAR_DRAG_DROP_TARGET_ROUNDING 2037u
+#define DMUI_UI_STYLE_VAR_BUTTON_TEXT_ALIGN 2038u
+#define DMUI_UI_STYLE_VAR_SELECTABLE_TEXT_ALIGN 2039u
+#define DMUI_UI_STYLE_VAR_SEPARATOR_SIZE 2040u
+#define DMUI_UI_STYLE_VAR_SEPARATOR_TEXT_BORDER_SIZE 2041u
+#define DMUI_UI_STYLE_VAR_SEPARATOR_TEXT_ALIGN 2042u
+#define DMUI_UI_STYLE_VAR_SEPARATOR_TEXT_PADDING 2043u
+#define DMUI_UI_STYLE_VAR_DOCKING_SEPARATOR_SIZE 2044u
+
+typedef DMUI_Result (DMUI_CALL *DMUI_UIGetStyleMetricsFn)(
+	DMUI_ClientHandle client,
 	DMUI_StyleMetrics* metrics) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIBeginComboFn)(
+typedef DMUI_Result (DMUI_CALL *DMUI_UIBeginComboFn)(
 	DMUI_ClientHandle client,
-	const char*       label,
-	const char*       previewValue,
+	const char* label,
+	const char* previewValue,
 	DMUI_UIComboFlags flags,
-	uint32_t*         visible) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIEndComboFn)(
+	uint32_t* visible) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIEndComboFn)(
 	DMUI_ClientHandle client) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIBeginDisabledFn)(
+typedef DMUI_Result (DMUI_CALL *DMUI_UIBeginDisabledFn)(
 	DMUI_ClientHandle client,
-	uint32_t          disabled) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIEndDisabledFn)(
+	uint32_t disabled) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIEndDisabledFn)(
 	DMUI_ClientHandle client) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIBeginTableFn)(
+typedef DMUI_Result (DMUI_CALL *DMUI_UIBeginTableFn)(
 	DMUI_ClientHandle client,
-	const char*       id,
-	int32_t           columns,
+	const char* id,
+	int32_t columns,
 	DMUI_UITableFlags flags,
-	DMUI_Vec2         outerSize,
-	float             innerWidth,
-	uint32_t*         visible) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIEndTableFn)(
+	DMUI_Vec2 outerSize,
+	float innerWidth,
+	uint32_t* visible) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIEndTableFn)(
 	DMUI_ClientHandle client) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIBeginTooltipFn)(
+typedef DMUI_Result (DMUI_CALL *DMUI_UIBeginTooltipFn)(
 	DMUI_ClientHandle client,
-	uint32_t*         visible) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIEndTooltipFn)(
+	uint32_t* visible) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIEndTooltipFn)(
 	DMUI_ClientHandle client) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIButtonFn)(
+typedef DMUI_Result (DMUI_CALL *DMUI_UIButtonFn)(
 	DMUI_ClientHandle client,
-	const char*       label,
-	DMUI_Vec2         size,
-	uint32_t*         pressed) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UICalcTextSizeFn)(
+	const char* label,
+	DMUI_Vec2 size,
+	uint32_t* pressed) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UICalcTextSizeFn)(
 	DMUI_ClientHandle client,
-	const char*       text,
-	size_t            textLength,
-	uint32_t          hideTextAfterDoubleHash,
-	float             wrapWidth,
-	DMUI_Vec2*        size) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UICheckboxFn)(
+	const char* text,
+	size_t textLength,
+	uint32_t hideTextAfterDoubleHash,
+	float wrapWidth,
+	DMUI_Vec2* size) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UICheckboxFn)(
 	DMUI_ClientHandle client,
-	const char*       label,
-	uint32_t*         value,
-	uint32_t*         changed) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UICollapsingHeaderFn)(
-	DMUI_ClientHandle    client,
-	const char*          label,
+	const char* label,
+	uint32_t* value,
+	uint32_t* changed) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UICollapsingHeaderFn)(
+	DMUI_ClientHandle client,
+	const char* label,
 	DMUI_UITreeNodeFlags flags,
-	uint32_t*            open) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UICollapsingHeaderVisibleFn)(
-	DMUI_ClientHandle    client,
-	const char*          label,
-	uint32_t*            visible,
+	uint32_t* open) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UICollapsingHeaderVisibleFn)(
+	DMUI_ClientHandle client,
+	const char* label,
+	uint32_t* visible,
 	DMUI_UITreeNodeFlags flags,
-	uint32_t*            open) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIDragScalarFn)(
-	DMUI_ClientHandle  client,
-	const char*        label,
-	DMUI_UIDataType    dataType,
-	void*              data,
-	uint32_t           dataSize,
-	float              speed,
-	const void*        minimum,
-	uint32_t           minimumSize,
-	const void*        maximum,
-	uint32_t           maximumSize,
-	const char*        format,
+	uint32_t* open) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIDragScalarFn)(
+	DMUI_ClientHandle client,
+	const char* label,
+	DMUI_UIDataType dataType,
+	void* data,
+	uint32_t dataSize,
+	float speed,
+	const void* minimum,
+	uint32_t minimumSize,
+	const void* maximum,
+	uint32_t maximumSize,
+	const char* format,
 	DMUI_UISliderFlags flags,
-	uint32_t*          changed) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIDummyFn)(
+	uint32_t* changed) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIDummyFn)(
 	DMUI_ClientHandle client,
-	DMUI_Vec2         size) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIGetContentRegionAvailFn)(
+	DMUI_Vec2 size) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIGetContentRegionAvailFn)(
 	DMUI_ClientHandle client,
-	DMUI_Vec2*        size) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIGetCursorScreenPosFn)(
+	DMUI_Vec2* size) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIGetCursorScreenPosFn)(
 	DMUI_ClientHandle client,
-	DMUI_Vec2*        position) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIGetFontSizeFn)(
+	DMUI_Vec2* position) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIGetFontSizeFn)(
 	DMUI_ClientHandle client,
-	float*            size) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIGetFrameHeightFn)(
+	float* size) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIGetFrameHeightFn)(
 	DMUI_ClientHandle client,
-	float*            height) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIGetStyleColorFn)(
+	float* height) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIGetStyleColorFn)(
 	DMUI_ClientHandle client,
-	DMUI_UIColor      color,
-	DMUI_Vec4*        value) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIGetTextLineHeightWithSpacingFn)(
+	DMUI_UIColor color,
+	DMUI_Vec4* value) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIGetTextLineHeightWithSpacingFn)(
 	DMUI_ClientHandle client,
-	float*            height) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIIndentFn)(
+	float* height) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIIndentFn)(
 	DMUI_ClientHandle client,
-	float             width) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIInputScalarFn)(
-	DMUI_ClientHandle     client,
-	const char*           label,
-	DMUI_UIDataType       dataType,
-	void*                 data,
-	uint32_t              dataSize,
-	const void*           step,
-	uint32_t              stepSize,
-	const void*           fastStep,
-	uint32_t              fastStepSize,
-	const char*           format,
+	float width) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIInputScalarFn)(
+	DMUI_ClientHandle client,
+	const char* label,
+	DMUI_UIDataType dataType,
+	void* data,
+	uint32_t dataSize,
+	const void* step,
+	uint32_t stepSize,
+	const void* fastStep,
+	uint32_t fastStepSize,
+	const char* format,
 	DMUI_UIInputTextFlags flags,
-	uint32_t*             changed) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIInputTextFn)(
-	DMUI_ClientHandle     client,
-	const char*           label,
-	char*                 buffer,
-	uint32_t              capacity,
-	DMUI_UIInputTextFlags flags,
-	uint32_t*             changed) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIInputTextMultilineFn)(
-	DMUI_ClientHandle     client,
-	const char*           label,
-	char*                 buffer,
-	uint32_t              capacity,
-	DMUI_Vec2             size,
-	DMUI_UIInputTextFlags flags,
-	uint32_t*             changed) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIInputTextWithHintFn)(
-	DMUI_ClientHandle     client,
-	const char*           label,
-	const char*           hint,
-	char*                 buffer,
-	uint32_t              capacity,
-	DMUI_UIInputTextFlags flags,
-	uint32_t*             changed) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIIsItemDeactivatedAfterEditFn)(
+	uint32_t* changed) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIInputTextFn)(
 	DMUI_ClientHandle client,
-	uint32_t*         deactivated) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIIsItemHoveredFn)(
-	DMUI_ClientHandle   client,
+	const char* label,
+	char* buffer,
+	uint32_t capacity,
+	DMUI_UIInputTextFlags flags,
+	uint32_t* changed) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIInputTextMultilineFn)(
+	DMUI_ClientHandle client,
+	const char* label,
+	char* buffer,
+	uint32_t capacity,
+	DMUI_Vec2 size,
+	DMUI_UIInputTextFlags flags,
+	uint32_t* changed) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIInputTextWithHintFn)(
+	DMUI_ClientHandle client,
+	const char* label,
+	const char* hint,
+	char* buffer,
+	uint32_t capacity,
+	DMUI_UIInputTextFlags flags,
+	uint32_t* changed) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIIsItemDeactivatedAfterEditFn)(
+	DMUI_ClientHandle client,
+	uint32_t* deactivated) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIIsItemHoveredFn)(
+	DMUI_ClientHandle client,
 	DMUI_UIHoveredFlags flags,
-	uint32_t*           hovered) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIPopIDFn)(
+	uint32_t* hovered) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIPopIDFn)(
 	DMUI_ClientHandle client) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIPopStyleColorFn)(
+typedef DMUI_Result (DMUI_CALL *DMUI_UIPopStyleColorFn)(
 	DMUI_ClientHandle client,
-	int32_t           count) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIPopTextWrapPosFn)(
+	int32_t count) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIPopTextWrapPosFn)(
 	DMUI_ClientHandle client) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIProgressBarFn)(
+typedef DMUI_Result (DMUI_CALL *DMUI_UIProgressBarFn)(
 	DMUI_ClientHandle client,
-	float             fraction,
-	DMUI_Vec2         size,
-	const char*       overlay,
-	size_t            overlayLength) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIPushIDStringFn)(
+	float fraction,
+	DMUI_Vec2 size,
+	const char* overlay,
+	size_t overlayLength) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIPushIDStringFn)(
 	DMUI_ClientHandle client,
-	const char*       id) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIPushIDRangeFn)(
+	const char* id) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIPushIDRangeFn)(
 	DMUI_ClientHandle client,
-	const char*       id,
-	size_t            length) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIPushIDValueFn)(
+	const char* id,
+	size_t length) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIPushIDValueFn)(
 	DMUI_ClientHandle client,
-	uint64_t          id) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIPushStyleColorU32Fn)(
+	uint64_t id) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIPushStyleColorU32Fn)(
 	DMUI_ClientHandle client,
-	DMUI_UIColor      color,
-	uint32_t          rgba) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIPushStyleColorFn)(
+	DMUI_UIColor color,
+	uint32_t rgba) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIPushStyleColorFn)(
 	DMUI_ClientHandle client,
-	DMUI_UIColor      color,
-	DMUI_Vec4         value) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIPushTextWrapPosFn)(
+	DMUI_UIColor color,
+	DMUI_Vec4 value) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIPushTextWrapPosFn)(
 	DMUI_ClientHandle client,
-	float             localX) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UISameLineFn)(
+	float localX) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UISameLineFn)(
 	DMUI_ClientHandle client,
-	float             offsetFromStartX,
-	float             spacing) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UISelectableFn)(
-	DMUI_ClientHandle      client,
-	const char*            label,
-	uint32_t               selected,
+	float offsetFromStartX,
+	float spacing) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UISelectableFn)(
+	DMUI_ClientHandle client,
+	const char* label,
+	uint32_t selected,
 	DMUI_UISelectableFlags flags,
-	DMUI_Vec2              size,
-	uint32_t*              pressed) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UISelectableToggleFn)(
-	DMUI_ClientHandle      client,
-	const char*            label,
-	uint32_t*              selected,
+	DMUI_Vec2 size,
+	uint32_t* pressed) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UISelectableToggleFn)(
+	DMUI_ClientHandle client,
+	const char* label,
+	uint32_t* selected,
 	DMUI_UISelectableFlags flags,
-	DMUI_Vec2              size,
-	uint32_t*              pressed) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UISeparatorFn)(
+	DMUI_Vec2 size,
+	uint32_t* pressed) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UISeparatorFn)(
 	DMUI_ClientHandle client) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UISetClipboardTextFn)(
+typedef DMUI_Result (DMUI_CALL *DMUI_UISetClipboardTextFn)(
 	DMUI_ClientHandle client,
-	const char*       text,
-	size_t            textLength) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UISetCursorScreenPosFn)(
+	const char* text,
+	size_t textLength) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UISetCursorScreenPosFn)(
 	DMUI_ClientHandle client,
-	DMUI_Vec2         position) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UISetItemDefaultFocusFn)(
+	DMUI_Vec2 position) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UISetItemDefaultFocusFn)(
 	DMUI_ClientHandle client) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UISetNextItemWidthFn)(
+typedef DMUI_Result (DMUI_CALL *DMUI_UISetNextItemWidthFn)(
 	DMUI_ClientHandle client,
-	float             width) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UISetTooltipTextFn)(
+	float width) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UISetTooltipTextFn)(
 	DMUI_ClientHandle client,
-	const char*       text,
-	size_t            textLength) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UISliderScalarFn)(
-	DMUI_ClientHandle  client,
-	const char*        label,
-	DMUI_UIDataType    dataType,
-	void*              data,
-	uint32_t           dataSize,
-	const void*        minimum,
-	uint32_t           minimumSize,
-	const void*        maximum,
-	uint32_t           maximumSize,
-	const char*        format,
+	const char* text,
+	size_t textLength) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UISliderScalarFn)(
+	DMUI_ClientHandle client,
+	const char* label,
+	DMUI_UIDataType dataType,
+	void* data,
+	uint32_t dataSize,
+	const void* minimum,
+	uint32_t minimumSize,
+	const void* maximum,
+	uint32_t maximumSize,
+	const char* format,
 	DMUI_UISliderFlags flags,
-	uint32_t*          changed) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UISpacingFn)(
+	uint32_t* changed) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UISpacingFn)(
 	DMUI_ClientHandle client) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UITableHeadersRowFn)(
+typedef DMUI_Result (DMUI_CALL *DMUI_UITableHeadersRowFn)(
 	DMUI_ClientHandle client) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UITableNextColumnFn)(
+typedef DMUI_Result (DMUI_CALL *DMUI_UITableNextColumnFn)(
 	DMUI_ClientHandle client,
-	uint32_t*         visible) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UITableNextRowFn)(
-	DMUI_ClientHandle    client,
+	uint32_t* visible) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UITableNextRowFn)(
+	DMUI_ClientHandle client,
 	DMUI_UITableRowFlags flags,
-	float                minimumHeight) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UITableSetColumnIndexFn)(
+	float minimumHeight) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UITableSetColumnIndexFn)(
 	DMUI_ClientHandle client,
-	int32_t           column,
-	uint32_t*         visible) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UITableSetupColumnFn)(
-	DMUI_ClientHandle       client,
-	const char*             label,
+	int32_t column,
+	uint32_t* visible) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UITableSetupColumnFn)(
+	DMUI_ClientHandle client,
+	const char* label,
 	DMUI_UITableColumnFlags flags,
-	float                   initialWidthOrWeight,
-	uint32_t                userId) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UITableSetupScrollFreezeFn)(
+	float initialWidthOrWeight,
+	uint32_t userId) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UITableSetupScrollFreezeFn)(
 	DMUI_ClientHandle client,
-	int32_t           columns,
-	int32_t           rows) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UITextFn)(
+	int32_t columns,
+	int32_t rows) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UITextFn)(
 	DMUI_ClientHandle client,
-	const char*       text,
-	size_t            textLength) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UITextColoredFn)(
+	const char* text,
+	size_t textLength) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UITextColoredFn)(
 	DMUI_ClientHandle client,
-	DMUI_Vec4         color,
-	const char*       text,
-	size_t            textLength) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UITextDisabledFn)(
+	DMUI_Vec4 color,
+	const char* text,
+	size_t textLength) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UITextDisabledFn)(
 	DMUI_ClientHandle client,
-	const char*       text,
-	size_t            textLength) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UITextWrappedFn)(
+	const char* text,
+	size_t textLength) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UITextWrappedFn)(
 	DMUI_ClientHandle client,
-	const char*       text,
-	size_t            textLength) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIUnindentFn)(
+	const char* text,
+	size_t textLength) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIUnindentFn)(
 	DMUI_ClientHandle client,
-	float             width) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UINewLineFn)(
+	float width) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UINewLineFn)(
 	DMUI_ClientHandle client) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIPlotLinesFn)(
+typedef DMUI_Result (DMUI_CALL *DMUI_UIPlotLinesFn)(
 	DMUI_ClientHandle client,
-	const char*       label,
-	const float*      values,
-	int32_t           valueCount,
-	int32_t           valueOffset,
-	const char*       overlay,
-	size_t            overlayLength,
-	float             scaleMinimum,
-	float             scaleMaximum,
-	DMUI_Vec2         size,
-	uint32_t          strideBytes) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIPushStyleVarV1Fn)(
+	const char* label,
+	const float* values,
+	int32_t valueCount,
+	int32_t valueOffset,
+	const char* overlay,
+	size_t overlayLength,
+	float scaleMinimum,
+	float scaleMaximum,
+	DMUI_Vec2 size,
+	uint32_t strideBytes) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIPushStyleVarFloatFn)(
 	DMUI_ClientHandle client,
-	DMUI_UIVar        a_var,
-	float             a_value) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIPushStyleVarV2Fn)(
+	DMUI_UIStyleVar styleVar,
+	float value) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIPushStyleVarVec2Fn)(
 	DMUI_ClientHandle client,
-	DMUI_UIVar        a_var,
-	DMUI_Vec2*        a_value) DMUI_NOEXCEPT;
-typedef DMUI_Result(DMUI_CALL* DMUI_UIPopStyleVarFn)(
+	DMUI_UIStyleVar styleVar,
+	DMUI_Vec2 value) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIPopStyleVarFn)(
 	DMUI_ClientHandle client,
-	uint32_t          a_count) DMUI_NOEXCEPT;
+	int32_t count) DMUI_NOEXCEPT;
 
 typedef struct DMUI_UIAPI
 {
-	uint32_t                              structSize;
-	uint32_t                              abiVersion;
-	uint32_t                              revision;
-	uint32_t                              reserved;
-	DMUI_UIGetStyleMetricsFn              getStyleMetrics;
-	DMUI_UIBeginComboFn                   beginCombo;
-	DMUI_UIEndComboFn                     endCombo;
-	DMUI_UIBeginDisabledFn                beginDisabled;
-	DMUI_UIEndDisabledFn                  endDisabled;
-	DMUI_UIBeginTableFn                   beginTable;
-	DMUI_UIEndTableFn                     endTable;
-	DMUI_UIBeginTooltipFn                 beginTooltip;
-	DMUI_UIEndTooltipFn                   endTooltip;
-	DMUI_UIButtonFn                       button;
-	DMUI_UICalcTextSizeFn                 calcTextSize;
-	DMUI_UICheckboxFn                     checkbox;
-	DMUI_UICollapsingHeaderFn             collapsingHeader;
-	DMUI_UICollapsingHeaderVisibleFn      collapsingHeaderVisible;
-	DMUI_UIDragScalarFn                   dragScalar;
-	DMUI_UIDummyFn                        dummy;
-	DMUI_UIGetContentRegionAvailFn        getContentRegionAvail;
-	DMUI_UIGetCursorScreenPosFn           getCursorScreenPos;
-	DMUI_UIGetFontSizeFn                  getFontSize;
-	DMUI_UIGetFrameHeightFn               getFrameHeight;
-	DMUI_UIGetStyleColorFn                getStyleColor;
+	uint32_t structSize;
+	uint32_t abiVersion;
+	uint32_t revision;
+	uint32_t reserved;
+	DMUI_UIGetStyleMetricsFn getStyleMetrics;
+	DMUI_UIBeginComboFn beginCombo;
+	DMUI_UIEndComboFn endCombo;
+	DMUI_UIBeginDisabledFn beginDisabled;
+	DMUI_UIEndDisabledFn endDisabled;
+	DMUI_UIBeginTableFn beginTable;
+	DMUI_UIEndTableFn endTable;
+	DMUI_UIBeginTooltipFn beginTooltip;
+	DMUI_UIEndTooltipFn endTooltip;
+	DMUI_UIButtonFn button;
+	DMUI_UICalcTextSizeFn calcTextSize;
+	DMUI_UICheckboxFn checkbox;
+	DMUI_UICollapsingHeaderFn collapsingHeader;
+	DMUI_UICollapsingHeaderVisibleFn collapsingHeaderVisible;
+	DMUI_UIDragScalarFn dragScalar;
+	DMUI_UIDummyFn dummy;
+	DMUI_UIGetContentRegionAvailFn getContentRegionAvail;
+	DMUI_UIGetCursorScreenPosFn getCursorScreenPos;
+	DMUI_UIGetFontSizeFn getFontSize;
+	DMUI_UIGetFrameHeightFn getFrameHeight;
+	DMUI_UIGetStyleColorFn getStyleColor;
 	DMUI_UIGetTextLineHeightWithSpacingFn getTextLineHeightWithSpacing;
-	DMUI_UIIndentFn                       indent;
-	DMUI_UIInputScalarFn                  inputScalar;
-	DMUI_UIInputTextFn                    inputText;
-	DMUI_UIInputTextMultilineFn           inputTextMultiline;
-	DMUI_UIInputTextWithHintFn            inputTextWithHint;
-	DMUI_UIIsItemDeactivatedAfterEditFn   isItemDeactivatedAfterEdit;
-	DMUI_UIIsItemHoveredFn                isItemHovered;
-	DMUI_UIPopIDFn                        popID;
-	DMUI_UIPopStyleColorFn                popStyleColor;
-	DMUI_UIPopTextWrapPosFn               popTextWrapPos;
-	DMUI_UIProgressBarFn                  progressBar;
-	DMUI_UIPushIDStringFn                 pushIDString;
-	DMUI_UIPushIDRangeFn                  pushIDRange;
-	DMUI_UIPushIDValueFn                  pushIDValue;
-	DMUI_UIPushStyleColorU32Fn            pushStyleColorU32;
-	DMUI_UIPushStyleColorFn               pushStyleColor;
-	DMUI_UIPushTextWrapPosFn              pushTextWrapPos;
-	DMUI_UISameLineFn                     sameLine;
-	DMUI_UISelectableFn                   selectable;
-	DMUI_UISelectableToggleFn             selectableToggle;
-	DMUI_UISeparatorFn                    separator;
-	DMUI_UISetClipboardTextFn             setClipboardText;
-	DMUI_UISetCursorScreenPosFn           setCursorScreenPos;
-	DMUI_UISetItemDefaultFocusFn          setItemDefaultFocus;
-	DMUI_UISetNextItemWidthFn             setNextItemWidth;
-	DMUI_UISetTooltipTextFn               setTooltipText;
-	DMUI_UISliderScalarFn                 sliderScalar;
-	DMUI_UISpacingFn                      spacing;
-	DMUI_UITableHeadersRowFn              tableHeadersRow;
-	DMUI_UITableNextColumnFn              tableNextColumn;
-	DMUI_UITableNextRowFn                 tableNextRow;
-	DMUI_UITableSetColumnIndexFn          tableSetColumnIndex;
-	DMUI_UITableSetupColumnFn             tableSetupColumn;
-	DMUI_UITableSetupScrollFreezeFn       tableSetupScrollFreeze;
-	DMUI_UITextFn                         text;
-	DMUI_UITextColoredFn                  textColored;
-	DMUI_UITextDisabledFn                 textDisabled;
-	DMUI_UITextWrappedFn                  textWrapped;
-	DMUI_UIUnindentFn                     unindent;
-	DMUI_UINewLineFn                      newLine;
-	DMUI_UIPlotLinesFn                    plotLines;
-	DMUI_UIPushStyleVarV1Fn               pushStyleVarV1;
-	DMUI_UIPushStyleVarV2Fn               pushStyleVarV2;
-	DMUI_UIPopStyleVarFn                  popStyleVar;
+	DMUI_UIIndentFn indent;
+	DMUI_UIInputScalarFn inputScalar;
+	DMUI_UIInputTextFn inputText;
+	DMUI_UIInputTextMultilineFn inputTextMultiline;
+	DMUI_UIInputTextWithHintFn inputTextWithHint;
+	DMUI_UIIsItemDeactivatedAfterEditFn isItemDeactivatedAfterEdit;
+	DMUI_UIIsItemHoveredFn isItemHovered;
+	DMUI_UIPopIDFn popID;
+	DMUI_UIPopStyleColorFn popStyleColor;
+	DMUI_UIPopTextWrapPosFn popTextWrapPos;
+	DMUI_UIProgressBarFn progressBar;
+	DMUI_UIPushIDStringFn pushIDString;
+	DMUI_UIPushIDRangeFn pushIDRange;
+	DMUI_UIPushIDValueFn pushIDValue;
+	DMUI_UIPushStyleColorU32Fn pushStyleColorU32;
+	DMUI_UIPushStyleColorFn pushStyleColor;
+	DMUI_UIPushTextWrapPosFn pushTextWrapPos;
+	DMUI_UISameLineFn sameLine;
+	DMUI_UISelectableFn selectable;
+	DMUI_UISelectableToggleFn selectableToggle;
+	DMUI_UISeparatorFn separator;
+	DMUI_UISetClipboardTextFn setClipboardText;
+	DMUI_UISetCursorScreenPosFn setCursorScreenPos;
+	DMUI_UISetItemDefaultFocusFn setItemDefaultFocus;
+	DMUI_UISetNextItemWidthFn setNextItemWidth;
+	DMUI_UISetTooltipTextFn setTooltipText;
+	DMUI_UISliderScalarFn sliderScalar;
+	DMUI_UISpacingFn spacing;
+	DMUI_UITableHeadersRowFn tableHeadersRow;
+	DMUI_UITableNextColumnFn tableNextColumn;
+	DMUI_UITableNextRowFn tableNextRow;
+	DMUI_UITableSetColumnIndexFn tableSetColumnIndex;
+	DMUI_UITableSetupColumnFn tableSetupColumn;
+	DMUI_UITableSetupScrollFreezeFn tableSetupScrollFreeze;
+	DMUI_UITextFn text;
+	DMUI_UITextColoredFn textColored;
+	DMUI_UITextDisabledFn textDisabled;
+	DMUI_UITextWrappedFn textWrapped;
+	DMUI_UIUnindentFn unindent;
+	DMUI_UINewLineFn newLine;
+	DMUI_UIPlotLinesFn plotLines;
+	DMUI_UIPushStyleVarFloatFn pushStyleVarFloat;
+	DMUI_UIPushStyleVarVec2Fn pushStyleVarVec2;
+	DMUI_UIPopStyleVarFn popStyleVar;
 } DMUI_UIAPI;
 
 #define DMUI_UI_API_GET_STYLE_METRICS_SIZE \
@@ -795,14 +796,14 @@ typedef struct DMUI_UIAPI
 	((uint32_t)(offsetof(DMUI_UIAPI, newLine) + sizeof(DMUI_UINewLineFn)))
 #define DMUI_UI_API_PLOT_LINES_SIZE \
 	((uint32_t)(offsetof(DMUI_UIAPI, plotLines) + sizeof(DMUI_UIPlotLinesFn)))
-#define DMUI_UI_API_PUSHSTYLEVARV1_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, pushStyleVarV1) + sizeof(DMUI_UIPushStyleVarV1Fn)))
-#define DMUI_UI_API_PUSHSTYLEVARV2_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, pushStyleVarV2) + sizeof(DMUI_UIPushStyleVarV2Fn)))
-#define DMUI_UI_API_POPSTYLEVAR_SIZE \
+#define DMUI_UI_API_PUSH_STYLE_VAR_FLOAT_SIZE \
+	((uint32_t)(offsetof(DMUI_UIAPI, pushStyleVarFloat) + sizeof(DMUI_UIPushStyleVarFloatFn)))
+#define DMUI_UI_API_PUSH_STYLE_VAR_VEC2_SIZE \
+	((uint32_t)(offsetof(DMUI_UIAPI, pushStyleVarVec2) + sizeof(DMUI_UIPushStyleVarVec2Fn)))
+#define DMUI_UI_API_POP_STYLE_VAR_SIZE \
 	((uint32_t)(offsetof(DMUI_UIAPI, popStyleVar) + sizeof(DMUI_UIPopStyleVarFn)))
-#define DMUI_UI_API_REQUIRED_SIZE DMUI_UI_API_PUSHSTYLEVARV2_SIZE
-#define DMUI_UI_API_CURRENT_SIZE DMUI_UI_API_POPSTYLEVAR_SIZE
+#define DMUI_UI_API_REQUIRED_SIZE DMUI_UI_API_NEW_LINE_SIZE
+#define DMUI_UI_API_CURRENT_SIZE DMUI_UI_API_POP_STYLE_VAR_SIZE
 
 typedef struct DMUI_UIAPIInfo
 {

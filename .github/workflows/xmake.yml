@@ -35,6 +35,23 @@ jobs:
     - name: Test stable UI compatibility baseline
       run: python Tests/test-ui-contract-generator.py -v
 
+    - name: Check generated UI contract headers
+      shell: pwsh
+      run: |
+        $generated = Join-Path $env:RUNNER_TEMP 'dmui-ui-contract'
+        python Tools/generate-ui-contract.py `
+          --schema schema/ui-contract.json `
+          --baseline-manifest schema/ui-contract.manifest.json `
+          --c-header "$generated/CUIAPI.h" `
+          --checked-header "$generated/UIChecked.generated.h" `
+          --host-bindings "$generated/UIBindings.generated.h"
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        foreach ($name in 'CUIAPI.h', 'UIChecked.generated.h') {
+          $actual = [IO.File]::ReadAllText((Join-Path $generated $name)).Replace("`r`n", "`n")
+          $expected = [IO.File]::ReadAllText("include/DearModdingUI/$name").Replace("`r`n", "`n")
+          if ($actual -cne $expected) { throw "Generated contract differs from schema: $name" }
+        }
+
     - name: Test Phosphor vocabulary generation
       run: python Tests/test-phosphor-generator.py -v
 

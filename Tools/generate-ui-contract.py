@@ -85,10 +85,17 @@ def render_c_header(schema: dict) -> str:
         "",
         f"#define DMUI_UI_ABI_{contract['abi']} {contract['abi']}u",
         f"#define DMUI_UI_ABI_CURRENT DMUI_UI_ABI_{contract['abi']}",
-        f"#define DMUI_UI_REVISION_{contract['revision']} {contract['revision']}u",
-        f"#define DMUI_UI_REVISION_CURRENT DMUI_UI_REVISION_{contract['revision']}",
-        "",
     ]
+    lines.extend(
+        f"#define DMUI_UI_REVISION_{revision} {revision}u"
+        for revision in range(1, contract["revision"] + 1)
+    )
+    lines.extend(
+        [
+            f"#define DMUI_UI_REVISION_CURRENT DMUI_UI_REVISION_{contract['revision']}",
+            "",
+        ]
+    )
     for enum in schema["enums"]:
         c_name = enum["cName"]
         lines.append(f"typedef uint32_t {c_name};")
@@ -300,6 +307,7 @@ def render_checked_header(schema: dict) -> str:
 def native_type(enum_name: str) -> str:
     return {
         "Color": "ImGuiCol",
+        "StyleVar": "ImGuiStyleVar",
         "DataType": "ImGuiDataType",
         "ComboFlags": "ImGuiComboFlags",
         "HoveredFlags": "ImGuiHoveredFlags",
@@ -544,6 +552,11 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--checked-header", required=True, type=Path)
     parser.add_argument("--host-bindings", required=True, type=Path)
     parser.add_argument("--baseline-manifest", required=True, type=Path)
+    parser.add_argument(
+        "--update-baseline",
+        action="store_true",
+        help="record the validated schema as the published baseline",
+    )
     return parser.parse_args()
 
 
@@ -557,6 +570,10 @@ def main() -> int:
         arguments.checked_header.resolve(): render_checked_header(schema),
         arguments.host_bindings.resolve(): render_host_bindings(schema),
     }
+    if arguments.update_baseline:
+        outputs[arguments.baseline_manifest.resolve()] = (
+            json.dumps(build_manifest(schema), indent=2) + "\n"
+        )
     for path, text in outputs.items():
         atomic_write(path, text)
         print(f"Wrote {path} ({len(text.encode('utf-8'))} bytes).")

@@ -18,7 +18,9 @@ _Static_assert(
 _Static_assert(offsetof(DMUI_UIAPI, getStyleMetrics) == 16, "UI slot 1");
 _Static_assert(offsetof(DMUI_UIAPI, newLine) == 504, "UI slot 62");
 _Static_assert(offsetof(DMUI_UIAPI, plotLines) == 512, "UI slot 63");
-_Static_assert(DMUI_UI_API_REQUIRED_SIZE == 536, "required UI prefix");
+_Static_assert(offsetof(DMUI_UIAPI, pushStyleVarFloat) == 520, "UI slot 64");
+_Static_assert(offsetof(DMUI_UIAPI, popStyleVar) == 536, "UI slot 66");
+_Static_assert(DMUI_UI_API_REQUIRED_SIZE == 512, "required UI prefix");
 _Static_assert(DMUI_UI_API_CURRENT_SIZE == 544, "current UI prefix");
 _Static_assert(sizeof(DMUI_UIAPI) == 544, "current UI table layout");
 #endif

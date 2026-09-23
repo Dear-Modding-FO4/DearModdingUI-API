@@ -2,7 +2,7 @@
   "contract": {
     "name": "DearModdingUI stable UI",
     "abi": 1,
-    "revision": 1,
+    "revision": 2,
     "namespace": "dmui::ui",
     "packedColor": "RRGGBBAA"
   },
@@ -301,6 +301,58 @@
         ["DrawLinesToNodes", 524288, "ImGuiTreeNodeFlags_DrawLinesToNodes"]
       ],
       "aliases": [["CollapsingHeader", 26]]
+    },
+    {
+      "name": "StyleVar",
+      "cName": "DMUI_UIStyleVar",
+      "kind": "value",
+      "values": [
+        ["Alpha", 2000, "ImGuiStyleVar_Alpha"],
+        ["DisabledAlpha", 2001, "ImGuiStyleVar_DisabledAlpha"],
+        ["WindowPadding", 2002, "ImGuiStyleVar_WindowPadding"],
+        ["WindowRounding", 2003, "ImGuiStyleVar_WindowRounding"],
+        ["WindowBorderSize", 2004, "ImGuiStyleVar_WindowBorderSize"],
+        ["WindowMinSize", 2005, "ImGuiStyleVar_WindowMinSize"],
+        ["WindowTitleAlign", 2006, "ImGuiStyleVar_WindowTitleAlign"],
+        ["ChildRounding", 2007, "ImGuiStyleVar_ChildRounding"],
+        ["ChildBorderSize", 2008, "ImGuiStyleVar_ChildBorderSize"],
+        ["PopupRounding", 2009, "ImGuiStyleVar_PopupRounding"],
+        ["PopupBorderSize", 2010, "ImGuiStyleVar_PopupBorderSize"],
+        ["FramePadding", 2011, "ImGuiStyleVar_FramePadding"],
+        ["FrameRounding", 2012, "ImGuiStyleVar_FrameRounding"],
+        ["FrameBorderSize", 2013, "ImGuiStyleVar_FrameBorderSize"],
+        ["ItemSpacing", 2014, "ImGuiStyleVar_ItemSpacing"],
+        ["ItemInnerSpacing", 2015, "ImGuiStyleVar_ItemInnerSpacing"],
+        ["IndentSpacing", 2016, "ImGuiStyleVar_IndentSpacing"],
+        ["CellPadding", 2017, "ImGuiStyleVar_CellPadding"],
+        ["ScrollbarSize", 2018, "ImGuiStyleVar_ScrollbarSize"],
+        ["ScrollbarRounding", 2019, "ImGuiStyleVar_ScrollbarRounding"],
+        ["ScrollbarPadding", 2020, "ImGuiStyleVar_ScrollbarPadding"],
+        ["GrabMinSize", 2021, "ImGuiStyleVar_GrabMinSize"],
+        ["GrabRounding", 2022, "ImGuiStyleVar_GrabRounding"],
+        ["ImageRounding", 2023, "ImGuiStyleVar_ImageRounding"],
+        ["ImageBorderSize", 2024, "ImGuiStyleVar_ImageBorderSize"],
+        ["TabRounding", 2025, "ImGuiStyleVar_TabRounding"],
+        ["TabBorderSize", 2026, "ImGuiStyleVar_TabBorderSize"],
+        ["TabMinWidthBase", 2027, "ImGuiStyleVar_TabMinWidthBase"],
+        ["TabMinWidthShrink", 2028, "ImGuiStyleVar_TabMinWidthShrink"],
+        ["TabBarBorderSize", 2029, "ImGuiStyleVar_TabBarBorderSize"],
+        ["TabBarOverlineSize", 2030, "ImGuiStyleVar_TabBarOverlineSize"],
+        ["TableAngledHeadersAngle", 2031, "ImGuiStyleVar_TableAngledHeadersAngle"],
+        ["TableAngledHeadersTextAlign", 2032, "ImGuiStyleVar_TableAngledHeadersTextAlign"],
+        ["TreeLinesSize", 2033, "ImGuiStyleVar_TreeLinesSize"],
+        ["TreeLinesRounding", 2034, "ImGuiStyleVar_TreeLinesRounding"],
+        ["MenuItemRounding", 2035, "ImGuiStyleVar_MenuItemRounding"],
+        ["SelectableRounding", 2036, "ImGuiStyleVar_SelectableRounding"],
+        ["DragDropTargetRounding", 2037, "ImGuiStyleVar_DragDropTargetRounding"],
+        ["ButtonTextAlign", 2038, "ImGuiStyleVar_ButtonTextAlign"],
+        ["SelectableTextAlign", 2039, "ImGuiStyleVar_SelectableTextAlign"],
+        ["SeparatorSize", 2040, "ImGuiStyleVar_SeparatorSize"],
+        ["SeparatorTextBorderSize", 2041, "ImGuiStyleVar_SeparatorTextBorderSize"],
+        ["SeparatorTextAlign", 2042, "ImGuiStyleVar_SeparatorTextAlign"],
+        ["SeparatorTextPadding", 2043, "ImGuiStyleVar_SeparatorTextPadding"],
+        ["DockingSeparatorSize", 2044, "ImGuiStyleVar_DockingSeparatorSize"]
+      ]
     }
   ],
   "signatures": {
@@ -366,7 +418,10 @@
     "TextWrapped": [["DMUI_ClientHandle", "client"], ["const char*", "text"], ["size_t", "textLength"]],
     "Unindent": [["DMUI_ClientHandle", "client"], ["float", "width"]],
     "NewLine": [["DMUI_ClientHandle", "client"]],
-    "PlotLines": [["DMUI_ClientHandle", "client"], ["const char*", "label"], ["const float*", "values"], ["int32_t", "valueCount"], ["int32_t", "valueOffset"], ["const char*", "overlay"], ["size_t", "overlayLength"], ["float", "scaleMinimum"], ["float", "scaleMaximum"], ["DMUI_Vec2", "size"], ["uint32_t", "strideBytes"]]
+    "PlotLines": [["DMUI_ClientHandle", "client"], ["const char*", "label"], ["const float*", "values"], ["int32_t", "valueCount"], ["int32_t", "valueOffset"], ["const char*", "overlay"], ["size_t", "overlayLength"], ["float", "scaleMinimum"], ["float", "scaleMaximum"], ["DMUI_Vec2", "size"], ["uint32_t", "strideBytes"]],
+    "PushStyleVarFloat": [["DMUI_ClientHandle", "client"], ["DMUI_UIStyleVar", "styleVar"], ["float", "value"]],
+    "PushStyleVarVec2": [["DMUI_ClientHandle", "client"], ["DMUI_UIStyleVar", "styleVar"], ["DMUI_Vec2", "value"]],
+    "PopStyleVar": [["DMUI_ClientHandle", "client"], ["int32_t", "count"]]
   },
   "operations": [
     [1, "GetStyleMetrics", "getStyleMetrics", "style_metrics", true],
@@ -431,6 +486,9 @@
     [60, "TextWrapped", "textWrapped", "text", true],
     [61, "Unindent", "unindent", "void", true],
     [62, "NewLine", "newLine", "void", true],
-    [63, "PlotLines", "plotLines", "plot", false]
+    [63, "PlotLines", "plotLines", "plot", false],
+    [64, "PushStyleVarFloat", "pushStyleVarFloat", "void", false],
+    [65, "PushStyleVarVec2", "pushStyleVarVec2", "void", false],
+    [66, "PopStyleVar", "popStyleVar", "void", false]
   ]
 }

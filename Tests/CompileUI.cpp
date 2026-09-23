@@ -87,6 +87,11 @@ void CompileStableUI()
 		dmui::ui::Color::kText,
 		dmui::ui::Vec4{ 1.0f, 1.0f, 1.0f, 1.0f });
 	dmui::ui::PopStyleColor();
+	dmui::ui::PushStyleVar(dmui::ui::StyleVar::kAlpha, 0.5f);
+	dmui::ui::PushStyleVar(
+		dmui::ui::StyleVar::kFramePadding,
+		dmui::ui::Vec2{ 4.0f, 2.0f });
+	dmui::ui::PopStyleVar(2);
 	dmui::ui::PushTextWrapPos(0.0f);
 	dmui::ui::TextUnformatted("wrapped");
 	dmui::ui::PopTextWrapPos();

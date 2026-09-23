@@ -58,7 +58,7 @@ class CompatibilityBaselineTests(unittest.TestCase):
             ["DMUI_ClientHandle", "client"]
         ]
         changed["operations"].append(
-            [64, "OptionalProbe", "optionalProbe", "void", False]
+            [len(changed["operations"]) + 1, "OptionalProbe", "optionalProbe", "void", False]
         )
         with self.assertRaisesRegex(generator.GenerationError, "newer contract revision"):
             self.validate(changed)
@@ -73,7 +73,7 @@ class CompatibilityBaselineTests(unittest.TestCase):
             ["DMUI_ClientHandle", "client"]
         ]
         changed["operations"].append(
-            [64, "OptionalProbe", "optionalProbe", "void", False]
+            [len(changed["operations"]) + 1, "OptionalProbe", "optionalProbe", "void", False]
         )
 
         header = generator.render_checked_header(changed)
