@@ -178,6 +178,52 @@ namespace dmui::ui::detail
 
 namespace dmui::ui
 {
+	class ListClipper
+	{
+	public:
+		ListClipper() noexcept = default;
+		~ListClipper() noexcept { End(); }
+
+		ListClipper(const ListClipper&) = delete;
+		ListClipper(ListClipper&&) = delete;
+		ListClipper& operator=(const ListClipper&) = delete;
+		ListClipper& operator=(ListClipper&&) = delete;
+
+		void Begin(int32_t a_itemsCount, float a_itemsHeight = -1.0f) noexcept
+		{
+			End();
+			DisplayStart = DisplayEnd = 0;
+			detail::Record(checked::ListClipperBegin(
+				a_itemsCount, a_itemsHeight, &m_clipper));
+		}
+
+		[[nodiscard]] bool Step() noexcept
+		{
+			if (!m_clipper)
+				return false;
+			uint32_t stepping{};
+			detail::Record(checked::ListClipperStep(
+				m_clipper, &stepping, &DisplayStart, &DisplayEnd));
+			if (!stepping)
+				m_clipper = 0;
+			return stepping != 0;
+		}
+
+		void End() noexcept
+		{
+			if (!m_clipper)
+				return;
+			detail::Record(checked::ListClipperEnd(m_clipper));
+			m_clipper = 0;
+		}
+
+		int32_t DisplayStart{ 0 };
+		int32_t DisplayEnd{ 0 };
+
+	private:
+		uint64_t m_clipper{ 0 };
+	};
+
 	[[nodiscard]] inline DMUI_Result LastResult() noexcept
 	{
 		return detail::LastResult();

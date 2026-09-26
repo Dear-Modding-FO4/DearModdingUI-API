@@ -595,6 +595,20 @@ typedef DMUI_Result (DMUI_CALL *DMUI_UIPushStyleVarVec2Fn)(
 typedef DMUI_Result (DMUI_CALL *DMUI_UIPopStyleVarFn)(
 	DMUI_ClientHandle client,
 	int32_t count) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIListClipperBeginFn)(
+	DMUI_ClientHandle client,
+	int32_t itemsCount,
+	float itemsHeight,
+	uint64_t* clipper) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIListClipperStepFn)(
+	DMUI_ClientHandle client,
+	uint64_t clipper,
+	uint32_t* stepping,
+	int32_t* displayStart,
+	int32_t* displayEnd) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIListClipperEndFn)(
+	DMUI_ClientHandle client,
+	uint64_t clipper) DMUI_NOEXCEPT;
 
 typedef struct DMUI_UIAPI
 {
@@ -668,6 +682,9 @@ typedef struct DMUI_UIAPI
 	DMUI_UIPushStyleVarFloatFn pushStyleVarFloat;
 	DMUI_UIPushStyleVarVec2Fn pushStyleVarVec2;
 	DMUI_UIPopStyleVarFn popStyleVar;
+	DMUI_UIListClipperBeginFn listClipperBegin;
+	DMUI_UIListClipperStepFn listClipperStep;
+	DMUI_UIListClipperEndFn listClipperEnd;
 } DMUI_UIAPI;
 
 #define DMUI_UI_API_GET_STYLE_METRICS_SIZE \
@@ -802,8 +819,14 @@ typedef struct DMUI_UIAPI
 	((uint32_t)(offsetof(DMUI_UIAPI, pushStyleVarVec2) + sizeof(DMUI_UIPushStyleVarVec2Fn)))
 #define DMUI_UI_API_POP_STYLE_VAR_SIZE \
 	((uint32_t)(offsetof(DMUI_UIAPI, popStyleVar) + sizeof(DMUI_UIPopStyleVarFn)))
+#define DMUI_UI_API_LIST_CLIPPER_BEGIN_SIZE \
+	((uint32_t)(offsetof(DMUI_UIAPI, listClipperBegin) + sizeof(DMUI_UIListClipperBeginFn)))
+#define DMUI_UI_API_LIST_CLIPPER_STEP_SIZE \
+	((uint32_t)(offsetof(DMUI_UIAPI, listClipperStep) + sizeof(DMUI_UIListClipperStepFn)))
+#define DMUI_UI_API_LIST_CLIPPER_END_SIZE \
+	((uint32_t)(offsetof(DMUI_UIAPI, listClipperEnd) + sizeof(DMUI_UIListClipperEndFn)))
 #define DMUI_UI_API_REQUIRED_SIZE DMUI_UI_API_NEW_LINE_SIZE
-#define DMUI_UI_API_CURRENT_SIZE DMUI_UI_API_POP_STYLE_VAR_SIZE
+#define DMUI_UI_API_CURRENT_SIZE DMUI_UI_API_LIST_CLIPPER_END_SIZE
 
 typedef struct DMUI_UIAPIInfo
 {

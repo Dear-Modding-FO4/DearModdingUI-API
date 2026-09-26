@@ -92,6 +92,12 @@ void CompileStableUI()
 		dmui::ui::StyleVar::kFramePadding,
 		dmui::ui::Vec2{ 4.0f, 2.0f });
 	dmui::ui::PopStyleVar(2);
+	dmui::ui::ListClipper clipper;
+	clipper.Begin(1000);
+	while (clipper.Step())
+		for (int32_t i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i)
+			dmui::ui::Text("%d: row", i);
+	clipper.End();
 	dmui::ui::PushTextWrapPos(0.0f);
 	dmui::ui::TextUnformatted("wrapped");
 	dmui::ui::PopTextWrapPos();

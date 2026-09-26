@@ -421,7 +421,10 @@
     "PlotLines": [["DMUI_ClientHandle", "client"], ["const char*", "label"], ["const float*", "values"], ["int32_t", "valueCount"], ["int32_t", "valueOffset"], ["const char*", "overlay"], ["size_t", "overlayLength"], ["float", "scaleMinimum"], ["float", "scaleMaximum"], ["DMUI_Vec2", "size"], ["uint32_t", "strideBytes"]],
     "PushStyleVarFloat": [["DMUI_ClientHandle", "client"], ["DMUI_UIStyleVar", "styleVar"], ["float", "value"]],
     "PushStyleVarVec2": [["DMUI_ClientHandle", "client"], ["DMUI_UIStyleVar", "styleVar"], ["DMUI_Vec2", "value"]],
-    "PopStyleVar": [["DMUI_ClientHandle", "client"], ["int32_t", "count"]]
+    "PopStyleVar": [["DMUI_ClientHandle", "client"], ["int32_t", "count"]],
+    "ListClipperBegin": [["DMUI_ClientHandle", "client"], ["int32_t", "itemsCount"], ["float", "itemsHeight"], ["uint64_t*", "clipper"]],
+    "ListClipperStep": [["DMUI_ClientHandle", "client"], ["uint64_t", "clipper"], ["uint32_t*", "stepping"], ["int32_t*", "displayStart"], ["int32_t*", "displayEnd"]],
+    "ListClipperEnd": [["DMUI_ClientHandle", "client"], ["uint64_t", "clipper"]]
   },
   "operations": [
     [1, "GetStyleMetrics", "getStyleMetrics", "style_metrics", true],
@@ -489,6 +492,9 @@
     [63, "PlotLines", "plotLines", "plot", false],
     [64, "PushStyleVarFloat", "pushStyleVarFloat", "void", false],
     [65, "PushStyleVarVec2", "pushStyleVarVec2", "void", false],
-    [66, "PopStyleVar", "popStyleVar", "void", false]
+    [66, "PopStyleVar", "popStyleVar", "void", false],
+    [67, "ListClipperBegin", "listClipperBegin", "handle", false],
+    [68, "ListClipperStep", "listClipperStep", "list_clipper_step", false],
+    [69, "ListClipperEnd", "listClipperEnd", "void", false]
   ]
 }

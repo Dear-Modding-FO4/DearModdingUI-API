@@ -31,6 +31,25 @@ float maxVal = 2.0f;
 dmui::ui::SliderScalar("##intensity", &intensity, &minVal, &maxVal, "%.2fx");
 ```
 
+### List Clipping
+
+Use `ListClipper` to submit only the requested rows of a large list:
+
+```cpp
+dmui::ui::ListClipper clipper;
+clipper.Begin(static_cast<int32_t>(items.size()));
+while (clipper.Step())
+    for (int32_t i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i)
+        dmui::ui::Text("%d: %s", i, items[i].c_str());
+```
+
+Rows must have uniform height. Omit `itemsHeight` or pass a value <= 0 to measure
+the first row. Keep each clipper inside one drawing callback and the same window
+and table; end nested clippers in reverse order. Destruction ends a clipper early.
+
+To require clipping at connect time, set `ClientOptions::minimumUIAPISize` to
+`DMUI_UI_API_LIST_CLIPPER_END_SIZE`.
+
 ### Search and Read-Only Text
 
 `Client::DrawSearchInput(id, hint, text)` is growable by default, with no

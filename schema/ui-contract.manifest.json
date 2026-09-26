@@ -2641,6 +2641,77 @@
           "count"
         ]
       ]
+    },
+    {
+      "id": 67,
+      "name": "ListClipperBegin",
+      "field": "listClipperBegin",
+      "kind": "handle",
+      "required": false,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "int32_t",
+          "itemsCount"
+        ],
+        [
+          "float",
+          "itemsHeight"
+        ],
+        [
+          "uint64_t*",
+          "clipper"
+        ]
+      ]
+    },
+    {
+      "id": 68,
+      "name": "ListClipperStep",
+      "field": "listClipperStep",
+      "kind": "list_clipper_step",
+      "required": false,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "uint64_t",
+          "clipper"
+        ],
+        [
+          "uint32_t*",
+          "stepping"
+        ],
+        [
+          "int32_t*",
+          "displayStart"
+        ],
+        [
+          "int32_t*",
+          "displayEnd"
+        ]
+      ]
+    },
+    {
+      "id": 69,
+      "name": "ListClipperEnd",
+      "field": "listClipperEnd",
+      "kind": "void",
+      "required": false,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "uint64_t",
+          "clipper"
+        ]
+      ]
     }
   ]
 }

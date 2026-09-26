@@ -15,9 +15,19 @@ The host translates every stable enum and flag symbolically. Values do not neces
 
 ### Optional Slots and Minimum Prefixes
 
-The required table prefix ends at `NewLine`. Subsequent slots are optional and additive (revision 1 adds `PlotLines`; revision 2 adds `PushStyleVarFloat`, `PushStyleVarVec2`, and `PopStyleVar`). A client can connect to a host that supplies its required prefix even if a newer optional tail is absent. Invoking an unsupported operation returns `DMUI_RESULT_UNSUPPORTED_ABI`.
+The required table prefix ends at `NewLine`. Subsequent slots are optional and additive (revision 1 adds `PlotLines`; revision 2 adds `PushStyleVarFloat`, `PushStyleVarVec2`, `PopStyleVar`, `ListClipperBegin`, `ListClipperStep`, and `ListClipperEnd`). A client can connect to a host that supplies its required prefix even if a newer optional tail is absent. Invoking an unsupported operation returns `DMUI_RESULT_UNSUPPORTED_ABI`.
 
 Drawing wrappers record the first failure in a callback-scoped sticky result. The trampoline passes this result back to the host, which disables the malfunctioning callback. Scope-end operations continue to dispatch so nested stacks unwind cleanly.
+
+`ListClipper` clips uniform-height rows. Counts must be nonnegative and less than
+`INT32_MAX`; heights must be finite, with values <= 0 measuring the first row.
+`Begin` returns a host-owned token; `Step` returns half-open display ranges and
+releases the token when stepping finishes. `End` releases early; zero and already
+finished tokens are no-ops. Nested clippers must be stepped and ended in LIFO
+order by their owning client in the original window and table. Violations return
+`DMUI_RESULT_UNBALANCED_BRACKET`. Tokens last only for the drawing callback;
+the host abandons unfinished clippers at callback exit without seeking the cursor.
+The non-copyable, non-movable C++ wrapper ends on destruction and before re-Begin.
 
 `ClientOptions::minimumHostAPISize` applies the same prefix rule to the host
 table. `PreflightHostAPI` verifies every function through that byte size before

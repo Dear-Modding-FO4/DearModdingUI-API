@@ -608,7 +608,10 @@ namespace dmui::ui
 				(a_minimumSize < DMUI_UI_API_PLOT_LINES_SIZE || a_api->plotLines) &&
 				(a_minimumSize < DMUI_UI_API_PUSH_STYLE_VAR_FLOAT_SIZE || a_api->pushStyleVarFloat) &&
 				(a_minimumSize < DMUI_UI_API_PUSH_STYLE_VAR_VEC2_SIZE || a_api->pushStyleVarVec2) &&
-				(a_minimumSize < DMUI_UI_API_POP_STYLE_VAR_SIZE || a_api->popStyleVar);
+				(a_minimumSize < DMUI_UI_API_POP_STYLE_VAR_SIZE || a_api->popStyleVar) &&
+				(a_minimumSize < DMUI_UI_API_LIST_CLIPPER_BEGIN_SIZE || a_api->listClipperBegin) &&
+				(a_minimumSize < DMUI_UI_API_LIST_CLIPPER_STEP_SIZE || a_api->listClipperStep) &&
+				(a_minimumSize < DMUI_UI_API_LIST_CLIPPER_END_SIZE || a_api->listClipperEnd);
 		}
 	}
 
@@ -1247,6 +1250,35 @@ namespace dmui::ui
 			return detail::Invoke(
 				DMUI_UI_API_POP_STYLE_VAR_SIZE,
 				&DMUI_UIAPI::popStyleVar, count);
+		}
+
+		[[nodiscard]] inline DMUI_Result ListClipperBegin(
+			int32_t itemsCount,
+		float itemsHeight,
+		uint64_t* clipper) noexcept
+		{
+			return detail::Invoke(
+				DMUI_UI_API_LIST_CLIPPER_BEGIN_SIZE,
+				&DMUI_UIAPI::listClipperBegin, itemsCount, itemsHeight, clipper);
+		}
+
+		[[nodiscard]] inline DMUI_Result ListClipperStep(
+			uint64_t clipper,
+		uint32_t* stepping,
+		int32_t* displayStart,
+		int32_t* displayEnd) noexcept
+		{
+			return detail::Invoke(
+				DMUI_UI_API_LIST_CLIPPER_STEP_SIZE,
+				&DMUI_UIAPI::listClipperStep, clipper, stepping, displayStart, displayEnd);
+		}
+
+		[[nodiscard]] inline DMUI_Result ListClipperEnd(
+			uint64_t clipper) noexcept
+		{
+			return detail::Invoke(
+				DMUI_UI_API_LIST_CLIPPER_END_SIZE,
+				&DMUI_UIAPI::listClipperEnd, clipper);
 		}
 	}
 }
