@@ -103,4 +103,11 @@ void CompileStableUI()
 		dmui::ui::EndTooltip();
 	(void)dmui::ui::Image(dmui::ImageHandle{}, { 20.0f, 20.0f });
 	dmui::ui::PlotAnnotated("annotated", {});
+	dmui::ui::OpenPopup("Popup");
+	if (dmui::ui::PopupScope popup{ "Popup" })
+		dmui::ui::CloseCurrentPopup();
+	bool open{ true };
+	if (dmui::ui::ModalScope modal{ "Modal", open, false })
+		dmui::ui::CloseCurrentPopup();
+	(void)dmui::ui::IsPopupOpen("Modal");
 }

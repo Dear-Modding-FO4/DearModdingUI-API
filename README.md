@@ -31,6 +31,23 @@ draw custom interfaces, and interact with the shared DearModdingUI host menu.
 
 ## Integration
 
+### Popups and modals
+
+Inside a page callback, call `ui::OpenPopup(id)` once (set `open=true` for a modal) and draw each frame with
+`ui::PopupScope{id}` or `ui::ModalScope{id, open}`. The modal takes a `bool& open`,
+an optional `hasCloseButton` (true), and `WindowFlags` (AlwaysAutoResize).
+Successful raw `BeginPopup`/`BeginPopupModal` calls require `EndPopup`.
+`CloseCurrentPopup` closes one level; `IsPopupOpen` includes pending requests.
+
+IDs use the current ID stack with an additional page scope. Popup lifetimes
+belong to the calling page. Leaving the page, closing
+the menu, or callback failure closes its popups. One page or the host dialog
+service owns the modal chain; same-page nested modals are allowed. Host dialog
+requests return `BUSY` while another owner holds the chain. A blocked client
+begin returns false without error and retains its open request until the chain
+is free. Escape/controller B closes one level; the next modal begin updates
+`open` to false. Use `SetItemDefaultFocus` to override initial navigation focus.
+
 ### Using CommonLibF4
 
 The [Dear-Modding-FO4 CommonLibF4 fork](https://github.com/Dear-Modding-FO4/commonlibf4) includes this repository as a public dependency. If your plugin uses that fork, you can include the headers directly without modifying build scripts:

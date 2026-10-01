@@ -7,6 +7,47 @@
   },
   "enums": [
     {
+      "name": "WindowFlags",
+      "cName": "DMUI_UIWindowFlags",
+      "kind": "flags",
+      "values": [
+        {
+          "name": "NoTitleBar",
+          "value": 1
+        },
+        {
+          "name": "NoResize",
+          "value": 2
+        },
+        {
+          "name": "NoMove",
+          "value": 4
+        },
+        {
+          "name": "NoScrollbar",
+          "value": 8
+        },
+        {
+          "name": "NoScrollWithMouse",
+          "value": 16
+        },
+        {
+          "name": "AlwaysAutoResize",
+          "value": 32
+        },
+        {
+          "name": "NoSavedSettings",
+          "value": 64
+        },
+        {
+          "name": "HorizontalScrollbar",
+          "value": 128
+        }
+      ],
+      "aliases": [],
+      "rejectedMask": 0
+    },
+    {
       "name": "Color",
       "cName": "DMUI_UIColor",
       "kind": "value",
@@ -2744,6 +2785,122 @@
         [
           "size_t",
           "length"
+        ]
+      ]
+    },
+    {
+      "id": 75,
+      "name": "OpenPopup",
+      "field": "openPopup",
+      "kind": "void",
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "id"
+        ]
+      ]
+    },
+    {
+      "id": 76,
+      "name": "BeginPopup",
+      "field": "beginPopup",
+      "kind": "bool",
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "id"
+        ],
+        [
+          "DMUI_UIWindowFlags",
+          "flags"
+        ],
+        [
+          "uint32_t*",
+          "visible"
+        ]
+      ]
+    },
+    {
+      "id": 77,
+      "name": "BeginPopupModal",
+      "field": "beginPopupModal",
+      "kind": "custom",
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "id"
+        ],
+        [
+          "uint32_t",
+          "hasCloseButton"
+        ],
+        [
+          "uint32_t*",
+          "open"
+        ],
+        [
+          "DMUI_UIWindowFlags",
+          "flags"
+        ],
+        [
+          "uint32_t*",
+          "visible"
+        ]
+      ]
+    },
+    {
+      "id": 78,
+      "name": "EndPopup",
+      "field": "endPopup",
+      "kind": "void",
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ]
+      ]
+    },
+    {
+      "id": 79,
+      "name": "CloseCurrentPopup",
+      "field": "closeCurrentPopup",
+      "kind": "void",
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ]
+      ]
+    },
+    {
+      "id": 80,
+      "name": "IsPopupOpen",
+      "field": "isPopupOpen",
+      "kind": "bool",
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "id"
+        ],
+        [
+          "uint32_t*",
+          "open"
         ]
       ]
     }

@@ -10,6 +10,42 @@ namespace dmui::ui
 	using Color32 = uint32_t;
 	using ID = uint32_t;
 
+	enum class WindowFlags : uint32_t
+	{
+		kNone = 0u,
+		kNoTitleBar = DMUI_UI_WINDOW_FLAGS_NO_TITLE_BAR,
+		kNoResize = DMUI_UI_WINDOW_FLAGS_NO_RESIZE,
+		kNoMove = DMUI_UI_WINDOW_FLAGS_NO_MOVE,
+		kNoScrollbar = DMUI_UI_WINDOW_FLAGS_NO_SCROLLBAR,
+		kNoScrollWithMouse = DMUI_UI_WINDOW_FLAGS_NO_SCROLL_WITH_MOUSE,
+		kAlwaysAutoResize = DMUI_UI_WINDOW_FLAGS_ALWAYS_AUTO_RESIZE,
+		kNoSavedSettings = DMUI_UI_WINDOW_FLAGS_NO_SAVED_SETTINGS,
+		kHorizontalScrollbar = DMUI_UI_WINDOW_FLAGS_HORIZONTAL_SCROLLBAR
+	};
+
+	[[nodiscard]] constexpr WindowFlags operator|(
+		WindowFlags a_left, WindowFlags a_right) noexcept
+	{
+		return static_cast<WindowFlags>(
+			static_cast<uint32_t>(a_left) |
+			static_cast<uint32_t>(a_right));
+	}
+
+	[[nodiscard]] constexpr WindowFlags operator&(
+		WindowFlags a_left, WindowFlags a_right) noexcept
+	{
+		return static_cast<WindowFlags>(
+			static_cast<uint32_t>(a_left) &
+			static_cast<uint32_t>(a_right));
+	}
+
+	constexpr WindowFlags& operator|=(
+		WindowFlags& a_left, WindowFlags a_right) noexcept
+	{
+		a_left = a_left | a_right;
+		return a_left;
+	}
+
 	enum class Color : uint32_t
 	{
 		kNone = 0u,
@@ -1169,6 +1205,55 @@ namespace dmui::ui
 		{
 			return detail::Invoke(
 				&DMUI_UIAPI::textAligned, alignX, width, text, length);
+		}
+
+		[[nodiscard]] inline DMUI_Result OpenPopup(
+			const char* id) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::openPopup, id);
+		}
+
+		[[nodiscard]] inline DMUI_Result BeginPopup(
+			const char* id,
+		DMUI_UIWindowFlags flags,
+		uint32_t* visible) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::beginPopup, id, flags, visible);
+		}
+
+		[[nodiscard]] inline DMUI_Result BeginPopupModal(
+			const char* id,
+		uint32_t hasCloseButton,
+		uint32_t* open,
+		DMUI_UIWindowFlags flags,
+		uint32_t* visible) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::beginPopupModal, id, hasCloseButton, open, flags, visible);
+		}
+
+		[[nodiscard]] inline DMUI_Result EndPopup(
+			void) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::endPopup);
+		}
+
+		[[nodiscard]] inline DMUI_Result CloseCurrentPopup(
+			void) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::closeCurrentPopup);
+		}
+
+		[[nodiscard]] inline DMUI_Result IsPopupOpen(
+			const char* id,
+		uint32_t* open) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::isPopupOpen, id, open);
 		}
 	}
 }

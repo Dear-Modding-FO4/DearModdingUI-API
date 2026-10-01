@@ -219,6 +219,7 @@ def render_checked_header(schema: dict) -> str:
 
 def native_type(enum_name: str) -> str:
     return {
+        "WindowFlags": "ImGuiWindowFlags",
         "Color": "ImGuiCol",
         "StyleVar": "ImGuiStyleVar",
         "DataType": "ImGuiDataType",

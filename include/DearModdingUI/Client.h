@@ -2553,9 +2553,12 @@ namespace dmui
 				return DMUI_RESULT_CALLBACK_FAILED;
 			}
 			const auto uiResult = uiContext.Result();
+			// Service contention is retryable; UI-table failures still fail the callback.
+			const auto hostResult = owner.LastResult() == DMUI_RESULT_BUSY ?
+				DMUI_RESULT_OK : owner.LastResult();
 			const auto result = uiResult != DMUI_RESULT_OK ?
 				uiResult :
-				owner.LastResult();
+				hostResult;
 			if (result != DMUI_RESULT_OK)
 			{
 				owner.lastResult_ = result;

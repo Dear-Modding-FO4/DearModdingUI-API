@@ -7,6 +7,21 @@
   },
   "enums": [
     {
+      "name": "WindowFlags",
+      "cName": "DMUI_UIWindowFlags",
+      "kind": "flags",
+      "values": [
+        ["NoTitleBar", 1, "ImGuiWindowFlags_NoTitleBar"],
+        ["NoResize", 2, "ImGuiWindowFlags_NoResize"],
+        ["NoMove", 4, "ImGuiWindowFlags_NoMove"],
+        ["NoScrollbar", 8, "ImGuiWindowFlags_NoScrollbar"],
+        ["NoScrollWithMouse", 16, "ImGuiWindowFlags_NoScrollWithMouse"],
+        ["AlwaysAutoResize", 32, "ImGuiWindowFlags_AlwaysAutoResize"],
+        ["NoSavedSettings", 64, "ImGuiWindowFlags_NoSavedSettings"],
+        ["HorizontalScrollbar", 128, "ImGuiWindowFlags_HorizontalScrollbar"]
+      ]
+    },
+    {
       "name": "Color",
       "cName": "DMUI_UIColor",
       "kind": "value",
@@ -428,7 +443,13 @@
     "PopStyleVar": [["DMUI_ClientHandle", "client"], ["int32_t", "count"]],
     "ListClipperBegin": [["DMUI_ClientHandle", "client"], ["int32_t", "itemsCount"], ["float", "itemsHeight"], ["uint64_t*", "clipper"]],
     "ListClipperStep": [["DMUI_ClientHandle", "client"], ["uint64_t", "clipper"], ["uint32_t*", "stepping"], ["int32_t*", "displayStart"], ["int32_t*", "displayEnd"]],
-    "ListClipperEnd": [["DMUI_ClientHandle", "client"], ["uint64_t", "clipper"]]
+    "ListClipperEnd": [["DMUI_ClientHandle", "client"], ["uint64_t", "clipper"]],
+    "OpenPopup": [["DMUI_ClientHandle", "client"], ["const char*", "id"]],
+    "BeginPopup": [["DMUI_ClientHandle", "client"], ["const char*", "id"], ["DMUI_UIWindowFlags", "flags"], ["uint32_t*", "visible"]],
+    "BeginPopupModal": [["DMUI_ClientHandle", "client"], ["const char*", "id"], ["uint32_t", "hasCloseButton"], ["uint32_t*", "open"], ["DMUI_UIWindowFlags", "flags"], ["uint32_t*", "visible"]],
+    "EndPopup": [["DMUI_ClientHandle", "client"]],
+    "CloseCurrentPopup": [["DMUI_ClientHandle", "client"]],
+    "IsPopupOpen": [["DMUI_ClientHandle", "client"], ["const char*", "id"], ["uint32_t*", "open"]]
   },
   "operations": [
     [1, "GetStyleMetrics", "getStyleMetrics", "style_metrics"],
@@ -504,6 +525,12 @@
     [71, "PlotAnnotated", "plotAnnotated", "custom"],
     [72, "GetCursorPos", "getCursorPos", "custom"],
     [73, "SetCursorPos", "setCursorPos", "custom"],
-    [74, "TextAligned", "textAligned", "custom"]
+    [74, "TextAligned", "textAligned", "custom"],
+    [75, "OpenPopup", "openPopup", "void"],
+    [76, "BeginPopup", "beginPopup", "bool"],
+    [77, "BeginPopupModal", "beginPopupModal", "custom"],
+    [78, "EndPopup", "endPopup", "void"],
+    [79, "CloseCurrentPopup", "closeCurrentPopup", "void"],
+    [80, "IsPopupOpen", "isPopupOpen", "bool"]
   ]
 }

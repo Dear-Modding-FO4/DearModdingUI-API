@@ -371,6 +371,70 @@ namespace dmui::ui
 		detail::Record(checked::EndTooltip());
 	}
 
+	inline void OpenPopup(const char* a_id) noexcept
+	{
+		detail::Record(checked::OpenPopup(a_id));
+	}
+
+	[[nodiscard]] inline bool BeginPopup(
+		const char* a_id, WindowFlags a_flags = WindowFlags::kNone) noexcept
+	{
+		uint32_t visible{};
+		detail::Record(checked::BeginPopup(a_id, static_cast<DMUI_UIWindowFlags>(a_flags), &visible));
+		return visible != 0;
+	}
+
+	[[nodiscard]] inline bool BeginPopupModal(
+		const char* a_id, bool& a_open, bool a_hasCloseButton = true,
+		WindowFlags a_flags = WindowFlags::kAlwaysAutoResize) noexcept
+	{
+		uint32_t visible{}, open = a_open ? 1u : 0u;
+		detail::Record(checked::BeginPopupModal(a_id, a_hasCloseButton ? 1u : 0u,
+			&open, static_cast<DMUI_UIWindowFlags>(a_flags), &visible));
+		a_open = open != 0;
+		return visible != 0;
+	}
+
+	inline void EndPopup() noexcept { detail::Record(checked::EndPopup()); }
+	inline void CloseCurrentPopup() noexcept { detail::Record(checked::CloseCurrentPopup()); }
+
+	[[nodiscard]] inline bool IsPopupOpen(const char* a_id) noexcept
+	{
+		uint32_t open{};
+		detail::Record(checked::IsPopupOpen(a_id, &open));
+		return open != 0;
+	}
+
+	class PopupScope
+	{
+	public:
+		explicit PopupScope(const char* a_id, WindowFlags a_flags = WindowFlags::kNone) noexcept :
+			m_visible(BeginPopup(a_id, a_flags)) {}
+		~PopupScope() noexcept { End(); }
+		PopupScope(const PopupScope&) = delete;
+		PopupScope& operator=(const PopupScope&) = delete;
+		[[nodiscard]] explicit operator bool() const noexcept { return m_visible; }
+		void End() noexcept
+		{
+			if (std::exchange(m_visible, false))
+				EndPopup();
+		}
+
+	protected:
+		explicit PopupScope(bool a_visible) noexcept : m_visible(a_visible) {}
+
+	private:
+		bool m_visible{};
+	};
+
+	class ModalScope : public PopupScope
+	{
+	public:
+		ModalScope(const char* a_id, bool& a_open, bool a_hasCloseButton = true,
+			WindowFlags a_flags = WindowFlags::kAlwaysAutoResize) noexcept :
+			PopupScope(BeginPopupModal(a_id, a_open, a_hasCloseButton, a_flags)) {}
+	};
+
 	[[nodiscard]] inline bool Button(
 		const char* a_label,
 		Vec2 a_size = {}) noexcept

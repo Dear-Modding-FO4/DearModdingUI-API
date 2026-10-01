@@ -4,6 +4,17 @@
 
 #include <DearModdingUI/API.h>
 
+typedef uint32_t DMUI_UIWindowFlags;
+#define DMUI_UI_WINDOW_FLAGS_NONE 0u
+#define DMUI_UI_WINDOW_FLAGS_NO_TITLE_BAR 1u
+#define DMUI_UI_WINDOW_FLAGS_NO_RESIZE 2u
+#define DMUI_UI_WINDOW_FLAGS_NO_MOVE 4u
+#define DMUI_UI_WINDOW_FLAGS_NO_SCROLLBAR 8u
+#define DMUI_UI_WINDOW_FLAGS_NO_SCROLL_WITH_MOUSE 16u
+#define DMUI_UI_WINDOW_FLAGS_ALWAYS_AUTO_RESIZE 32u
+#define DMUI_UI_WINDOW_FLAGS_NO_SAVED_SETTINGS 64u
+#define DMUI_UI_WINDOW_FLAGS_HORIZONTAL_SCROLLBAR 128u
+
 typedef uint32_t DMUI_UIColor;
 #define DMUI_UI_COLOR_NONE 0u
 #define DMUI_UI_COLOR_TEXT 1000u
@@ -624,6 +635,29 @@ typedef DMUI_Result (DMUI_CALL *DMUI_UITextAlignedFn)(
 	float width,
 	const char* text,
 	size_t length) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIOpenPopupFn)(
+	DMUI_ClientHandle client,
+	const char* id) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIBeginPopupFn)(
+	DMUI_ClientHandle client,
+	const char* id,
+	DMUI_UIWindowFlags flags,
+	uint32_t* visible) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIBeginPopupModalFn)(
+	DMUI_ClientHandle client,
+	const char* id,
+	uint32_t hasCloseButton,
+	uint32_t* open,
+	DMUI_UIWindowFlags flags,
+	uint32_t* visible) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIEndPopupFn)(
+	DMUI_ClientHandle client) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UICloseCurrentPopupFn)(
+	DMUI_ClientHandle client) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIIsPopupOpenFn)(
+	DMUI_ClientHandle client,
+	const char* id,
+	uint32_t* open) DMUI_NOEXCEPT;
 
 typedef struct DMUI_UIAPI
 {
@@ -701,4 +735,10 @@ typedef struct DMUI_UIAPI
 	DMUI_UIGetCursorPosFn getCursorPos;
 	DMUI_UISetCursorPosFn setCursorPos;
 	DMUI_UITextAlignedFn textAligned;
+	DMUI_UIOpenPopupFn openPopup;
+	DMUI_UIBeginPopupFn beginPopup;
+	DMUI_UIBeginPopupModalFn beginPopupModal;
+	DMUI_UIEndPopupFn endPopup;
+	DMUI_UICloseCurrentPopupFn closeCurrentPopup;
+	DMUI_UIIsPopupOpenFn isPopupOpen;
 } DMUI_UIAPI;
