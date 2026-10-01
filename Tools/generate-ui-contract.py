@@ -58,9 +58,11 @@ def upper_snake(name: str) -> str:
 
 
 def c_macro(c_name: str) -> str:
-    if not c_name.startswith("DMUI_UI"):
-        raise GenerationError(f"UI C type does not use the DMUI_UI prefix: {c_name}")
-    return "DMUI_UI_" + upper_snake(c_name[len("DMUI_UI") :])
+    if c_name.startswith("DMUI_UI"):
+        return "DMUI_UI_" + upper_snake(c_name[len("DMUI_UI") :])
+    if c_name.startswith("DMUI_"):
+        return "DMUI_" + upper_snake(c_name[len("DMUI_") :])
+    raise GenerationError(f"UI C type does not use the DMUI prefix: {c_name}")
 
 
 def declaration(type_name: str, name: str) -> str:
@@ -251,6 +253,8 @@ def render_host_bindings(schema: dict) -> str:
     for enum in schema["enums"]:
         name = enum["name"]
         c_name = enum["cName"]
+        if enum.get("hostTranslated") is False:
+            continue
         native = native_type(name)
         if enum["kind"] == "value":
             lines.extend(

@@ -7,6 +7,27 @@
   },
   "enums": [
     {
+      "name": "DrawTarget",
+      "cName": "DMUI_DrawTarget",
+      "kind": "value",
+      "values": [
+        {
+          "name": "Window",
+          "value": 1
+        },
+        {
+          "name": "Foreground",
+          "value": 2
+        },
+        {
+          "name": "Background",
+          "value": 3
+        }
+      ],
+      "aliases": [],
+      "rejectedMask": 0
+    },
+    {
       "name": "WindowFlags",
       "cName": "DMUI_UIWindowFlags",
       "kind": "flags",
@@ -2901,6 +2922,470 @@
         [
           "uint32_t*",
           "open"
+        ]
+      ]
+    },
+    {
+      "id": 81,
+      "name": "DrawListAddLine",
+      "field": "drawListAddLine",
+      "kind": "void",
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_DrawTarget",
+          "target"
+        ],
+        [
+          "DMUI_Vec2",
+          "p1"
+        ],
+        [
+          "DMUI_Vec2",
+          "p2"
+        ],
+        [
+          "uint32_t",
+          "color"
+        ],
+        [
+          "float",
+          "thickness"
+        ]
+      ]
+    },
+    {
+      "id": 82,
+      "name": "DrawListAddRect",
+      "field": "drawListAddRect",
+      "kind": "void",
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_DrawTarget",
+          "target"
+        ],
+        [
+          "DMUI_Vec2",
+          "min"
+        ],
+        [
+          "DMUI_Vec2",
+          "max"
+        ],
+        [
+          "uint32_t",
+          "color"
+        ],
+        [
+          "float",
+          "rounding"
+        ],
+        [
+          "float",
+          "thickness"
+        ]
+      ]
+    },
+    {
+      "id": 83,
+      "name": "DrawListAddRectFilled",
+      "field": "drawListAddRectFilled",
+      "kind": "void",
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_DrawTarget",
+          "target"
+        ],
+        [
+          "DMUI_Vec2",
+          "min"
+        ],
+        [
+          "DMUI_Vec2",
+          "max"
+        ],
+        [
+          "uint32_t",
+          "color"
+        ],
+        [
+          "float",
+          "rounding"
+        ]
+      ]
+    },
+    {
+      "id": 84,
+      "name": "DrawListAddCircle",
+      "field": "drawListAddCircle",
+      "kind": "void",
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_DrawTarget",
+          "target"
+        ],
+        [
+          "DMUI_Vec2",
+          "center"
+        ],
+        [
+          "float",
+          "radius"
+        ],
+        [
+          "uint32_t",
+          "color"
+        ],
+        [
+          "uint32_t",
+          "segments"
+        ],
+        [
+          "float",
+          "thickness"
+        ]
+      ]
+    },
+    {
+      "id": 85,
+      "name": "DrawListAddCircleFilled",
+      "field": "drawListAddCircleFilled",
+      "kind": "void",
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_DrawTarget",
+          "target"
+        ],
+        [
+          "DMUI_Vec2",
+          "center"
+        ],
+        [
+          "float",
+          "radius"
+        ],
+        [
+          "uint32_t",
+          "color"
+        ],
+        [
+          "uint32_t",
+          "segments"
+        ]
+      ]
+    },
+    {
+      "id": 86,
+      "name": "DrawListAddTriangle",
+      "field": "drawListAddTriangle",
+      "kind": "void",
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_DrawTarget",
+          "target"
+        ],
+        [
+          "DMUI_Vec2",
+          "p1"
+        ],
+        [
+          "DMUI_Vec2",
+          "p2"
+        ],
+        [
+          "DMUI_Vec2",
+          "p3"
+        ],
+        [
+          "uint32_t",
+          "color"
+        ],
+        [
+          "float",
+          "thickness"
+        ]
+      ]
+    },
+    {
+      "id": 87,
+      "name": "DrawListAddTriangleFilled",
+      "field": "drawListAddTriangleFilled",
+      "kind": "void",
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_DrawTarget",
+          "target"
+        ],
+        [
+          "DMUI_Vec2",
+          "p1"
+        ],
+        [
+          "DMUI_Vec2",
+          "p2"
+        ],
+        [
+          "DMUI_Vec2",
+          "p3"
+        ],
+        [
+          "uint32_t",
+          "color"
+        ]
+      ]
+    },
+    {
+      "id": 88,
+      "name": "DrawListAddBezierCubic",
+      "field": "drawListAddBezierCubic",
+      "kind": "void",
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_DrawTarget",
+          "target"
+        ],
+        [
+          "DMUI_Vec2",
+          "p1"
+        ],
+        [
+          "DMUI_Vec2",
+          "p2"
+        ],
+        [
+          "DMUI_Vec2",
+          "p3"
+        ],
+        [
+          "DMUI_Vec2",
+          "p4"
+        ],
+        [
+          "uint32_t",
+          "color"
+        ],
+        [
+          "float",
+          "thickness"
+        ],
+        [
+          "uint32_t",
+          "segments"
+        ]
+      ]
+    },
+    {
+      "id": 89,
+      "name": "DrawListAddPolyline",
+      "field": "drawListAddPolyline",
+      "kind": "void",
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_DrawTarget",
+          "target"
+        ],
+        [
+          "const DMUI_Vec2*",
+          "points"
+        ],
+        [
+          "uint32_t",
+          "count"
+        ],
+        [
+          "uint32_t",
+          "color"
+        ],
+        [
+          "uint32_t",
+          "closed"
+        ],
+        [
+          "float",
+          "thickness"
+        ]
+      ]
+    },
+    {
+      "id": 90,
+      "name": "DrawListAddPolygonFilled",
+      "field": "drawListAddPolygonFilled",
+      "kind": "void",
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_DrawTarget",
+          "target"
+        ],
+        [
+          "const DMUI_Vec2*",
+          "points"
+        ],
+        [
+          "uint32_t",
+          "count"
+        ],
+        [
+          "uint32_t",
+          "color"
+        ]
+      ]
+    },
+    {
+      "id": 91,
+      "name": "DrawListAddText",
+      "field": "drawListAddText",
+      "kind": "void",
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_DrawTarget",
+          "target"
+        ],
+        [
+          "DMUI_Vec2",
+          "pos"
+        ],
+        [
+          "uint32_t",
+          "color"
+        ],
+        [
+          "const char*",
+          "text"
+        ],
+        [
+          "size_t",
+          "length"
+        ],
+        [
+          "float",
+          "fontSize"
+        ]
+      ]
+    },
+    {
+      "id": 92,
+      "name": "DrawListAddImage",
+      "field": "drawListAddImage",
+      "kind": "void",
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_DrawTarget",
+          "target"
+        ],
+        [
+          "DMUI_ImageHandle",
+          "image"
+        ],
+        [
+          "DMUI_Vec2",
+          "min"
+        ],
+        [
+          "DMUI_Vec2",
+          "max"
+        ],
+        [
+          "DMUI_Vec2",
+          "uv0"
+        ],
+        [
+          "DMUI_Vec2",
+          "uv1"
+        ],
+        [
+          "uint32_t",
+          "tint"
+        ]
+      ]
+    },
+    {
+      "id": 93,
+      "name": "DrawListPushClipRect",
+      "field": "drawListPushClipRect",
+      "kind": "void",
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_DrawTarget",
+          "target"
+        ],
+        [
+          "DMUI_Vec2",
+          "min"
+        ],
+        [
+          "DMUI_Vec2",
+          "max"
+        ],
+        [
+          "uint32_t",
+          "intersectWithCurrent"
+        ]
+      ]
+    },
+    {
+      "id": 94,
+      "name": "DrawListPopClipRect",
+      "field": "drawListPopClipRect",
+      "kind": "void",
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_DrawTarget",
+          "target"
         ]
       ]
     }

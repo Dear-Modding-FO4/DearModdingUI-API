@@ -7,6 +7,17 @@
   },
   "enums": [
     {
+      "name": "DrawTarget",
+      "cName": "DMUI_DrawTarget",
+      "kind": "value",
+      "hostTranslated": false,
+      "values": [
+        ["Window", 1, null],
+        ["Foreground", 2, null],
+        ["Background", 3, null]
+      ]
+    },
+    {
       "name": "WindowFlags",
       "cName": "DMUI_UIWindowFlags",
       "kind": "flags",
@@ -449,7 +460,21 @@
     "BeginPopupModal": [["DMUI_ClientHandle", "client"], ["const char*", "id"], ["uint32_t", "hasCloseButton"], ["uint32_t*", "open"], ["DMUI_UIWindowFlags", "flags"], ["uint32_t*", "visible"]],
     "EndPopup": [["DMUI_ClientHandle", "client"]],
     "CloseCurrentPopup": [["DMUI_ClientHandle", "client"]],
-    "IsPopupOpen": [["DMUI_ClientHandle", "client"], ["const char*", "id"], ["uint32_t*", "open"]]
+    "IsPopupOpen": [["DMUI_ClientHandle", "client"], ["const char*", "id"], ["uint32_t*", "open"]],
+    "DrawListAddLine": [["DMUI_ClientHandle", "client"], ["DMUI_DrawTarget", "target"], ["DMUI_Vec2", "p1"], ["DMUI_Vec2", "p2"], ["uint32_t", "color"], ["float", "thickness"]],
+    "DrawListAddRect": [["DMUI_ClientHandle", "client"], ["DMUI_DrawTarget", "target"], ["DMUI_Vec2", "min"], ["DMUI_Vec2", "max"], ["uint32_t", "color"], ["float", "rounding"], ["float", "thickness"]],
+    "DrawListAddRectFilled": [["DMUI_ClientHandle", "client"], ["DMUI_DrawTarget", "target"], ["DMUI_Vec2", "min"], ["DMUI_Vec2", "max"], ["uint32_t", "color"], ["float", "rounding"]],
+    "DrawListAddCircle": [["DMUI_ClientHandle", "client"], ["DMUI_DrawTarget", "target"], ["DMUI_Vec2", "center"], ["float", "radius"], ["uint32_t", "color"], ["uint32_t", "segments"], ["float", "thickness"]],
+    "DrawListAddCircleFilled": [["DMUI_ClientHandle", "client"], ["DMUI_DrawTarget", "target"], ["DMUI_Vec2", "center"], ["float", "radius"], ["uint32_t", "color"], ["uint32_t", "segments"]],
+    "DrawListAddTriangle": [["DMUI_ClientHandle", "client"], ["DMUI_DrawTarget", "target"], ["DMUI_Vec2", "p1"], ["DMUI_Vec2", "p2"], ["DMUI_Vec2", "p3"], ["uint32_t", "color"], ["float", "thickness"]],
+    "DrawListAddTriangleFilled": [["DMUI_ClientHandle", "client"], ["DMUI_DrawTarget", "target"], ["DMUI_Vec2", "p1"], ["DMUI_Vec2", "p2"], ["DMUI_Vec2", "p3"], ["uint32_t", "color"]],
+    "DrawListAddBezierCubic": [["DMUI_ClientHandle", "client"], ["DMUI_DrawTarget", "target"], ["DMUI_Vec2", "p1"], ["DMUI_Vec2", "p2"], ["DMUI_Vec2", "p3"], ["DMUI_Vec2", "p4"], ["uint32_t", "color"], ["float", "thickness"], ["uint32_t", "segments"]],
+    "DrawListAddPolyline": [["DMUI_ClientHandle", "client"], ["DMUI_DrawTarget", "target"], ["const DMUI_Vec2*", "points"], ["uint32_t", "count"], ["uint32_t", "color"], ["uint32_t", "closed"], ["float", "thickness"]],
+    "DrawListAddPolygonFilled": [["DMUI_ClientHandle", "client"], ["DMUI_DrawTarget", "target"], ["const DMUI_Vec2*", "points"], ["uint32_t", "count"], ["uint32_t", "color"]],
+    "DrawListAddText": [["DMUI_ClientHandle", "client"], ["DMUI_DrawTarget", "target"], ["DMUI_Vec2", "pos"], ["uint32_t", "color"], ["const char*", "text"], ["size_t", "length"], ["float", "fontSize"]],
+    "DrawListAddImage": [["DMUI_ClientHandle", "client"], ["DMUI_DrawTarget", "target"], ["DMUI_ImageHandle", "image"], ["DMUI_Vec2", "min"], ["DMUI_Vec2", "max"], ["DMUI_Vec2", "uv0"], ["DMUI_Vec2", "uv1"], ["uint32_t", "tint"]],
+    "DrawListPushClipRect": [["DMUI_ClientHandle", "client"], ["DMUI_DrawTarget", "target"], ["DMUI_Vec2", "min"], ["DMUI_Vec2", "max"], ["uint32_t", "intersectWithCurrent"]],
+    "DrawListPopClipRect": [["DMUI_ClientHandle", "client"], ["DMUI_DrawTarget", "target"]]
   },
   "operations": [
     [1, "GetStyleMetrics", "getStyleMetrics", "style_metrics"],
@@ -531,6 +556,20 @@
     [77, "BeginPopupModal", "beginPopupModal", "custom"],
     [78, "EndPopup", "endPopup", "void"],
     [79, "CloseCurrentPopup", "closeCurrentPopup", "void"],
-    [80, "IsPopupOpen", "isPopupOpen", "bool"]
+    [80, "IsPopupOpen", "isPopupOpen", "bool"],
+    [81, "DrawListAddLine", "drawListAddLine", "void"],
+    [82, "DrawListAddRect", "drawListAddRect", "void"],
+    [83, "DrawListAddRectFilled", "drawListAddRectFilled", "void"],
+    [84, "DrawListAddCircle", "drawListAddCircle", "void"],
+    [85, "DrawListAddCircleFilled", "drawListAddCircleFilled", "void"],
+    [86, "DrawListAddTriangle", "drawListAddTriangle", "void"],
+    [87, "DrawListAddTriangleFilled", "drawListAddTriangleFilled", "void"],
+    [88, "DrawListAddBezierCubic", "drawListAddBezierCubic", "void"],
+    [89, "DrawListAddPolyline", "drawListAddPolyline", "void"],
+    [90, "DrawListAddPolygonFilled", "drawListAddPolygonFilled", "void"],
+    [91, "DrawListAddText", "drawListAddText", "void"],
+    [92, "DrawListAddImage", "drawListAddImage", "void"],
+    [93, "DrawListPushClipRect", "drawListPushClipRect", "void"],
+    [94, "DrawListPopClipRect", "drawListPopClipRect", "void"]
   ]
 }

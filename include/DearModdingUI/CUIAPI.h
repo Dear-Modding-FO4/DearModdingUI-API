@@ -4,6 +4,12 @@
 
 #include <DearModdingUI/API.h>
 
+typedef uint32_t DMUI_DrawTarget;
+#define DMUI_DRAW_TARGET_NONE 0u
+#define DMUI_DRAW_TARGET_WINDOW 1u
+#define DMUI_DRAW_TARGET_FOREGROUND 2u
+#define DMUI_DRAW_TARGET_BACKGROUND 3u
+
 typedef uint32_t DMUI_UIWindowFlags;
 #define DMUI_UI_WINDOW_FLAGS_NONE 0u
 #define DMUI_UI_WINDOW_FLAGS_NO_TITLE_BAR 1u
@@ -658,6 +664,108 @@ typedef DMUI_Result (DMUI_CALL *DMUI_UIIsPopupOpenFn)(
 	DMUI_ClientHandle client,
 	const char* id,
 	uint32_t* open) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIDrawListAddLineFn)(
+	DMUI_ClientHandle client,
+	DMUI_DrawTarget target,
+	DMUI_Vec2 p1,
+	DMUI_Vec2 p2,
+	uint32_t color,
+	float thickness) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIDrawListAddRectFn)(
+	DMUI_ClientHandle client,
+	DMUI_DrawTarget target,
+	DMUI_Vec2 min,
+	DMUI_Vec2 max,
+	uint32_t color,
+	float rounding,
+	float thickness) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIDrawListAddRectFilledFn)(
+	DMUI_ClientHandle client,
+	DMUI_DrawTarget target,
+	DMUI_Vec2 min,
+	DMUI_Vec2 max,
+	uint32_t color,
+	float rounding) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIDrawListAddCircleFn)(
+	DMUI_ClientHandle client,
+	DMUI_DrawTarget target,
+	DMUI_Vec2 center,
+	float radius,
+	uint32_t color,
+	uint32_t segments,
+	float thickness) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIDrawListAddCircleFilledFn)(
+	DMUI_ClientHandle client,
+	DMUI_DrawTarget target,
+	DMUI_Vec2 center,
+	float radius,
+	uint32_t color,
+	uint32_t segments) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIDrawListAddTriangleFn)(
+	DMUI_ClientHandle client,
+	DMUI_DrawTarget target,
+	DMUI_Vec2 p1,
+	DMUI_Vec2 p2,
+	DMUI_Vec2 p3,
+	uint32_t color,
+	float thickness) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIDrawListAddTriangleFilledFn)(
+	DMUI_ClientHandle client,
+	DMUI_DrawTarget target,
+	DMUI_Vec2 p1,
+	DMUI_Vec2 p2,
+	DMUI_Vec2 p3,
+	uint32_t color) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIDrawListAddBezierCubicFn)(
+	DMUI_ClientHandle client,
+	DMUI_DrawTarget target,
+	DMUI_Vec2 p1,
+	DMUI_Vec2 p2,
+	DMUI_Vec2 p3,
+	DMUI_Vec2 p4,
+	uint32_t color,
+	float thickness,
+	uint32_t segments) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIDrawListAddPolylineFn)(
+	DMUI_ClientHandle client,
+	DMUI_DrawTarget target,
+	const DMUI_Vec2* points,
+	uint32_t count,
+	uint32_t color,
+	uint32_t closed,
+	float thickness) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIDrawListAddPolygonFilledFn)(
+	DMUI_ClientHandle client,
+	DMUI_DrawTarget target,
+	const DMUI_Vec2* points,
+	uint32_t count,
+	uint32_t color) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIDrawListAddTextFn)(
+	DMUI_ClientHandle client,
+	DMUI_DrawTarget target,
+	DMUI_Vec2 pos,
+	uint32_t color,
+	const char* text,
+	size_t length,
+	float fontSize) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIDrawListAddImageFn)(
+	DMUI_ClientHandle client,
+	DMUI_DrawTarget target,
+	DMUI_ImageHandle image,
+	DMUI_Vec2 min,
+	DMUI_Vec2 max,
+	DMUI_Vec2 uv0,
+	DMUI_Vec2 uv1,
+	uint32_t tint) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIDrawListPushClipRectFn)(
+	DMUI_ClientHandle client,
+	DMUI_DrawTarget target,
+	DMUI_Vec2 min,
+	DMUI_Vec2 max,
+	uint32_t intersectWithCurrent) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIDrawListPopClipRectFn)(
+	DMUI_ClientHandle client,
+	DMUI_DrawTarget target) DMUI_NOEXCEPT;
 
 typedef struct DMUI_UIAPI
 {
@@ -741,4 +849,18 @@ typedef struct DMUI_UIAPI
 	DMUI_UIEndPopupFn endPopup;
 	DMUI_UICloseCurrentPopupFn closeCurrentPopup;
 	DMUI_UIIsPopupOpenFn isPopupOpen;
+	DMUI_UIDrawListAddLineFn drawListAddLine;
+	DMUI_UIDrawListAddRectFn drawListAddRect;
+	DMUI_UIDrawListAddRectFilledFn drawListAddRectFilled;
+	DMUI_UIDrawListAddCircleFn drawListAddCircle;
+	DMUI_UIDrawListAddCircleFilledFn drawListAddCircleFilled;
+	DMUI_UIDrawListAddTriangleFn drawListAddTriangle;
+	DMUI_UIDrawListAddTriangleFilledFn drawListAddTriangleFilled;
+	DMUI_UIDrawListAddBezierCubicFn drawListAddBezierCubic;
+	DMUI_UIDrawListAddPolylineFn drawListAddPolyline;
+	DMUI_UIDrawListAddPolygonFilledFn drawListAddPolygonFilled;
+	DMUI_UIDrawListAddTextFn drawListAddText;
+	DMUI_UIDrawListAddImageFn drawListAddImage;
+	DMUI_UIDrawListPushClipRectFn drawListPushClipRect;
+	DMUI_UIDrawListPopClipRectFn drawListPopClipRect;
 } DMUI_UIAPI;

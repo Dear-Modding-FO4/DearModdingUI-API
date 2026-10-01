@@ -1169,3 +1169,5 @@ namespace dmui::ui
 			a_strideBytes));
 	}
 }
+
+#include <DearModdingUI/UI/DrawList.h>

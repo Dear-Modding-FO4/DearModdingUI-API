@@ -51,6 +51,15 @@ void CompileStableUI()
 		.matchRevision = 1
 	};
 	dmui::TextViewState textState;
+	const auto drawing = dmui::ui::WindowDrawList();
+	const std::array points{ dmui::ui::Vec2{ 0, 0 }, dmui::ui::Vec2{ 10, 10 }, dmui::ui::Vec2{ 20, 0 } };
+	drawing.AddPolyline(points, 0xFFFFFFFF);
+	drawing.AddPolygonFilled(points, 0xFFFFFFFF);
+	drawing.AddText({ 0, 0 }, 0xFFFFFFFF, "Text", 24);
+	{
+		dmui::ui::ClipRectScope clip{ drawing, { 0, 0 }, { 100, 100 } };
+		drawing.AddImage(dmui::ImageHandle{ 1 }, { 0, 0 }, { 50, 50 });
+	}
 
 	(void)client.HostPresent();
 	(void)client.DrawSearchInput("search", "Search", search);

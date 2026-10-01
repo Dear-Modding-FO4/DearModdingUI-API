@@ -10,6 +10,14 @@ namespace dmui::ui
 	using Color32 = uint32_t;
 	using ID = uint32_t;
 
+	enum class DrawTarget : uint32_t
+	{
+		kNone = 0u,
+		kWindow = DMUI_DRAW_TARGET_WINDOW,
+		kForeground = DMUI_DRAW_TARGET_FOREGROUND,
+		kBackground = DMUI_DRAW_TARGET_BACKGROUND
+	};
+
 	enum class WindowFlags : uint32_t
 	{
 		kNone = 0u,
@@ -1254,6 +1262,164 @@ namespace dmui::ui
 		{
 			return detail::Invoke(
 				&DMUI_UIAPI::isPopupOpen, id, open);
+		}
+
+		[[nodiscard]] inline DMUI_Result DrawListAddLine(
+			DMUI_DrawTarget target,
+		DMUI_Vec2 p1,
+		DMUI_Vec2 p2,
+		uint32_t color,
+		float thickness) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::drawListAddLine, target, p1, p2, color, thickness);
+		}
+
+		[[nodiscard]] inline DMUI_Result DrawListAddRect(
+			DMUI_DrawTarget target,
+		DMUI_Vec2 min,
+		DMUI_Vec2 max,
+		uint32_t color,
+		float rounding,
+		float thickness) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::drawListAddRect, target, min, max, color, rounding, thickness);
+		}
+
+		[[nodiscard]] inline DMUI_Result DrawListAddRectFilled(
+			DMUI_DrawTarget target,
+		DMUI_Vec2 min,
+		DMUI_Vec2 max,
+		uint32_t color,
+		float rounding) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::drawListAddRectFilled, target, min, max, color, rounding);
+		}
+
+		[[nodiscard]] inline DMUI_Result DrawListAddCircle(
+			DMUI_DrawTarget target,
+		DMUI_Vec2 center,
+		float radius,
+		uint32_t color,
+		uint32_t segments,
+		float thickness) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::drawListAddCircle, target, center, radius, color, segments, thickness);
+		}
+
+		[[nodiscard]] inline DMUI_Result DrawListAddCircleFilled(
+			DMUI_DrawTarget target,
+		DMUI_Vec2 center,
+		float radius,
+		uint32_t color,
+		uint32_t segments) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::drawListAddCircleFilled, target, center, radius, color, segments);
+		}
+
+		[[nodiscard]] inline DMUI_Result DrawListAddTriangle(
+			DMUI_DrawTarget target,
+		DMUI_Vec2 p1,
+		DMUI_Vec2 p2,
+		DMUI_Vec2 p3,
+		uint32_t color,
+		float thickness) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::drawListAddTriangle, target, p1, p2, p3, color, thickness);
+		}
+
+		[[nodiscard]] inline DMUI_Result DrawListAddTriangleFilled(
+			DMUI_DrawTarget target,
+		DMUI_Vec2 p1,
+		DMUI_Vec2 p2,
+		DMUI_Vec2 p3,
+		uint32_t color) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::drawListAddTriangleFilled, target, p1, p2, p3, color);
+		}
+
+		[[nodiscard]] inline DMUI_Result DrawListAddBezierCubic(
+			DMUI_DrawTarget target,
+		DMUI_Vec2 p1,
+		DMUI_Vec2 p2,
+		DMUI_Vec2 p3,
+		DMUI_Vec2 p4,
+		uint32_t color,
+		float thickness,
+		uint32_t segments) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::drawListAddBezierCubic, target, p1, p2, p3, p4, color, thickness, segments);
+		}
+
+		[[nodiscard]] inline DMUI_Result DrawListAddPolyline(
+			DMUI_DrawTarget target,
+		const DMUI_Vec2* points,
+		uint32_t count,
+		uint32_t color,
+		uint32_t closed,
+		float thickness) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::drawListAddPolyline, target, points, count, color, closed, thickness);
+		}
+
+		[[nodiscard]] inline DMUI_Result DrawListAddPolygonFilled(
+			DMUI_DrawTarget target,
+		const DMUI_Vec2* points,
+		uint32_t count,
+		uint32_t color) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::drawListAddPolygonFilled, target, points, count, color);
+		}
+
+		[[nodiscard]] inline DMUI_Result DrawListAddText(
+			DMUI_DrawTarget target,
+		DMUI_Vec2 pos,
+		uint32_t color,
+		const char* text,
+		size_t length,
+		float fontSize) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::drawListAddText, target, pos, color, text, length, fontSize);
+		}
+
+		[[nodiscard]] inline DMUI_Result DrawListAddImage(
+			DMUI_DrawTarget target,
+		DMUI_ImageHandle image,
+		DMUI_Vec2 min,
+		DMUI_Vec2 max,
+		DMUI_Vec2 uv0,
+		DMUI_Vec2 uv1,
+		uint32_t tint) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::drawListAddImage, target, image, min, max, uv0, uv1, tint);
+		}
+
+		[[nodiscard]] inline DMUI_Result DrawListPushClipRect(
+			DMUI_DrawTarget target,
+		DMUI_Vec2 min,
+		DMUI_Vec2 max,
+		uint32_t intersectWithCurrent) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::drawListPushClipRect, target, min, max, intersectWithCurrent);
+		}
+
+		[[nodiscard]] inline DMUI_Result DrawListPopClipRect(
+			DMUI_DrawTarget target) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::drawListPopClipRect, target);
 		}
 	}
 }
