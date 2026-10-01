@@ -69,11 +69,26 @@ typedef uint32_t DMUI_Result;
 #define DMUI_RESULT_EXTERNAL_OPEN_FAILED 39u
 #define DMUI_RESULT_EXTERNAL_RESOLUTION_FAILED 40u
 #define DMUI_RESULT_EXTERNAL_RESOLUTION_UNSUPPORTED 41u
+#define DMUI_RESULT_FILE_NOT_FOUND 42u
+#define DMUI_RESULT_ACCESS_DENIED 43u
+#define DMUI_RESULT_IMAGE_TOO_LARGE 44u
+#define DMUI_RESULT_IMAGE_DECODE_FAILED 45u
+#define DMUI_RESULT_IMAGE_DEVICE_FAILED 46u
 
 static inline const char* DMUI_ResultToString(DMUI_Result result) DMUI_NOEXCEPT
 {
 	switch (result)
 	{
+	case DMUI_RESULT_FILE_NOT_FOUND:
+		return "FILE_NOT_FOUND";
+	case DMUI_RESULT_ACCESS_DENIED:
+		return "ACCESS_DENIED";
+	case DMUI_RESULT_IMAGE_TOO_LARGE:
+		return "IMAGE_TOO_LARGE";
+	case DMUI_RESULT_IMAGE_DECODE_FAILED:
+		return "IMAGE_DECODE_FAILED";
+	case DMUI_RESULT_IMAGE_DEVICE_FAILED:
+		return "IMAGE_DEVICE_FAILED";
 	case DMUI_RESULT_OK:
 		return "OK";
 	case DMUI_RESULT_UNSUPPORTED_ABI:
@@ -979,6 +994,10 @@ typedef DMUI_Result (DMUI_CALL *DMUI_UpdateImageFn)(
 	DMUI_ClientHandle client,
 	DMUI_ImageHandle image,
 	const DMUI_ImageDescriptor* descriptor) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_LoadImageFileFn)(
+	DMUI_ClientHandle client,
+	const char* utf8Path,
+	DMUI_ImageHandle* image) DMUI_NOEXCEPT;
 // With no application, the OS-associated handler opens target. Arguments and
 // workingDirectory are then invalid. An explicit application must be an absolute
 // executable path. Its argv is application, supplied arguments, then target when
@@ -1075,6 +1094,7 @@ typedef struct DMUI_HostAPI
 	DMUI_EndFieldFn endField;
 	DMUI_DrawTextViewFn drawTextView;
 	DMUI_DrawSearchInputBufferFn drawSearchInputBuffer;
+	DMUI_LoadImageFileFn loadImageFile;
 } DMUI_HostAPI;
 
 #if defined(_MSC_VER)

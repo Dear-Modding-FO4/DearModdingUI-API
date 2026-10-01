@@ -1526,6 +1526,25 @@ namespace dmui
 			};
 		}
 
+		[[nodiscard]] std::optional<ImageResource> LoadImageFile(const char* a_utf8Path) noexcept
+		{
+			if (!IsConnected())
+			{
+				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+				return std::nullopt;
+			}
+			if (!api_->loadImageFile || !api_->releaseImage)
+			{
+				Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
+				return std::nullopt;
+			}
+			DMUI_ImageHandle handle{};
+			lastResult_ = api_->loadImageFile(clientHandle_, a_utf8Path, &handle);
+			if (lastResult_ != DMUI_RESULT_OK)
+				return std::nullopt;
+			return ImageResource{ api_->releaseImage, clientHandle_, handle };
+		}
+
 		[[nodiscard]] bool UpdateImage(
 			ImageHandle a_image,
 			const DMUI_ImageDescriptor& a_descriptor) noexcept

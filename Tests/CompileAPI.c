@@ -13,6 +13,7 @@ DMUI_ImageDescriptor image_descriptor = {
 };
 
 DMUI_CreateImageFn create_image;
+DMUI_LoadImageFileFn load_image_file;
 DMUI_UpdateImageFn update_image;
 DMUI_ResolveIconGlyphFn resolve_icon_glyph;
 DMUI_DrawSearchInputBufferFn draw_search_input_buffer;

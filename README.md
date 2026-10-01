@@ -31,6 +31,29 @@ draw custom interfaces, and interact with the shared DearModdingUI host menu.
 
 ## Integration
 
+### File images
+
+`Client::LoadImageFile(utf8Path)` returns an owned image in `LOADING` immediately.
+Use `QueryImage` for `READY`/`FAILED` and the failure result, and `ui::Image` to
+draw it. Loading and failed images are not drawn and do not set a UI error.
+Loading, query, and release are any-thread; GPU publication occurs only at a
+render-frame boundary. Releasing during loading cancels publication, and
+device changes automatically reload file images.
+
+Relative paths are under the game's `Data` directory and cannot escape it.
+Absolute local paths are allowed; UNC/network and device paths are rejected.
+The host opens the virtual Win32 path so MO2 redirection still applies.
+PNG/JPEG/BMP/GIF (first frame)/TIFF decode to straight RGBA8. DDS accepts single
+2D textures and mip chains in BC1-BC7 and common uncompressed formats, not
+arrays, cubemaps, volumes, or premultiplied alpha. sRGB tags are ignored so
+DDS stored colors match the PNG UNORM path.
+
+Limits are 8192 pixels per dimension, 64 MiB encoded/decoded, 32 queued jobs
+globally, and four per client. Capacity exhaustion returns `BUSY` without a
+handle. Failed handles retain `FILE_NOT_FOUND`, `ACCESS_DENIED`,
+`UNSUPPORTED_RESOURCE`, `IMAGE_TOO_LARGE`, `IMAGE_DECODE_FAILED`,
+`IMAGE_DEVICE_FAILED`, or `RESOURCE_EXHAUSTED` until released.
+
 ### Popups and modals
 
 Inside a page callback, call `ui::OpenPopup(id)` once (set `open=true` for a modal) and draw each frame with

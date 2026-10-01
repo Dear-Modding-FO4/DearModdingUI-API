@@ -86,6 +86,7 @@ int main()
 	};
 	DMUI_HostAPI api{};
 	api.createImage = nullptr;
+	api.loadImageFile = nullptr;
 	api.updateImage = nullptr;
 	api.resolveIconGlyph = nullptr;
 	api.beginSettingsRow = nullptr;

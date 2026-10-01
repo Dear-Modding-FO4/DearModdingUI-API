@@ -35,7 +35,9 @@ Draw images with `ui::Image(handle, size)` or `ui::Image(handle, options)`, retu
 whether an image was drawn. Device-invalidated images return false without a
 sticky error; stale/foreign/malformed handles and invalid options return errors.
 Invalidated handles remain owned until released. `DMUI_ImageInfo::failure`
-carries the result for `FAILED`; `LOADING` and `FAILED` are reserved for file loading.
+carries the result for `FAILED`. `Client::LoadImageFile` starts in `LOADING`;
+both states return false from `ui::Image` without a sticky error. See the
+[file image contract](../README.md#file-images) for paths, formats, limits, and reload behavior.
 `ui::PlotAnnotated(id, descriptor)` draws annotated plots. Image lifetime operations
 remain on `Client` and the host table.
 
