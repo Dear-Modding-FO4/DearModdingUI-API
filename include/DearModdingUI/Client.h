@@ -1597,7 +1597,8 @@ namespace dmui
 		[[nodiscard]] bool PostNotification(
 			DMUI_StatusSeverity a_severity,
 			const char* a_message,
-			uint32_t a_durationMilliseconds = 4000) noexcept
+			uint32_t a_durationMilliseconds = 0,
+			const char* a_title = nullptr) noexcept
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
@@ -1606,7 +1607,8 @@ namespace dmui
 			const DMUI_NotificationDescriptor descriptor{
 				a_severity,
 				a_message,
-				a_durationMilliseconds
+				a_durationMilliseconds,
+				a_title
 			};
 			lastResult_ = api_->postNotification(clientHandle_, &descriptor);
 			return lastResult_ == DMUI_RESULT_OK;

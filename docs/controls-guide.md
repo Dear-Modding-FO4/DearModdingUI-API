@@ -270,5 +270,5 @@ through `AddFontDefaultVector`. It does not fall back to a proportional family.
 
 ## Notifications and Status
 
-- **Toast Notifications**: `client.PostNotification(severity, message, durationMs)` displays a popup notification in the corner of the menu.
+- **Toast Notifications**: `client.PostNotification(severity, message, durationMs = 0, title = nullptr)` posts a passive bottom-right toast, including while the menu is closed. The host supplies the registered mod name; the title is optional additional text. Zero duration selects five seconds, starting on first presentation. Durations clamp to 250-30000 ms; hovering in menu cursor mode pauses expiry. Four toasts can be visible and 32 wait FIFO; overflow drops the oldest waiting toast. Consecutive identical posts from the same client coalesce with a count.
 - **Health Status**: `client.SetStatus(severity, message)` records an active status condition displayed in the host Health page.

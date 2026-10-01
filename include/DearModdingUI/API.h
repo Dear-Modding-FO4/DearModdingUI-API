@@ -679,8 +679,11 @@ typedef struct DMUI_ManagedOverlayPlacement
 typedef struct DMUI_NotificationDescriptor
 {
 	DMUI_StatusSeverity severity;
+	// Copied UTF-8: required message (1024 bytes), optional title (256 bytes).
 	const char* message;
+	// Zero selects the host default; lifetime starts at first presentation.
 	uint32_t durationMilliseconds;
+	const char* title;
 } DMUI_NotificationDescriptor;
 
 typedef struct DMUI_PlotReferenceLine
