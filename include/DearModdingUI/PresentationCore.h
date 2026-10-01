@@ -61,8 +61,6 @@ namespace dmui
 			return { DMUI_RESULT_INVALID_ARGUMENT, nullptr };
 		if (a_tone == TextTone::kInherit)
 			return {};
-		if (a_theme.structSize < DMUI_THEME_COLORS_0_1_SIZE)
-			return { DMUI_RESULT_STRUCT_TOO_SMALL, nullptr };
 		switch (a_tone)
 		{
 		case TextTone::kAccent:

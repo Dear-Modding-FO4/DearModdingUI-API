@@ -4,12 +4,6 @@
 
 #include <DearModdingUI/API.h>
 
-#define DMUI_UI_ABI_1 1u
-#define DMUI_UI_ABI_CURRENT DMUI_UI_ABI_1
-#define DMUI_UI_REVISION_1 1u
-#define DMUI_UI_REVISION_2 2u
-#define DMUI_UI_REVISION_CURRENT DMUI_UI_REVISION_2
-
 typedef uint32_t DMUI_UIColor;
 #define DMUI_UI_COLOR_NONE 0u
 #define DMUI_UI_COLOR_TEXT 1000u
@@ -609,13 +603,30 @@ typedef DMUI_Result (DMUI_CALL *DMUI_UIListClipperStepFn)(
 typedef DMUI_Result (DMUI_CALL *DMUI_UIListClipperEndFn)(
 	DMUI_ClientHandle client,
 	uint64_t clipper) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIImageFn)(
+	DMUI_ClientHandle client,
+	DMUI_ImageHandle image,
+	const DMUI_ImageDrawOptions* options,
+	uint32_t* drawn) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIPlotAnnotatedFn)(
+	DMUI_ClientHandle client,
+	const char* id,
+	const DMUI_AnnotatedPlotDescriptor* descriptor) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIGetCursorPosFn)(
+	DMUI_ClientHandle client,
+	DMUI_Vec2* position) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UISetCursorPosFn)(
+	DMUI_ClientHandle client,
+	DMUI_Vec2 position) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UITextAlignedFn)(
+	DMUI_ClientHandle client,
+	float alignX,
+	float width,
+	const char* text,
+	size_t length) DMUI_NOEXCEPT;
 
 typedef struct DMUI_UIAPI
 {
-	uint32_t structSize;
-	uint32_t abiVersion;
-	uint32_t revision;
-	uint32_t reserved;
 	DMUI_UIGetStyleMetricsFn getStyleMetrics;
 	DMUI_UIBeginComboFn beginCombo;
 	DMUI_UIEndComboFn endCombo;
@@ -685,159 +696,9 @@ typedef struct DMUI_UIAPI
 	DMUI_UIListClipperBeginFn listClipperBegin;
 	DMUI_UIListClipperStepFn listClipperStep;
 	DMUI_UIListClipperEndFn listClipperEnd;
+	DMUI_UIImageFn image;
+	DMUI_UIPlotAnnotatedFn plotAnnotated;
+	DMUI_UIGetCursorPosFn getCursorPos;
+	DMUI_UISetCursorPosFn setCursorPos;
+	DMUI_UITextAlignedFn textAligned;
 } DMUI_UIAPI;
-
-#define DMUI_UI_API_GET_STYLE_METRICS_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, getStyleMetrics) + sizeof(DMUI_UIGetStyleMetricsFn)))
-#define DMUI_UI_API_BEGIN_COMBO_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, beginCombo) + sizeof(DMUI_UIBeginComboFn)))
-#define DMUI_UI_API_END_COMBO_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, endCombo) + sizeof(DMUI_UIEndComboFn)))
-#define DMUI_UI_API_BEGIN_DISABLED_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, beginDisabled) + sizeof(DMUI_UIBeginDisabledFn)))
-#define DMUI_UI_API_END_DISABLED_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, endDisabled) + sizeof(DMUI_UIEndDisabledFn)))
-#define DMUI_UI_API_BEGIN_TABLE_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, beginTable) + sizeof(DMUI_UIBeginTableFn)))
-#define DMUI_UI_API_END_TABLE_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, endTable) + sizeof(DMUI_UIEndTableFn)))
-#define DMUI_UI_API_BEGIN_TOOLTIP_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, beginTooltip) + sizeof(DMUI_UIBeginTooltipFn)))
-#define DMUI_UI_API_END_TOOLTIP_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, endTooltip) + sizeof(DMUI_UIEndTooltipFn)))
-#define DMUI_UI_API_BUTTON_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, button) + sizeof(DMUI_UIButtonFn)))
-#define DMUI_UI_API_CALC_TEXT_SIZE_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, calcTextSize) + sizeof(DMUI_UICalcTextSizeFn)))
-#define DMUI_UI_API_CHECKBOX_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, checkbox) + sizeof(DMUI_UICheckboxFn)))
-#define DMUI_UI_API_COLLAPSING_HEADER_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, collapsingHeader) + sizeof(DMUI_UICollapsingHeaderFn)))
-#define DMUI_UI_API_COLLAPSING_HEADER_VISIBLE_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, collapsingHeaderVisible) + sizeof(DMUI_UICollapsingHeaderVisibleFn)))
-#define DMUI_UI_API_DRAG_SCALAR_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, dragScalar) + sizeof(DMUI_UIDragScalarFn)))
-#define DMUI_UI_API_DUMMY_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, dummy) + sizeof(DMUI_UIDummyFn)))
-#define DMUI_UI_API_GET_CONTENT_REGION_AVAIL_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, getContentRegionAvail) + sizeof(DMUI_UIGetContentRegionAvailFn)))
-#define DMUI_UI_API_GET_CURSOR_SCREEN_POS_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, getCursorScreenPos) + sizeof(DMUI_UIGetCursorScreenPosFn)))
-#define DMUI_UI_API_GET_FONT_SIZE_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, getFontSize) + sizeof(DMUI_UIGetFontSizeFn)))
-#define DMUI_UI_API_GET_FRAME_HEIGHT_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, getFrameHeight) + sizeof(DMUI_UIGetFrameHeightFn)))
-#define DMUI_UI_API_GET_STYLE_COLOR_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, getStyleColor) + sizeof(DMUI_UIGetStyleColorFn)))
-#define DMUI_UI_API_GET_TEXT_LINE_HEIGHT_WITH_SPACING_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, getTextLineHeightWithSpacing) + sizeof(DMUI_UIGetTextLineHeightWithSpacingFn)))
-#define DMUI_UI_API_INDENT_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, indent) + sizeof(DMUI_UIIndentFn)))
-#define DMUI_UI_API_INPUT_SCALAR_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, inputScalar) + sizeof(DMUI_UIInputScalarFn)))
-#define DMUI_UI_API_INPUT_TEXT_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, inputText) + sizeof(DMUI_UIInputTextFn)))
-#define DMUI_UI_API_INPUT_TEXT_MULTILINE_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, inputTextMultiline) + sizeof(DMUI_UIInputTextMultilineFn)))
-#define DMUI_UI_API_INPUT_TEXT_WITH_HINT_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, inputTextWithHint) + sizeof(DMUI_UIInputTextWithHintFn)))
-#define DMUI_UI_API_IS_ITEM_DEACTIVATED_AFTER_EDIT_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, isItemDeactivatedAfterEdit) + sizeof(DMUI_UIIsItemDeactivatedAfterEditFn)))
-#define DMUI_UI_API_IS_ITEM_HOVERED_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, isItemHovered) + sizeof(DMUI_UIIsItemHoveredFn)))
-#define DMUI_UI_API_POP_ID_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, popID) + sizeof(DMUI_UIPopIDFn)))
-#define DMUI_UI_API_POP_STYLE_COLOR_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, popStyleColor) + sizeof(DMUI_UIPopStyleColorFn)))
-#define DMUI_UI_API_POP_TEXT_WRAP_POS_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, popTextWrapPos) + sizeof(DMUI_UIPopTextWrapPosFn)))
-#define DMUI_UI_API_PROGRESS_BAR_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, progressBar) + sizeof(DMUI_UIProgressBarFn)))
-#define DMUI_UI_API_PUSH_ID_STRING_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, pushIDString) + sizeof(DMUI_UIPushIDStringFn)))
-#define DMUI_UI_API_PUSH_ID_RANGE_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, pushIDRange) + sizeof(DMUI_UIPushIDRangeFn)))
-#define DMUI_UI_API_PUSH_ID_VALUE_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, pushIDValue) + sizeof(DMUI_UIPushIDValueFn)))
-#define DMUI_UI_API_PUSH_STYLE_COLOR_U32_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, pushStyleColorU32) + sizeof(DMUI_UIPushStyleColorU32Fn)))
-#define DMUI_UI_API_PUSH_STYLE_COLOR_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, pushStyleColor) + sizeof(DMUI_UIPushStyleColorFn)))
-#define DMUI_UI_API_PUSH_TEXT_WRAP_POS_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, pushTextWrapPos) + sizeof(DMUI_UIPushTextWrapPosFn)))
-#define DMUI_UI_API_SAME_LINE_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, sameLine) + sizeof(DMUI_UISameLineFn)))
-#define DMUI_UI_API_SELECTABLE_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, selectable) + sizeof(DMUI_UISelectableFn)))
-#define DMUI_UI_API_SELECTABLE_TOGGLE_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, selectableToggle) + sizeof(DMUI_UISelectableToggleFn)))
-#define DMUI_UI_API_SEPARATOR_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, separator) + sizeof(DMUI_UISeparatorFn)))
-#define DMUI_UI_API_SET_CLIPBOARD_TEXT_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, setClipboardText) + sizeof(DMUI_UISetClipboardTextFn)))
-#define DMUI_UI_API_SET_CURSOR_SCREEN_POS_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, setCursorScreenPos) + sizeof(DMUI_UISetCursorScreenPosFn)))
-#define DMUI_UI_API_SET_ITEM_DEFAULT_FOCUS_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, setItemDefaultFocus) + sizeof(DMUI_UISetItemDefaultFocusFn)))
-#define DMUI_UI_API_SET_NEXT_ITEM_WIDTH_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, setNextItemWidth) + sizeof(DMUI_UISetNextItemWidthFn)))
-#define DMUI_UI_API_SET_TOOLTIP_TEXT_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, setTooltipText) + sizeof(DMUI_UISetTooltipTextFn)))
-#define DMUI_UI_API_SLIDER_SCALAR_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, sliderScalar) + sizeof(DMUI_UISliderScalarFn)))
-#define DMUI_UI_API_SPACING_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, spacing) + sizeof(DMUI_UISpacingFn)))
-#define DMUI_UI_API_TABLE_HEADERS_ROW_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, tableHeadersRow) + sizeof(DMUI_UITableHeadersRowFn)))
-#define DMUI_UI_API_TABLE_NEXT_COLUMN_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, tableNextColumn) + sizeof(DMUI_UITableNextColumnFn)))
-#define DMUI_UI_API_TABLE_NEXT_ROW_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, tableNextRow) + sizeof(DMUI_UITableNextRowFn)))
-#define DMUI_UI_API_TABLE_SET_COLUMN_INDEX_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, tableSetColumnIndex) + sizeof(DMUI_UITableSetColumnIndexFn)))
-#define DMUI_UI_API_TABLE_SETUP_COLUMN_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, tableSetupColumn) + sizeof(DMUI_UITableSetupColumnFn)))
-#define DMUI_UI_API_TABLE_SETUP_SCROLL_FREEZE_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, tableSetupScrollFreeze) + sizeof(DMUI_UITableSetupScrollFreezeFn)))
-#define DMUI_UI_API_TEXT_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, text) + sizeof(DMUI_UITextFn)))
-#define DMUI_UI_API_TEXT_COLORED_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, textColored) + sizeof(DMUI_UITextColoredFn)))
-#define DMUI_UI_API_TEXT_DISABLED_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, textDisabled) + sizeof(DMUI_UITextDisabledFn)))
-#define DMUI_UI_API_TEXT_WRAPPED_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, textWrapped) + sizeof(DMUI_UITextWrappedFn)))
-#define DMUI_UI_API_UNINDENT_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, unindent) + sizeof(DMUI_UIUnindentFn)))
-#define DMUI_UI_API_NEW_LINE_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, newLine) + sizeof(DMUI_UINewLineFn)))
-#define DMUI_UI_API_PLOT_LINES_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, plotLines) + sizeof(DMUI_UIPlotLinesFn)))
-#define DMUI_UI_API_PUSH_STYLE_VAR_FLOAT_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, pushStyleVarFloat) + sizeof(DMUI_UIPushStyleVarFloatFn)))
-#define DMUI_UI_API_PUSH_STYLE_VAR_VEC2_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, pushStyleVarVec2) + sizeof(DMUI_UIPushStyleVarVec2Fn)))
-#define DMUI_UI_API_POP_STYLE_VAR_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, popStyleVar) + sizeof(DMUI_UIPopStyleVarFn)))
-#define DMUI_UI_API_LIST_CLIPPER_BEGIN_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, listClipperBegin) + sizeof(DMUI_UIListClipperBeginFn)))
-#define DMUI_UI_API_LIST_CLIPPER_STEP_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, listClipperStep) + sizeof(DMUI_UIListClipperStepFn)))
-#define DMUI_UI_API_LIST_CLIPPER_END_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPI, listClipperEnd) + sizeof(DMUI_UIListClipperEndFn)))
-#define DMUI_UI_API_REQUIRED_SIZE DMUI_UI_API_NEW_LINE_SIZE
-#define DMUI_UI_API_CURRENT_SIZE DMUI_UI_API_LIST_CLIPPER_END_SIZE
-
-typedef struct DMUI_UIAPIInfo
-{
-	uint32_t structSize;
-	uint32_t abiVersion;
-	uint32_t revision;
-	uint32_t tableSize;
-	const DMUI_UIAPI* api;
-} DMUI_UIAPIInfo;
-
-#define DMUI_UI_API_INFO_PREFIX_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPIInfo, tableSize) + sizeof(uint32_t)))
-#define DMUI_UI_API_INFO_1_SIZE \
-	((uint32_t)(offsetof(DMUI_UIAPIInfo, api) + sizeof(const DMUI_UIAPI*)))

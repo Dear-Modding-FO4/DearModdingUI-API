@@ -100,7 +100,6 @@ void CompileTextViewNavigation()
 	};
 	dmui::TextViewState state;
 	DMUI_StyleMetrics metrics{};
-	metrics.structSize = sizeof(metrics);
 	(void)dmui::DrawTextViewNavigation(
 		"sections",
 		std::span<const Section>{ sections },

@@ -1,96 +1,52 @@
 import copy
 import importlib.util
-import json
 import unittest
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-GENERATOR = ROOT / "Tools" / "generate-ui-contract.py"
-SCHEMA = ROOT / "schema" / "ui-contract.json"
-BASELINE = ROOT / "schema" / "ui-contract.manifest.json"
-
-SPEC = importlib.util.spec_from_file_location("dmui_ui_contract_generator", GENERATOR)
-assert SPEC and SPEC.loader
+SPEC = importlib.util.spec_from_file_location(
+    "generator", ROOT / "Tools/generate-ui-contract.py"
+)
 generator = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(generator)
 
 
-class CompatibilityBaselineTests(unittest.TestCase):
-    def setUp(self) -> None:
-        self.schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
-        self.baseline = json.loads(BASELINE.read_text(encoding="utf-8"))
-
-    def validate(self, schema: dict) -> None:
-        generator.validate_compatibility(schema, self.baseline)
-
-    def test_current_schema_matches_published_baseline(self) -> None:
-        self.validate(self.schema)
-
-    def test_published_signature_cannot_change(self) -> None:
-        changed = copy.deepcopy(self.schema)
-        changed["signatures"]["Button"][1][0] = "uint64_t"
-        with self.assertRaisesRegex(
-            generator.GenerationError, "published UI operation"
-        ):
-            self.validate(changed)
-
-    def test_published_slot_cannot_be_reordered(self) -> None:
-        changed = copy.deepcopy(self.schema)
-        changed["operations"][0], changed["operations"][1] = (
-            changed["operations"][1],
-            changed["operations"][0],
-        )
-        with self.assertRaisesRegex(
-            generator.GenerationError, "published UI operation"
-        ):
-            self.validate(changed)
-
-    def test_published_enum_value_cannot_change(self) -> None:
-        changed = copy.deepcopy(self.schema)
-        changed["enums"][0]["values"][0][1] += 1
-        with self.assertRaisesRegex(generator.GenerationError, "enum values"):
-            self.validate(changed)
-
-    def test_append_requires_new_revision(self) -> None:
-        changed = copy.deepcopy(self.schema)
-        changed["signatures"]["OptionalProbe"] = [
-            ["DMUI_ClientHandle", "client"]
-        ]
-        changed["operations"].append(
-            [len(changed["operations"]) + 1, "OptionalProbe", "optionalProbe", "void", False]
-        )
-        with self.assertRaisesRegex(generator.GenerationError, "newer contract revision"):
-            self.validate(changed)
-
-        changed["contract"]["revision"] += 1
-        self.validate(changed)
-
-    def test_appended_optional_slot_is_checked_by_requested_size(self) -> None:
-        changed = copy.deepcopy(self.schema)
-        changed["contract"]["revision"] += 1
-        changed["signatures"]["OptionalProbe"] = [
-            ["DMUI_ClientHandle", "client"]
-        ]
-        changed["operations"].append(
-            [len(changed["operations"]) + 1, "OptionalProbe", "optionalProbe", "void", False]
+class ABIContractTests(unittest.TestCase):
+    def setUp(self):
+        self.schema = generator.load_schema(ROOT / "schema/ui-contract.json")
+        self.baseline = generator.load_baseline_manifest(
+            ROOT / "schema/ui-contract.manifest.json"
         )
 
-        header = generator.render_checked_header(changed)
-        self.assertIn("HasOperationsThroughSize", header)
-        self.assertIn(
-            "(a_minimumSize < DMUI_UI_API_OPTIONAL_PROBE_SIZE || "
-            "a_api->optionalProbe)",
-            header,
-        )
+    def test_published_contract_matches(self):
+        generator.validate_compatibility(self.schema, self.baseline)
 
-    def test_revision_cannot_change_without_addition(self) -> None:
-        changed = copy.deepcopy(self.schema)
-        changed["contract"]["revision"] += 1
-        with self.assertRaisesRegex(
-            generator.GenerationError, "revision changed without"
-        ):
-            self.validate(changed)
+    def test_layout_changes_require_abi_change(self):
+        signature = copy.deepcopy(self.schema)
+        signature["signatures"]["Button"][1][0] = "uint64_t"
+        reordered = copy.deepcopy(self.schema)
+        reordered["operations"][0], reordered["operations"][1] = (
+            reordered["operations"][1], reordered["operations"][0]
+        )
+        appended = copy.deepcopy(self.schema)
+        appended["signatures"]["Probe"] = [["DMUI_ClientHandle", "client"]]
+        appended["operations"].append(
+            [len(appended["operations"]) + 1, "Probe", "probe", "void"]
+        )
+        removed = copy.deepcopy(self.schema)
+        removed["operations"].pop()
+        for changed in (signature, reordered, appended, removed):
+            with self.subTest(operations=len(changed["operations"])):
+                with self.assertRaisesRegex(generator.GenerationError, "DMUI_ABI_VERSION"):
+                    generator.validate_compatibility(changed, self.baseline)
+                changed["contract"]["abi"] += 1
+                generator.validate_compatibility(changed, self.baseline)
+
+    def test_enum_changes_require_abi_change(self):
+        self.schema["enums"][0]["values"][0][1] += 1
+        with self.assertRaisesRegex(generator.GenerationError, "DMUI_ABI_VERSION"):
+            generator.validate_compatibility(self.schema, self.baseline)
 
 
 if __name__ == "__main__":

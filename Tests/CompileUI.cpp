@@ -16,13 +16,7 @@ static_assert(
 static_assert(DMUI_UI_COLOR_TEXT != 0u);
 constexpr dmui::ClientOptions kPositionalClientOptions{
 	DMUI_CLIENT_CAPABILITY_NONE,
-	DMUI_HOST_SERVICE_NONE,
-	DMUI_UI_REVISION_1,
-	DMUI_UI_API_REQUIRED_SIZE
 };
-static_assert(
-	kPositionalClientOptions.minimumHostAPISize ==
-	DMUI_HOST_API_REGISTER_CLIENT_SIZE);
 
 [[nodiscard]] dmui::ChoiceSettingControl CompileUnmatchedChoiceLabel()
 {
@@ -41,13 +35,7 @@ void CompileStableUI()
 		{},
 		{},
 		{
-			.capabilities = DMUI_CLIENT_CAPABILITY_RENDERER_REPLACEMENT,
-			.requiredServices =
-				DMUI_HOST_SERVICE_FRAME_CONTROL |
-				DMUI_HOST_SERVICE_IMAGE_RESOURCES,
-			.minimumUIRevision = DMUI_UI_REVISION_1,
-			.minimumUIAPISize = DMUI_UI_API_REQUIRED_SIZE,
-			.minimumHostAPISize = DMUI_HOST_API_REGISTER_CLIENT_SIZE
+			.capabilities = DMUI_CLIENT_CAPABILITY_RENDERER_REPLACEMENT
 		}
 	};
 
@@ -107,4 +95,12 @@ void CompileStableUI()
 		dmui::ui::Vec4{ 1.0f, 1.0f, 1.0f, 1.0f },
 		"text");
 	dmui::ui::SetTooltip("tooltip");
+	dmui::ui::SetCursorPos(dmui::ui::GetCursorPos());
+	dmui::ui::SetCursorPosX(dmui::ui::GetCursorPosX());
+	dmui::ui::SetCursorPosY(dmui::ui::GetCursorPosY());
+	dmui::ui::TextAligned(0.5f, 200.0f, "Aligned");
+	if (dmui::ui::BeginItemTooltip())
+		dmui::ui::EndTooltip();
+	(void)dmui::ui::Image(dmui::ImageHandle{}, { 20.0f, 20.0f });
+	dmui::ui::PlotAnnotated("annotated", {});
 }

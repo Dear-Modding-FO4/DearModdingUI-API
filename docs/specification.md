@@ -4,18 +4,20 @@ This document details the low-level contracts, binary layout requirements, threa
 
 ## Stable UI Contract and Schema
 
-`schema/ui-contract.json` defines the current C UI contract. `schema/ui-contract.manifest.json` records the latest published ABI-1 revision: validation fails if an existing operation ID, slot, signature, requirement, enum family, or enum value changes. Pass `--update-baseline` to the generator when publishing a new revision.
+`DMUI_ABI_VERSION` (2) covers every public table and struct. `DMUI_GetAPI` returns the host table only for an exact match; mismatches log both versions and `Client::Connect` reports `UNSUPPORTED_ABI`. The host table's `ui` pointer exposes the complete UI table.
 
-New operations or enum values must only be appended under a newer UI revision. The generated files are:
+`schema/ui-contract.json` defines the C UI contract. Generation rejects layout or enum changes without an ABI change relative to `schema/ui-contract.manifest.json`. `--update-baseline` deliberately refreshes this guard, including during unreleased development slices. The generated files are:
 - `CUIAPI.h`: The C function table structure.
 - `UIChecked.generated.h`: Explicit result-returning C++ wrappers.
-- `UI.h`: The familiar boolean/void C++ facade (`dmui::ui`).
+- `UIBindings.generated.h`: Host declarations and symbolic translations.
+
+`UI.h` is the handwritten boolean/void C++ facade (`dmui::ui`).
 
 The host translates every stable enum and flag symbolically. Values do not necessarily match native Dear ImGui enum numeric values. Unknown flag bits return `DMUI_RESULT_INVALID_ARGUMENT`.
 
-### Optional Slots and Minimum Prefixes
+### Exact ABI and Drawing Failures
 
-The required table prefix ends at `NewLine`. Subsequent slots are optional and additive (revision 1 adds `PlotLines`; revision 2 adds `PushStyleVarFloat`, `PushStyleVarVec2`, `PopStyleVar`, `ListClipperBegin`, `ListClipperStep`, and `ListClipperEnd`). A client can connect to a host that supplies its required prefix even if a newer optional tail is absent. Invoking an unsupported operation returns `DMUI_RESULT_UNSUPPORTED_ABI`.
+Every table slot is part of the ABI. There are no `structSize` fields, table-prefix constants, UI revisions, service bits, or minimum-version options. Resource byte counts and buffer capacities remain runtime validation inputs. Runtime unavailability is reported through operation results and lifecycle callbacks.
 
 Drawing wrappers record the first failure in a callback-scoped sticky result. The trampoline passes this result back to the host, which disables the malfunctioning callback. Scope-end operations continue to dispatch so nested stacks unwind cleanly.
 
@@ -29,17 +31,19 @@ order by their owning client in the original window and table. Violations return
 the host abandons unfinished clippers at callback exit without seeking the cursor.
 The non-copyable, non-movable C++ wrapper ends on destruction and before re-Begin.
 
-`ClientOptions::minimumHostAPISize` applies the same prefix rule to the host
-table. `PreflightHostAPI` verifies every function through that byte size before
-registration, in addition to semantic service checks and stable UI preflight.
-Set it to `DMUI_HOST_API_DRAW_TEXT_VIEW_SIZE` when the viewer and preceding host
-widgets are required, or `DMUI_HOST_API_DRAW_SEARCH_INPUT_BUFFER_SIZE` when
-growable C++ search input is required.
+Draw images with `ui::Image(handle, size)` or `ui::Image(handle, options)`, returning
+whether an image was drawn. Device-invalidated images return false without a
+sticky error; stale/foreign/malformed handles and invalid options return errors.
+Invalidated handles remain owned until released. `DMUI_ImageInfo::failure`
+carries the result for `FAILED`; `LOADING` and `FAILED` are reserved for file loading.
+`ui::PlotAnnotated(id, descriptor)` draws annotated plots. Image lifetime operations
+remain on `Client` and the host table.
 
-API feature version 0.2 adds the text-view descriptors and monospace font role.
-The host table is only appended, so the host ABI remains ABI 1. Clients that do
-not require the appended viewer slot keep the default registration prefix and
-are not rejected solely for compiling against the newer feature header.
+`GetCursorPos` / `SetCursorPos` use window-local coordinates. X/Y variants are
+wrapper conveniences. `BeginItemTooltip` uses `ForTooltip` hover policy and
+`BeginTooltip`. `TextAligned(alignX, width, text, length)` renders unformatted
+UTF-8 with alignment clamped to [0,1]. Nonpositive width uses available content
+width; overflow is ellipsized and exposes full text on hover/nav focus.
 
 ## Drawing Operations and Type Mapping
 
@@ -82,7 +86,7 @@ without an application cap. The overload with `maximumBytes` uses a fixed
 buffer of `maximumBytes + 1` and no resize callback. It rejects an existing
 value beyond the maximum and a maximum of `INT_MAX` or greater. Fixed insertion
 may accept a UTF-8-safe prefix but never truncates existing text. Both overloads
-reject embedded NUL bytes, require the appended
+reject embedded NUL bytes, use the
 `drawSearchInputBuffer` operation, and do not fall back to the legacy fixed C
 entry.
 
@@ -133,7 +137,6 @@ font family.
 ### Style Metrics Layout
 
 `DMUI_StyleMetrics` layout consists of:
-- `structSize`
 - `itemSpacing`
 - `framePadding`
 - `itemInnerSpacing`
@@ -143,7 +146,7 @@ font family.
 - `scrollbarSize`
 - `fontSizeBase`
 
-`GetStyleMetrics` populates through `scrollbarSize` (52 bytes) when given that prefix size, and populates `fontSizeBase` (56 bytes) when given the complete structure size. Callers specify `structSize` and trailing unallocated storage is never overwritten.
+`GetStyleMetrics` populates the complete structure.
 
 ### Scopes and Choice Controls
 
@@ -208,26 +211,23 @@ descriptor. Raw zero remains no-icon for section/link operations, while an
 unset `SettingGroup::glyph` requests automatic inference. Invalid raw Unicode
 is not treated as a semantic miss.
 
-The appended `DMUI_HostAPI::resolveIconGlyph` entry makes automatic client
+The `DMUI_HostAPI::resolveIconGlyph` entry makes automatic client
 drawing host-authoritative. It is a stateless, thread-safe, no-render query
 over immutable host data and does not require host readiness, an active frame,
-or a client handle. `DMUI_IconResolutionRequest` is size-prefixed:
-`DMUI_ICON_RESOLUTION_REQUEST_0_1_SIZE` is the minimum accepted prefix and
-larger caller tails are ignored. `explicitName` is limited to 128 bytes and
+or a client handle. `explicitName` is limited to 128 bytes and
 each metadata field to 256 bytes; null and empty are equivalent. Every string
 must terminate within its limit and may not contain bytes below `0x20` other
 than tab. A successful zero glyph means no match. Errors also zero a valid
 output pointer.
 
 `Client::ResolveIconGlyph(primaryMetadata, explicitName, secondaryMetadata)`
-requires a connected client so it can use the negotiated host table, although
+requires a connected client so it can use the host table, although
 the underlying C operation itself has no lifecycle or thread-affinity
 requirement. It returns an engaged zero for a successful no-match and
 `std::nullopt` for failure, with `LastResult()` preserving the host result.
 Serialize access to a shared `Client` instance; unlike the underlying pure
 query, the wrapper updates mutable client state.
-Missing or short older host entries return `UNSUPPORTED_ABI`; there is no local
-resolver fallback.
+There is no local resolver fallback.
 
 An automatic `SettingGroup` resolves its current label on each draw (or its key
 when the label is empty), then uses Question only for a successful no-match.
@@ -245,7 +245,7 @@ because its vocabulary remains compiled into the mod.
 `Client::OpenExternal` dispatches targets via the host process:
 - Accepts URIs, absolute file paths, and absolute directory paths.
 - An optional application path overrides the default OS handler with an argv array.
-- When `DMUI_HOST_SERVICE_VIRTUAL_FILE_TARGETS` is available, `VIRTUAL_FILE` and `VIRTUAL_FILE_PARENT` resolve physical backing files for virtualized paths (such as loose mod files managed by Mod Organizer 2 / USVFS).
+- `VIRTUAL_FILE` and `VIRTUAL_FILE_PARENT` resolve physical backing files for virtualized paths (such as loose mod files managed by Mod Organizer 2 / USVFS).
 - Path resolution is synchronous and read-only. Unresolved paths do not fall back to virtual paths or guessed directories.
 
 ## Thread Affinity and Resources

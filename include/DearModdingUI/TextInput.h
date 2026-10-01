@@ -57,7 +57,6 @@ namespace dmui
 			}
 
 			buffer_ = {
-				sizeof(DMUI_TextBuffer),
 				storage_.data(),
 				storage_.size(),
 				a_maximumBytes ? nullptr : &ResizeCallback,
@@ -84,8 +83,7 @@ namespace dmui
 		{
 			if (result_ != DMUI_RESULT_OK)
 				return result_;
-			if (buffer_.structSize < DMUI_TEXT_BUFFER_0_2_SIZE ||
-				buffer_.data != storage_.data() ||
+			if (buffer_.data != storage_.data() ||
 				buffer_.capacity != storage_.size())
 				return DMUI_RESULT_INVALID_DESCRIPTOR;
 

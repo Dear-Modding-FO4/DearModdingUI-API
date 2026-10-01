@@ -58,305 +58,6 @@ namespace dmui
 	struct ClientOptions
 	{
 		DMUI_ClientCapabilities capabilities{ DMUI_CLIENT_CAPABILITY_NONE };
-		DMUI_HostServices requiredServices{ DMUI_HOST_SERVICE_NONE };
-		uint32_t minimumUIRevision{ DMUI_UI_REVISION_1 };
-		uint32_t minimumUIAPISize{ DMUI_UI_API_REQUIRED_SIZE };
-		uint32_t minimumHostAPISize{ DMUI_HOST_API_REGISTER_CLIENT_SIZE };
-	};
-
-	struct HostServices
-	{
-		DMUI_HostServices supported{};
-		uint32_t uiABI{};
-		uint32_t uiRevision{};
-		uint32_t uiTableSize{};
-	};
-
-	[[nodiscard]] inline DMUI_Result ValidateHostOperationsThroughSize(
-		const DMUI_HostAPI* a_api,
-		uint32_t a_minimumSize) noexcept
-	{
-		if (!a_api)
-			return DMUI_RESULT_UNSUPPORTED_ABI;
-		if (a_minimumSize < DMUI_HOST_API_REGISTER_CLIENT_SIZE ||
-			a_minimumSize > sizeof(DMUI_HostAPI))
-			return DMUI_RESULT_INVALID_DESCRIPTOR;
-		if (a_api->structSize < a_minimumSize)
-			return DMUI_RESULT_STRUCT_TOO_SMALL;
-
-#define DMUI_REQUIRE_HOST_ENTRY(member, sizeName) \
-	if (a_minimumSize >= sizeName && !a_api->member) \
-		return DMUI_RESULT_UNSUPPORTED_ABI
-		DMUI_REQUIRE_HOST_ENTRY(registerClient, DMUI_HOST_API_REGISTER_CLIENT_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(
-			registerPage,
-			offsetof(DMUI_HostAPI, registerPage) + sizeof(DMUI_RegisterPageFn));
-		DMUI_REQUIRE_HOST_ENTRY(
-			queryState,
-			offsetof(DMUI_HostAPI, queryState) + sizeof(DMUI_QueryStateFn));
-		DMUI_REQUIRE_HOST_ENTRY(
-			requestFrame,
-			offsetof(DMUI_HostAPI, requestFrame) + sizeof(DMUI_RequestFrameFn));
-		DMUI_REQUIRE_HOST_ENTRY(
-			releaseFrame,
-			offsetof(DMUI_HostAPI, releaseFrame) + sizeof(DMUI_ReleaseFrameFn));
-		DMUI_REQUIRE_HOST_ENTRY(
-			isMenuVisible,
-			offsetof(DMUI_HostAPI, isMenuVisible) + sizeof(DMUI_IsMenuVisibleFn));
-		DMUI_REQUIRE_HOST_ENTRY(selectPage, DMUI_HOST_API_SELECT_PAGE_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(attachSwapChain, DMUI_HOST_API_ATTACH_SWAP_CHAIN_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(registerAction, DMUI_HOST_API_REGISTER_ACTION_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(setStatus, DMUI_HOST_API_SET_STATUS_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(getThemeColors, DMUI_HOST_API_GET_THEME_COLORS_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(pushFont, DMUI_HOST_API_PUSH_FONT_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(popFont, DMUI_HOST_API_POP_FONT_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(drawSectionHeader, DMUI_HOST_API_DRAW_SECTION_HEADER_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(drawSearchInput, DMUI_HOST_API_DRAW_SEARCH_INPUT_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(
-			drawCollapsingSectionHeader,
-			DMUI_HOST_API_DRAW_COLLAPSING_SECTION_HEADER_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(
-			drawSettingsActionButton,
-			DMUI_HOST_API_DRAW_SETTINGS_ACTION_BUTTON_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(
-			settingsActionButtonWidth,
-			DMUI_HOST_API_SETTINGS_ACTION_BUTTON_WIDTH_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(
-			settingsActionButtonExtent,
-			DMUI_HOST_API_SETTINGS_ACTION_BUTTON_EXTENT_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(
-			registerFrameObserver,
-			DMUI_HOST_API_REGISTER_FRAME_OBSERVER_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(queryVideoMemory, DMUI_HOST_API_QUERY_VIDEO_MEMORY_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(drawBulletText, DMUI_HOST_API_DRAW_BULLET_TEXT_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(
-			registerHotkeyAction,
-			DMUI_HOST_API_REGISTER_HOTKEY_ACTION_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(
-			queryHotkeyBinding,
-			DMUI_HOST_API_QUERY_HOTKEY_BINDING_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(
-			unregisterHotkeyAction,
-			DMUI_HOST_API_UNREGISTER_HOTKEY_ACTION_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(beginSettingsTable, DMUI_HOST_API_BEGIN_SETTINGS_TABLE_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(beginSettingsRow, DMUI_HOST_API_BEGIN_SETTINGS_ROW_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(endSettingsRow, DMUI_HOST_API_END_SETTINGS_ROW_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(endSettingsTable, DMUI_HOST_API_END_SETTINGS_TABLE_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(beginSettingsRowEx, DMUI_HOST_API_BEGIN_SETTINGS_ROW_EX_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(
-			registerPageActivityObserver,
-			DMUI_HOST_API_REGISTER_PAGE_ACTIVITY_OBSERVER_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(drawLinkRow, DMUI_HOST_API_DRAW_LINK_ROW_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(drawFaq, DMUI_HOST_API_DRAW_FAQ_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(reportDiagnostic, DMUI_HOST_API_REPORT_DIAGNOSTIC_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(queryServices, DMUI_HOST_API_QUERY_SERVICES_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(
-			setHotkeyActionEnabled,
-			DMUI_HOST_API_SET_HOTKEY_ACTION_ENABLED_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(importD3D11Image, DMUI_HOST_API_IMPORT_D3D11_IMAGE_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(drawImage, DMUI_HOST_API_DRAW_IMAGE_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(releaseImage, DMUI_HOST_API_RELEASE_IMAGE_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(queryImage, DMUI_HOST_API_QUERY_IMAGE_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(configureOverlay, DMUI_HOST_API_CONFIGURE_OVERLAY_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(queryOverlay, DMUI_HOST_API_QUERY_OVERLAY_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(postNotification, DMUI_HOST_API_POST_NOTIFICATION_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(
-			drawAnnotatedPlot,
-			DMUI_HOST_API_DRAW_ANNOTATED_PLOT_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(requestDialog, DMUI_HOST_API_REQUEST_DIALOG_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(pollDialogEvent, DMUI_HOST_API_POLL_DIALOG_EVENT_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(
-			resolveDialogSubmission,
-			DMUI_HOST_API_RESOLVE_DIALOG_SUBMISSION_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(cancelDialog, DMUI_HOST_API_CANCEL_DIALOG_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(createImage, DMUI_HOST_API_CREATE_IMAGE_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(updateImage, DMUI_HOST_API_UPDATE_IMAGE_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(registerCategory, DMUI_HOST_API_REGISTER_CATEGORY_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(openExternal, DMUI_HOST_API_OPEN_EXTERNAL_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(queryUIAPI, DMUI_HOST_API_QUERY_UI_API_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(resolveIconGlyph, DMUI_HOST_API_RESOLVE_ICON_GLYPH_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(beginField, DMUI_HOST_API_BEGIN_FIELD_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(setFieldFeedback, DMUI_HOST_API_SET_FIELD_FEEDBACK_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(endField, DMUI_HOST_API_END_FIELD_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(drawTextView, DMUI_HOST_API_DRAW_TEXT_VIEW_SIZE);
-		DMUI_REQUIRE_HOST_ENTRY(
-			drawSearchInputBuffer,
-			DMUI_HOST_API_DRAW_SEARCH_INPUT_BUFFER_SIZE);
-#undef DMUI_REQUIRE_HOST_ENTRY
-		return DMUI_RESULT_OK;
-	}
-
-	[[nodiscard]] inline DMUI_Result PreflightHostAPI(
-		const DMUI_HostAPI* a_api,
-		const ClientOptions& a_options,
-		HostServices* a_services = nullptr,
-		const DMUI_UIAPI** a_uiAPI = nullptr) noexcept
-	{
-		if (a_services)
-			*a_services = {};
-		if (a_uiAPI)
-			*a_uiAPI = nullptr;
-		if (!a_api)
-			return DMUI_RESULT_UNSUPPORTED_ABI;
-		const auto hostOperations = ValidateHostOperationsThroughSize(
-			a_api,
-			a_options.minimumHostAPISize);
-		if (hostOperations != DMUI_RESULT_OK)
-			return hostOperations;
-		if (a_api->hostAbiVersion != DMUI_HOST_ABI_CURRENT)
-			return DMUI_RESULT_UNSUPPORTED_ABI;
-		if ((a_options.capabilities &
-				~DMUI_CLIENT_CAPABILITY_RENDERER_REPLACEMENT) != 0)
-			return DMUI_RESULT_INVALID_DESCRIPTOR;
-		constexpr DMUI_HostServices knownServices{
-			DMUI_HOST_SERVICE_FRAME_CONTROL |
-			DMUI_HOST_SERVICE_EDIT_LIFECYCLE |
-			DMUI_HOST_SERVICE_CONTEXTUAL_HOTKEYS |
-			DMUI_HOST_SERVICE_IMAGE_RESOURCES |
-			DMUI_HOST_SERVICE_MANAGED_OVERLAYS |
-			DMUI_HOST_SERVICE_NOTIFICATIONS |
-			DMUI_HOST_SERVICE_ANNOTATED_PLOTS |
-			DMUI_HOST_SERVICE_DIALOGS |
-			DMUI_HOST_SERVICE_PIXEL_IMAGES |
-			DMUI_HOST_SERVICE_EXTERNAL_OPEN |
-			DMUI_HOST_SERVICE_VIRTUAL_FILE_TARGETS |
-			DMUI_HOST_SERVICE_NAVIGATION_ICONS
-		};
-		if ((a_options.requiredServices & ~knownServices) != 0)
-			return DMUI_RESULT_SERVICE_UNAVAILABLE;
-		DMUI_HostServices supportedServices{ DMUI_HOST_SERVICE_NONE };
-		if (a_options.requiredServices != DMUI_HOST_SERVICE_NONE)
-		{
-			if (a_api->structSize < DMUI_HOST_API_QUERY_SERVICES_SIZE ||
-				!a_api->queryServices)
-				return DMUI_RESULT_SERVICE_UNAVAILABLE;
-
-			DMUI_HostServicesInfo services{};
-			services.structSize = sizeof(services);
-			const auto queryResult = a_api->queryServices(&services);
-			if (queryResult != DMUI_RESULT_OK)
-				return queryResult;
-			supportedServices = services.supportedServices;
-			if ((supportedServices & a_options.requiredServices) !=
-				a_options.requiredServices)
-				return DMUI_RESULT_SERVICE_UNAVAILABLE;
-		}
-
-		if (a_api->structSize < DMUI_HOST_API_QUERY_UI_API_SIZE ||
-			!a_api->queryUIAPI)
-			return DMUI_RESULT_UNSUPPORTED_ABI;
-		DMUI_UIAPIInfo uiInfo{};
-		uiInfo.structSize = sizeof(uiInfo);
-		const auto uiResult = a_api->queryUIAPI(
-			DMUI_UI_ABI_CURRENT,
-			a_options.minimumUIRevision,
-			a_options.minimumUIAPISize,
-			&uiInfo);
-		if (uiResult != DMUI_RESULT_OK)
-			return uiResult;
-		if (!uiInfo.api ||
-			uiInfo.abiVersion != DMUI_UI_ABI_CURRENT ||
-			uiInfo.revision < a_options.minimumUIRevision ||
-			uiInfo.tableSize < a_options.minimumUIAPISize ||
-			uiInfo.api->structSize < a_options.minimumUIAPISize ||
-			!ui::detail::HasOperationsThroughSize(
-				uiInfo.api,
-				a_options.minimumUIAPISize))
-			return DMUI_RESULT_UNSUPPORTED_ABI;
-
-		const auto required = a_options.requiredServices;
-		const auto frameControlAvailable =
-			a_api->structSize >=
-				offsetof(DMUI_HostAPI, releaseFrame) +
-					sizeof(DMUI_ReleaseFrameFn) &&
-			a_api->requestFrame &&
-			a_api->releaseFrame;
-		const auto contextualHotkeysAvailable =
-			a_api->structSize >= DMUI_HOST_API_SET_HOTKEY_ACTION_ENABLED_SIZE &&
-			a_api->registerHotkeyAction &&
-			a_api->setHotkeyActionEnabled;
-		const auto imagesAvailable =
-			a_api->structSize >= DMUI_HOST_API_QUERY_IMAGE_SIZE &&
-			a_api->importD3D11Image &&
-			a_api->drawImage &&
-			a_api->releaseImage &&
-			a_api->queryImage;
-		const auto pixelImagesAvailable =
-			a_api->structSize >= DMUI_HOST_API_UPDATE_IMAGE_SIZE &&
-			a_api->createImage &&
-			a_api->updateImage &&
-			a_api->drawImage &&
-			a_api->releaseImage &&
-			a_api->queryImage;
-		const auto overlaysAvailable =
-			a_api->structSize >= DMUI_HOST_API_QUERY_OVERLAY_SIZE &&
-			a_api->configureOverlay &&
-			a_api->queryOverlay;
-		const auto notificationsAvailable =
-			a_api->structSize >= DMUI_HOST_API_POST_NOTIFICATION_SIZE &&
-			a_api->postNotification;
-		const auto plotsAvailable =
-			a_api->structSize >= DMUI_HOST_API_DRAW_ANNOTATED_PLOT_SIZE &&
-			a_api->drawAnnotatedPlot;
-		const auto dialogsAvailable =
-			a_api->structSize >= DMUI_HOST_API_CANCEL_DIALOG_SIZE &&
-			a_api->requestDialog &&
-			a_api->pollDialogEvent &&
-			a_api->resolveDialogSubmission &&
-			a_api->cancelDialog;
-		const auto externalOpenAvailable =
-			a_api->structSize >= DMUI_HOST_API_OPEN_EXTERNAL_SIZE &&
-			a_api->openExternal;
-		constexpr auto registerPageSize =
-			offsetof(DMUI_HostAPI, registerPage) +
-			sizeof(DMUI_RegisterPageFn);
-		const auto navigationIconsAvailable =
-			a_api->structSize >= registerPageSize &&
-			a_api->structSize >= DMUI_HOST_API_REGISTER_CATEGORY_SIZE &&
-			a_api->registerPage &&
-			a_api->registerCategory;
-		if (((required & DMUI_HOST_SERVICE_FRAME_CONTROL) != 0 &&
-				!frameControlAvailable) ||
-			((required & DMUI_HOST_SERVICE_CONTEXTUAL_HOTKEYS) != 0 &&
-				!contextualHotkeysAvailable) ||
-			((required & DMUI_HOST_SERVICE_IMAGE_RESOURCES) != 0 &&
-				!imagesAvailable) ||
-			((required & DMUI_HOST_SERVICE_PIXEL_IMAGES) != 0 &&
-				!pixelImagesAvailable) ||
-			((required & DMUI_HOST_SERVICE_MANAGED_OVERLAYS) != 0 &&
-				!overlaysAvailable) ||
-			((required & DMUI_HOST_SERVICE_NOTIFICATIONS) != 0 &&
-				!notificationsAvailable) ||
-			((required & DMUI_HOST_SERVICE_ANNOTATED_PLOTS) != 0 &&
-				!plotsAvailable) ||
-			((required & DMUI_HOST_SERVICE_DIALOGS) != 0 &&
-				!dialogsAvailable) ||
-			((required & (DMUI_HOST_SERVICE_EXTERNAL_OPEN |
-							 DMUI_HOST_SERVICE_VIRTUAL_FILE_TARGETS)) != 0 &&
-				!externalOpenAvailable) ||
-			((required & DMUI_HOST_SERVICE_NAVIGATION_ICONS) != 0 &&
-				!navigationIconsAvailable))
-			return DMUI_RESULT_SERVICE_UNAVAILABLE;
-		if (a_services)
-		{
-			a_services->supported = supportedServices;
-			a_services->uiABI = uiInfo.abiVersion;
-			a_services->uiRevision = uiInfo.revision;
-			a_services->uiTableSize = uiInfo.tableSize;
-		}
-		if (a_uiAPI)
-			*a_uiAPI = uiInfo.api;
-		return DMUI_RESULT_OK;
-	}
-
-	struct ImageHandle
-	{
-		DMUI_ImageHandle value{ DMUI_INVALID_IMAGE_HANDLE };
-
-		[[nodiscard]] explicit operator bool() const noexcept
-		{
-			return value != DMUI_INVALID_IMAGE_HANDLE;
-		}
 	};
 
 	class ImageResource
@@ -1257,26 +958,17 @@ namespace dmui
 				return false;
 			}
 
-			api_ = getAPI(DMUI_HOST_ABI_CURRENT);
-			if (!api_)
+			api_ = getAPI(DMUI_ABI_VERSION);
+			if (!api_ || api_->abiVersion != DMUI_ABI_VERSION)
 			{
+				api_ = nullptr;
+				uiAPI_ = nullptr;
 				lastResult_ = DMUI_RESULT_UNSUPPORTED_ABI;
 				return false;
 			}
-			lastResult_ = PreflightHostAPI(
-				api_,
-				options_,
-				nullptr,
-				&uiAPI_);
-			if (lastResult_ != DMUI_RESULT_OK)
-			{
-				uiAPI_ = nullptr;
-				return false;
-			}
+			uiAPI_ = api_->ui;
 
 			DMUI_ClientDescriptor descriptor{};
-			descriptor.structSize = sizeof(descriptor);
-			descriptor.apiVersion = DMUI_API_VERSION_CURRENT;
 			descriptor.id = id_.c_str();
 			descriptor.displayName = displayName_.c_str();
 			descriptor.version = version_.Pack();
@@ -1289,7 +981,6 @@ namespace dmui
 			descriptor.origin = static_cast<DMUI_ClientOrigin>(origin_);
 			descriptor.bridgeSourceLabel =
 				bridgeSourceLabel_.empty() ? nullptr : bridgeSourceLabel_.c_str();
-			descriptor.requiredServices = options_.requiredServices;
 
 			DMUI_ClientHandle handle{ DMUI_INVALID_CLIENT_HANDLE };
 			lastResult_ = api_->registerClient(&descriptor, &handle);
@@ -1326,7 +1017,6 @@ namespace dmui
 				auto& registration = pages_.back();
 
 				DMUI_PageDescriptor descriptor{};
-				descriptor.structSize = sizeof(descriptor);
 				descriptor.id = a_page.id;
 				descriptor.displayName = a_page.displayName;
 				descriptor.categoryId = a_page.categoryId;
@@ -1365,12 +1055,10 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (api_->structSize < DMUI_HOST_API_REGISTER_CATEGORY_SIZE ||
-				!api_->registerCategory)
+			if (!api_->registerCategory)
 				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 
 			DMUI_CategoryDescriptor descriptor{};
-			descriptor.structSize = sizeof(descriptor);
 			descriptor.id = a_category.id;
 			descriptor.displayName = a_category.displayName;
 			descriptor.sortKey = a_category.sortKey;
@@ -1387,15 +1075,13 @@ namespace dmui
 				*a_nativeError = 0;
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (api_->structSize < DMUI_HOST_API_OPEN_EXTERNAL_SIZE ||
-				!api_->openExternal)
+			if (!api_->openExternal)
 				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 			if (a_external.arguments.size() >
 				(static_cast<size_t>((std::numeric_limits<uint32_t>::max)())))
 				return Fail(DMUI_RESULT_INVALID_ARGUMENT);
 
 			DMUI_ExternalOpenDescriptor descriptor{};
-			descriptor.structSize = sizeof(descriptor);
 			descriptor.targetKind = a_external.targetKind;
 			descriptor.target = a_external.target;
 			descriptor.application = a_external.application;
@@ -1451,8 +1137,7 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (api_->structSize < DMUI_HOST_API_REGISTER_HOTKEY_ACTION_SIZE ||
-				!api_->registerHotkeyAction)
+			if (!api_->registerHotkeyAction)
 			{
 				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
@@ -1473,7 +1158,6 @@ namespace dmui
 					{ DMUI_INVALID_HOTKEY_ACTION_HANDLE, std::move(callbackState) });
 				auto& registration = hotkeyActions_.back();
 				DMUI_HotkeyActionDescriptor descriptor{};
-				descriptor.structSize = sizeof(descriptor);
 				descriptor.id = a_id;
 				descriptor.displayName = a_displayName;
 				descriptor.suggestedDefaultChord = a_suggestedDefaultChord;
@@ -1512,14 +1196,12 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (api_->structSize < DMUI_HOST_API_QUERY_HOTKEY_BINDING_SIZE ||
-				!api_->queryHotkeyBinding)
+			if (!api_->queryHotkeyBinding)
 			{
 				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
 			}
 			DMUI_HotkeyBindingInfo binding{};
-			binding.structSize = sizeof(binding);
 			lastResult_ = api_->queryHotkeyBinding(clientHandle_, a_action, &binding);
 			if (lastResult_ != DMUI_RESULT_OK)
 				return std::nullopt;
@@ -1530,8 +1212,7 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (api_->structSize < DMUI_HOST_API_UNREGISTER_HOTKEY_ACTION_SIZE ||
-				!api_->unregisterHotkeyAction)
+			if (!api_->unregisterHotkeyAction)
 				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 			const auto registration = std::ranges::find(
 				hotkeyActions_, a_action, &HotkeyActionRegistration::handle);
@@ -1558,7 +1239,7 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (api_->structSize < DMUI_HOST_API_REGISTER_ACTION_SIZE || !api_->registerAction)
+			if (!api_->registerAction)
 				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 
 			try
@@ -1571,7 +1252,6 @@ namespace dmui
 				auto& registration = actions_.back();
 
 				DMUI_ActionDescriptor descriptor{};
-				descriptor.structSize = sizeof(descriptor);
 				descriptor.id = a_id;
 				descriptor.displayLabel = a_label;
 				descriptor.iconName = a_iconName;
@@ -1611,8 +1291,7 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (api_->structSize < DMUI_HOST_API_REGISTER_FRAME_OBSERVER_SIZE ||
-				!api_->registerFrameObserver)
+			if (!api_->registerFrameObserver)
 			{
 				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
@@ -1632,7 +1311,6 @@ namespace dmui
 				auto& registration = frameObservers_.back();
 
 				DMUI_FrameObserverDescriptor descriptor{};
-				descriptor.structSize = sizeof(descriptor);
 				descriptor.callback = &Invoke;
 				descriptor.userData = &registration.callback;
 
@@ -1670,9 +1348,7 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (api_->structSize <
-					DMUI_HOST_API_REGISTER_PAGE_ACTIVITY_OBSERVER_SIZE ||
-				!api_->registerPageActivityObserver)
+			if (!api_->registerPageActivityObserver)
 			{
 				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
@@ -1695,7 +1371,6 @@ namespace dmui
 				});
 				auto& registration = pageActivityObservers_.back();
 				DMUI_PageActivityObserverDescriptor descriptor{};
-				descriptor.structSize = sizeof(descriptor);
 				descriptor.callback = &InvokePageActivity;
 				descriptor.userData = &registration.callback;
 
@@ -1734,8 +1409,7 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (api_->structSize < DMUI_HOST_API_QUERY_VIDEO_MEMORY_SIZE ||
-				!api_->queryVideoMemory)
+			if (!api_->queryVideoMemory)
 			{
 				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
@@ -1749,41 +1423,11 @@ namespace dmui
 			return info;
 		}
 
-		[[nodiscard]] std::optional<HostServices> QueryServices() noexcept
-		{
-			if (!api_)
-			{
-				Fail(DMUI_RESULT_HOST_NOT_INITIALIZED);
-				return std::nullopt;
-			}
-			if (api_->structSize < DMUI_HOST_API_QUERY_SERVICES_SIZE ||
-				!api_->queryServices)
-			{
-				Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
-				return std::nullopt;
-			}
-			DMUI_HostServicesInfo services{};
-			services.structSize = sizeof(services);
-			lastResult_ = api_->queryServices(&services);
-			if (lastResult_ != DMUI_RESULT_OK)
-				return std::nullopt;
-			return HostServices{
-				services.supportedServices,
-				uiAPI_ ? uiAPI_->abiVersion : 0u,
-				uiAPI_ ? uiAPI_->revision : 0u,
-				uiAPI_ ? uiAPI_->structSize : 0u
-			};
-		}
-
 		[[nodiscard]] bool RequestFrame(DMUI_PageHandle a_page) noexcept
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (api_->structSize <
-					static_cast<uint32_t>(
-						offsetof(DMUI_HostAPI, requestFrame) +
-						sizeof(DMUI_RequestFrameFn)) ||
-				!api_->requestFrame)
+			if (!api_->requestFrame)
 				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 			lastResult_ = api_->requestFrame(clientHandle_, a_page);
 			return lastResult_ == DMUI_RESULT_OK;
@@ -1793,11 +1437,7 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (api_->structSize <
-					static_cast<uint32_t>(
-						offsetof(DMUI_HostAPI, releaseFrame) +
-						sizeof(DMUI_ReleaseFrameFn)) ||
-				!api_->releaseFrame)
+			if (!api_->releaseFrame)
 				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 			lastResult_ = api_->releaseFrame(clientHandle_, a_page);
 			return lastResult_ == DMUI_RESULT_OK;
@@ -1807,8 +1447,7 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (api_->structSize < DMUI_HOST_API_ATTACH_SWAP_CHAIN_SIZE ||
-				!api_->attachSwapChain)
+			if (!api_->attachSwapChain)
 				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 			lastResult_ =
 				api_->attachSwapChain(clientHandle_, a_nativeSwapChain);
@@ -1821,9 +1460,7 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (api_->structSize <
-					DMUI_HOST_API_SET_HOTKEY_ACTION_ENABLED_SIZE ||
-				!api_->setHotkeyActionEnabled)
+			if (!api_->setHotkeyActionEnabled)
 				return Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
 			lastResult_ = api_->setHotkeyActionEnabled(
 				clientHandle_, a_action, a_enabled ? 1u : 0u);
@@ -1840,15 +1477,13 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (api_->structSize < DMUI_HOST_API_QUERY_IMAGE_SIZE ||
-				!api_->importD3D11Image ||
+			if (!api_->importD3D11Image ||
 				!api_->releaseImage)
 			{
 				Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
 				return std::nullopt;
 			}
 			const DMUI_D3D11ImageDescriptor descriptor{
-				sizeof(DMUI_D3D11ImageDescriptor),
 				a_shaderResourceView,
 				a_contentWidth,
 				a_contentHeight
@@ -1873,8 +1508,7 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (api_->structSize < DMUI_HOST_API_CREATE_IMAGE_SIZE ||
-				!api_->createImage ||
+			if (!api_->createImage ||
 				!api_->releaseImage)
 			{
 				Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
@@ -1898,25 +1532,10 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (api_->structSize < DMUI_HOST_API_UPDATE_IMAGE_SIZE ||
-				!api_->updateImage)
+			if (!api_->updateImage)
 				return Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
 			lastResult_ = api_->updateImage(
 				clientHandle_, a_image.value, &a_descriptor);
-			return lastResult_ == DMUI_RESULT_OK;
-		}
-
-		[[nodiscard]] bool DrawImage(
-			ImageHandle a_image,
-			const DMUI_ImageDrawOptions& a_options) noexcept
-		{
-			if (!IsConnected())
-				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (api_->structSize < DMUI_HOST_API_DRAW_IMAGE_SIZE ||
-				!api_->drawImage)
-				return Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
-			lastResult_ = api_->drawImage(
-				clientHandle_, a_image.value, &a_options);
 			return lastResult_ == DMUI_RESULT_OK;
 		}
 
@@ -1928,14 +1547,12 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (api_->structSize < DMUI_HOST_API_QUERY_IMAGE_SIZE ||
-				!api_->queryImage)
+			if (!api_->queryImage)
 			{
 				Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
 				return std::nullopt;
 			}
 			DMUI_ImageInfo info{};
-			info.structSize = sizeof(info);
 			lastResult_ = api_->queryImage(
 				clientHandle_, a_image.value, &info);
 			if (lastResult_ != DMUI_RESULT_OK)
@@ -1949,8 +1566,7 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (api_->structSize < DMUI_HOST_API_CONFIGURE_OVERLAY_SIZE ||
-				!api_->configureOverlay)
+			if (!api_->configureOverlay)
 				return Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
 			lastResult_ = api_->configureOverlay(
 				clientHandle_, a_page, &a_options);
@@ -1965,14 +1581,12 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (api_->structSize < DMUI_HOST_API_QUERY_OVERLAY_SIZE ||
-				!api_->queryOverlay)
+			if (!api_->queryOverlay)
 			{
 				Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
 				return std::nullopt;
 			}
 			DMUI_ManagedOverlayPlacement placement{};
-			placement.structSize = sizeof(placement);
 			lastResult_ = api_->queryOverlay(
 				clientHandle_, a_page, &placement);
 			if (lastResult_ != DMUI_RESULT_OK)
@@ -1987,30 +1601,14 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (api_->structSize < DMUI_HOST_API_POST_NOTIFICATION_SIZE ||
-				!api_->postNotification)
+			if (!api_->postNotification)
 				return Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
 			const DMUI_NotificationDescriptor descriptor{
-				sizeof(DMUI_NotificationDescriptor),
 				a_severity,
 				a_message,
 				a_durationMilliseconds
 			};
 			lastResult_ = api_->postNotification(clientHandle_, &descriptor);
-			return lastResult_ == DMUI_RESULT_OK;
-		}
-
-		[[nodiscard]] bool DrawAnnotatedPlot(
-			const char* a_id,
-			const DMUI_AnnotatedPlotDescriptor& a_descriptor) noexcept
-		{
-			if (!IsConnected())
-				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (api_->structSize < DMUI_HOST_API_DRAW_ANNOTATED_PLOT_SIZE ||
-				!api_->drawAnnotatedPlot)
-				return Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
-			lastResult_ = api_->drawAnnotatedPlot(
-				clientHandle_, a_id, &a_descriptor);
 			return lastResult_ == DMUI_RESULT_OK;
 		}
 
@@ -2022,8 +1620,7 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (api_->structSize < DMUI_HOST_API_REQUEST_DIALOG_SIZE ||
-				!api_->requestDialog)
+			if (!api_->requestDialog)
 			{
 				Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
 				return std::nullopt;
@@ -2045,14 +1642,12 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (api_->structSize < DMUI_HOST_API_POLL_DIALOG_EVENT_SIZE ||
-				!api_->pollDialogEvent)
+			if (!api_->pollDialogEvent)
 			{
 				Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
 				return std::nullopt;
 			}
 			DMUI_DialogEvent event{};
-			event.structSize = sizeof(event);
 			if (a_text.size() >=
 				static_cast<size_t>((std::numeric_limits<uint32_t>::max)()))
 			{
@@ -2098,9 +1693,7 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (api_->structSize <
-					DMUI_HOST_API_RESOLVE_DIALOG_SUBMISSION_SIZE ||
-				!api_->resolveDialogSubmission)
+			if (!api_->resolveDialogSubmission)
 				return Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
 			lastResult_ = api_->resolveDialogSubmission(
 				clientHandle_,
@@ -2116,8 +1709,7 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (api_->structSize < DMUI_HOST_API_CANCEL_DIALOG_SIZE ||
-				!api_->cancelDialog)
+			if (!api_->cancelDialog)
 				return Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
 			lastResult_ = api_->cancelDialog(clientHandle_, a_dialog);
 			return lastResult_ == DMUI_RESULT_OK;
@@ -2127,7 +1719,7 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (api_->structSize < DMUI_HOST_API_SET_STATUS_SIZE || !api_->setStatus)
+			if (!api_->setStatus)
 				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 
 			lastResult_ = api_->setStatus(clientHandle_, a_severity, a_message);
@@ -2138,12 +1730,10 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (api_->structSize < DMUI_HOST_API_REPORT_DIAGNOSTIC_SIZE ||
-				!api_->reportDiagnostic)
+			if (!api_->reportDiagnostic)
 				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 
 			const DMUI_DiagnosticDescriptor descriptor{
-				DMUI_DIAGNOSTIC_DESCRIPTOR_0_1_SIZE,
 				a_diagnostic.severity,
 				a_diagnostic.scope,
 				a_diagnostic.summary,
@@ -2161,14 +1751,13 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (api_->structSize < DMUI_HOST_API_GET_THEME_COLORS_SIZE || !api_->getThemeColors)
+			if (!api_->getThemeColors)
 			{
 				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
 			}
 
 			DMUI_ThemeColors colors{};
-			colors.structSize = sizeof(colors);
 			lastResult_ = api_->getThemeColors(clientHandle_, &colors);
 			if (lastResult_ != DMUI_RESULT_OK)
 				return std::nullopt;
@@ -2183,7 +1772,6 @@ namespace dmui
 				return std::nullopt;
 			}
 			DMUI_StyleMetrics metrics{};
-			metrics.structSize = sizeof(metrics);
 			lastResult_ = ui::GetStyleMetrics(metrics);
 			if (lastResult_ != DMUI_RESULT_OK)
 				return std::nullopt;
@@ -2194,7 +1782,7 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (api_->structSize < DMUI_HOST_API_PUSH_FONT_SIZE || !api_->pushFont)
+			if (!api_->pushFont)
 				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 
 			lastResult_ = api_->pushFont(clientHandle_, a_role);
@@ -2205,7 +1793,7 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (api_->structSize < DMUI_HOST_API_POP_FONT_SIZE || !api_->popFont)
+			if (!api_->popFont)
 				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 
 			lastResult_ = api_->popFont(clientHandle_);
@@ -2216,8 +1804,7 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (api_->structSize < DMUI_HOST_API_DRAW_SECTION_HEADER_SIZE ||
-				!api_->drawSectionHeader)
+			if (!api_->drawSectionHeader)
 				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 
 			lastResult_ = api_->drawSectionHeader(
@@ -2237,15 +1824,13 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (api_->structSize < DMUI_HOST_API_RESOLVE_ICON_GLYPH_SIZE ||
-				!api_->resolveIconGlyph)
+			if (!api_->resolveIconGlyph)
 			{
 				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
 			}
 
 			const DMUI_IconResolutionRequest request{
-				sizeof(DMUI_IconResolutionRequest),
 				a_explicitName,
 				a_primaryMetadata,
 				a_secondaryMetadata
@@ -2261,8 +1846,7 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (api_->structSize < DMUI_HOST_API_DRAW_BULLET_TEXT_SIZE ||
-				!api_->drawBulletText)
+			if (!api_->drawBulletText)
 				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 
 			lastResult_ = api_->drawBulletText(clientHandle_, a_text);
@@ -2301,14 +1885,12 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (api_->structSize < DMUI_HOST_API_DRAW_TEXT_VIEW_SIZE ||
-				!api_->drawTextView)
+			if (!api_->drawTextView)
 				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 
 			auto presentation = a_state;
 			SynchronizeTextViewState(a_request, presentation);
 			DMUI_TextViewDescriptor descriptor{
-				sizeof(DMUI_TextViewDescriptor),
 				a_id,
 				a_request.text.data(),
 				a_request.text.size(),
@@ -2322,7 +1904,6 @@ namespace dmui
 				a_request.viewport
 			};
 			DMUI_TextViewState state{
-				sizeof(DMUI_TextViewState),
 				presentation.contentRevision,
 				presentation.matchRevision,
 				presentation.activeMatch,
@@ -2352,8 +1933,7 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (api_->structSize < DMUI_HOST_API_DRAW_COLLAPSING_SECTION_HEADER_SIZE ||
-				!api_->drawCollapsingSectionHeader)
+			if (!api_->drawCollapsingSectionHeader)
 				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 
 			uint32_t expanded = a_expanded ? 1u : 0u;
@@ -2376,8 +1956,7 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (api_->structSize < DMUI_HOST_API_DRAW_LINK_ROW_SIZE ||
-				!api_->drawLinkRow)
+			if (!api_->drawLinkRow)
 				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 
 			try
@@ -2392,7 +1971,6 @@ namespace dmui
 						(static_cast<size_t>((std::numeric_limits<uint32_t>::max)())))
 						return Fail(DMUI_RESULT_INVALID_ARGUMENT);
 					external.push_back({
-						sizeof(DMUI_ExternalOpenDescriptor),
 						link.external.targetKind,
 						link.external.target,
 						link.external.application,
@@ -2402,7 +1980,6 @@ namespace dmui
 						link.external.workingDirectory
 					});
 					descriptors.push_back({
-						DMUI_LINK_DESCRIPTOR_0_1_SIZE,
 						link.label,
 						link.note,
 						static_cast<uint32_t>(link.glyph),
@@ -2435,8 +2012,7 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (api_->structSize < DMUI_HOST_API_DRAW_FAQ_SIZE ||
-				!api_->drawFaq)
+			if (!api_->drawFaq)
 				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 
 			try
@@ -2446,7 +2022,6 @@ namespace dmui
 				for (const auto& entry : a_entries)
 				{
 					entries.push_back({
-						DMUI_FAQ_ENTRY_0_1_SIZE,
 						entry.question,
 						entry.answer
 					});
@@ -2482,8 +2057,7 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (api_->structSize < DMUI_HOST_API_DRAW_SETTINGS_ACTION_BUTTON_SIZE ||
-				!api_->drawSettingsActionButton)
+			if (!api_->drawSettingsActionButton)
 			{
 				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
@@ -2515,8 +2089,7 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (api_->structSize < DMUI_HOST_API_SETTINGS_ACTION_BUTTON_WIDTH_SIZE ||
-				!api_->settingsActionButtonWidth)
+			if (!api_->settingsActionButtonWidth)
 			{
 				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
@@ -2541,8 +2114,7 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (api_->structSize < DMUI_HOST_API_SETTINGS_ACTION_BUTTON_EXTENT_SIZE ||
-				!api_->settingsActionButtonExtent)
+			if (!api_->settingsActionButtonExtent)
 			{
 				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
@@ -2562,8 +2134,7 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (api_->structSize < DMUI_HOST_API_END_SETTINGS_TABLE_SIZE ||
-				!api_->beginSettingsTable ||
+			if (!api_->beginSettingsTable ||
 				!api_->endSettingsTable)
 			{
 				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
@@ -2589,45 +2160,20 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (api_->structSize < DMUI_HOST_API_END_SETTINGS_ROW_SIZE ||
-				!api_->endSettingsRow)
+			if (!api_->beginSettingsRowEx || !api_->endSettingsRow)
 			{
 				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
 			}
 
 			uint32_t visible{};
-			if (api_->structSize >= DMUI_HOST_API_BEGIN_SETTINGS_ROW_EX_SIZE &&
-				api_->beginSettingsRowEx)
-			{
-				const DMUI_SettingsRowBeginOptions options{
-					sizeof(DMUI_SettingsRowBeginOptions),
-					a_layout == RowPresentation::Layout::kFullSpan ?
-						DMUI_SETTINGS_ROW_LAYOUT_FULL_SPAN :
-						DMUI_SETTINGS_ROW_LAYOUT_LABEL_VALUE
-				};
-				lastResult_ = api_->beginSettingsRowEx(
-					clientHandle_,
-					a_id,
-					a_label,
-					a_description,
-					&options,
-					&visible);
-			}
-			else if (api_->beginSettingsRow)
-			{
-				lastResult_ = api_->beginSettingsRow(
-					clientHandle_,
-					a_id,
-					a_label,
-					a_description,
-					&visible);
-			}
-			else
-			{
-				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
-				return std::nullopt;
-			}
+			const DMUI_SettingsRowBeginOptions options{
+				a_layout == RowPresentation::Layout::kFullSpan ?
+					DMUI_SETTINGS_ROW_LAYOUT_FULL_SPAN :
+					DMUI_SETTINGS_ROW_LAYOUT_LABEL_VALUE
+			};
+			lastResult_ = api_->beginSettingsRowEx(
+				clientHandle_, a_id, a_label, a_description, &options, &visible);
 			if (lastResult_ != DMUI_RESULT_OK)
 				return std::nullopt;
 			return visible != 0;
@@ -2642,15 +2188,13 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (api_->structSize < DMUI_HOST_API_END_SETTINGS_ROW_SIZE ||
-				!api_->endSettingsRow)
+			if (!api_->endSettingsRow)
 			{
 				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
 			}
 
 			const DMUI_SettingsRowOptions options{
-				sizeof(DMUI_SettingsRowOptions),
 				a_resetVisible ? 1u : 0u,
 				a_resetEnabled ? 1u : 0u
 			};
@@ -2676,15 +2220,13 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (api_->structSize < DMUI_HOST_API_END_FIELD_SIZE ||
-				!api_->beginField || !api_->setFieldFeedback ||
+			if (!api_->beginField || !api_->setFieldFeedback ||
 				!api_->endField)
 			{
 				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
 			}
 			const DMUI_FieldBeginOptions options{
-				sizeof(DMUI_FieldBeginOptions),
 				a_layout == RowPresentation::Layout::kFullSpan ?
 					DMUI_FIELD_LAYOUT_FULL_SPAN :
 					DMUI_FIELD_LAYOUT_LABEL_VALUE
@@ -2708,11 +2250,9 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (api_->structSize < DMUI_HOST_API_SET_FIELD_FEEDBACK_SIZE ||
-				!api_->setFieldFeedback)
+			if (!api_->setFieldFeedback)
 				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 			const DMUI_FieldFeedback feedback{
-				sizeof(DMUI_FieldFeedback),
 				static_cast<DMUI_FieldFeedbackSeverity>(a_severity),
 				a_message
 			};
@@ -2738,14 +2278,12 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (api_->structSize < DMUI_HOST_API_END_FIELD_SIZE ||
-				!api_->endField)
+			if (!api_->endField)
 			{
 				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
 			}
 			const DMUI_FieldEndOptions options{
-				sizeof(DMUI_FieldEndOptions),
 				a_resetVisible ? 1u : 0u,
 				a_resetEnabled ? 1u : 0u
 			};
@@ -2763,8 +2301,7 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (api_->structSize < DMUI_HOST_API_END_SETTINGS_TABLE_SIZE ||
-				!api_->endSettingsTable)
+			if (!api_->endSettingsTable)
 				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 
 			lastResult_ = api_->endSettingsTable(clientHandle_);
@@ -2775,7 +2312,7 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (api_->structSize < DMUI_HOST_API_SELECT_PAGE_SIZE || !api_->selectPage)
+			if (!api_->selectPage)
 				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 
 			lastResult_ = api_->selectPage(clientHandle_, a_page);
@@ -2789,9 +2326,9 @@ namespace dmui
 				Fail(DMUI_RESULT_HOST_NOT_INITIALIZED);
 				return std::nullopt;
 			}
-			if (api_->structSize < kIsMenuVisibleSize || !api_->isMenuVisible)
+			if (!api_->isMenuVisible)
 			{
-				Fail(DMUI_RESULT_STRUCT_TOO_SMALL);
+				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
 			}
 
@@ -2809,14 +2346,13 @@ namespace dmui
 				Fail(DMUI_RESULT_HOST_NOT_INITIALIZED);
 				return std::nullopt;
 			}
-			if (api_->structSize < kQueryStateSize || !api_->queryState)
+			if (!api_->queryState)
 			{
-				Fail(DMUI_RESULT_STRUCT_TOO_SMALL);
+				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
 			}
 
 			DMUI_HostStateInfo state{};
-			state.structSize = sizeof(state);
 			lastResult_ = api_->queryState(&state);
 			if (lastResult_ != DMUI_RESULT_OK)
 				return std::nullopt;
@@ -2880,9 +2416,7 @@ namespace dmui
 				Fail(buffer.Result());
 				return std::nullopt;
 			}
-			if (api_->structSize <
-					DMUI_HOST_API_DRAW_SEARCH_INPUT_BUFFER_SIZE ||
-				!api_->drawSearchInputBuffer)
+			if (!api_->drawSearchInputBuffer)
 			{
 				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
@@ -2940,13 +2474,6 @@ namespace dmui
 			std::unique_ptr<HotkeyCallbackState> callback;
 		};
 
-		static constexpr uint32_t kRegisterPageSize =
-			static_cast<uint32_t>(offsetof(DMUI_HostAPI, registerPage) + sizeof(DMUI_RegisterPageFn));
-		static constexpr uint32_t kQueryStateSize =
-			static_cast<uint32_t>(offsetof(DMUI_HostAPI, queryState) + sizeof(DMUI_QueryStateFn));
-		static constexpr uint32_t kIsMenuVisibleSize =
-			static_cast<uint32_t>(offsetof(DMUI_HostAPI, isMenuVisible) + sizeof(DMUI_IsMenuVisibleFn));
-
 		[[nodiscard]] static GetAPIFn FindAPI() noexcept
 		{
 			return detail::ResolveHostSymbol<GetAPIFn>("DMUI_GetAPI");
@@ -2956,8 +2483,8 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (api_->structSize < kRegisterPageSize || !api_->registerPage)
-				return Fail(DMUI_RESULT_STRUCT_TOO_SMALL);
+			if (!api_->registerPage)
+				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 			return true;
 		}
 
@@ -2970,12 +2497,10 @@ namespace dmui
 		void ReportUIFailure(DMUI_Result a_result) noexcept
 		{
 			if (!api_ ||
-				api_->structSize < DMUI_HOST_API_REPORT_DIAGNOSTIC_SIZE ||
 				!api_->reportDiagnostic ||
 				clientHandle_ == DMUI_INVALID_CLIENT_HANDLE)
 				return;
 			const DMUI_DiagnosticDescriptor diagnostic{
-				DMUI_DIAGNOSTIC_DESCRIPTOR_0_1_SIZE,
 				DMUI_STATUS_SEVERITY_ERROR,
 				"ui-contract",
 				"Stable UI operation failed; drawing callback was disabled.",
@@ -2993,7 +2518,7 @@ namespace dmui
 			const DMUI_HostReadyInfo* a_info,
 			void* a_userData) noexcept
 		{
-			if (!a_info || a_info->structSize < sizeof(DMUI_HostReadyInfo))
+			if (!a_info)
 				return;
 			(void)a_userData;
 		}
@@ -3056,7 +2581,6 @@ namespace dmui
 			void* a_userData) noexcept
 		{
 			if (!a_info ||
-				a_info->structSize < DMUI_PAGE_ACTIVITY_INFO_0_1_SIZE ||
 				!a_userData)
 				return;
 			try
@@ -3462,7 +2986,6 @@ namespace dmui
 			PreparedClientTextStyle& a_prepared) noexcept
 		{
 			a_prepared = {};
-			a_prepared.theme.structSize = sizeof(a_prepared.theme);
 			a_prepared.style = a_style;
 			if (!a_client.IsConnected())
 				return DMUI_RESULT_CLIENT_NOT_FOUND;

@@ -533,95 +533,12 @@ namespace dmui::ui
 		kDockingSeparatorSize = DMUI_UI_STYLE_VAR_DOCKING_SEPARATOR_SIZE
 	};
 
-	namespace detail
-	{
-		[[nodiscard]] inline bool HasOperationsThroughSize(
-			const DMUI_UIAPI* a_api,
-			uint32_t a_minimumSize) noexcept
-		{
-			return a_api &&
-				a_minimumSize >= DMUI_UI_API_REQUIRED_SIZE &&
-				a_minimumSize <= DMUI_UI_API_CURRENT_SIZE &&
-				a_api->structSize >= a_minimumSize &&
-				a_api->getStyleMetrics &&
-				a_api->beginCombo &&
-				a_api->endCombo &&
-				a_api->beginDisabled &&
-				a_api->endDisabled &&
-				a_api->beginTable &&
-				a_api->endTable &&
-				a_api->beginTooltip &&
-				a_api->endTooltip &&
-				a_api->button &&
-				a_api->calcTextSize &&
-				a_api->checkbox &&
-				a_api->collapsingHeader &&
-				a_api->collapsingHeaderVisible &&
-				a_api->dragScalar &&
-				a_api->dummy &&
-				a_api->getContentRegionAvail &&
-				a_api->getCursorScreenPos &&
-				a_api->getFontSize &&
-				a_api->getFrameHeight &&
-				a_api->getStyleColor &&
-				a_api->getTextLineHeightWithSpacing &&
-				a_api->indent &&
-				a_api->inputScalar &&
-				a_api->inputText &&
-				a_api->inputTextMultiline &&
-				a_api->inputTextWithHint &&
-				a_api->isItemDeactivatedAfterEdit &&
-				a_api->isItemHovered &&
-				a_api->popID &&
-				a_api->popStyleColor &&
-				a_api->popTextWrapPos &&
-				a_api->progressBar &&
-				a_api->pushIDString &&
-				a_api->pushIDRange &&
-				a_api->pushIDValue &&
-				a_api->pushStyleColorU32 &&
-				a_api->pushStyleColor &&
-				a_api->pushTextWrapPos &&
-				a_api->sameLine &&
-				a_api->selectable &&
-				a_api->selectableToggle &&
-				a_api->separator &&
-				a_api->setClipboardText &&
-				a_api->setCursorScreenPos &&
-				a_api->setItemDefaultFocus &&
-				a_api->setNextItemWidth &&
-				a_api->setTooltipText &&
-				a_api->sliderScalar &&
-				a_api->spacing &&
-				a_api->tableHeadersRow &&
-				a_api->tableNextColumn &&
-				a_api->tableNextRow &&
-				a_api->tableSetColumnIndex &&
-				a_api->tableSetupColumn &&
-				a_api->tableSetupScrollFreeze &&
-				a_api->text &&
-				a_api->textColored &&
-				a_api->textDisabled &&
-				a_api->textWrapped &&
-				a_api->unindent &&
-				a_api->newLine &&
-				(a_minimumSize < DMUI_UI_API_PLOT_LINES_SIZE || a_api->plotLines) &&
-				(a_minimumSize < DMUI_UI_API_PUSH_STYLE_VAR_FLOAT_SIZE || a_api->pushStyleVarFloat) &&
-				(a_minimumSize < DMUI_UI_API_PUSH_STYLE_VAR_VEC2_SIZE || a_api->pushStyleVarVec2) &&
-				(a_minimumSize < DMUI_UI_API_POP_STYLE_VAR_SIZE || a_api->popStyleVar) &&
-				(a_minimumSize < DMUI_UI_API_LIST_CLIPPER_BEGIN_SIZE || a_api->listClipperBegin) &&
-				(a_minimumSize < DMUI_UI_API_LIST_CLIPPER_STEP_SIZE || a_api->listClipperStep) &&
-				(a_minimumSize < DMUI_UI_API_LIST_CLIPPER_END_SIZE || a_api->listClipperEnd);
-		}
-	}
-
 	namespace checked
 	{
 		[[nodiscard]] inline DMUI_Result GetStyleMetrics(
 			DMUI_StyleMetrics* metrics) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_GET_STYLE_METRICS_SIZE,
 				&DMUI_UIAPI::getStyleMetrics, metrics);
 		}
 
@@ -632,7 +549,6 @@ namespace dmui::ui
 		uint32_t* visible) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_BEGIN_COMBO_SIZE,
 				&DMUI_UIAPI::beginCombo, label, previewValue, flags, visible);
 		}
 
@@ -640,7 +556,6 @@ namespace dmui::ui
 			void) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_END_COMBO_SIZE,
 				&DMUI_UIAPI::endCombo);
 		}
 
@@ -648,7 +563,6 @@ namespace dmui::ui
 			uint32_t disabled) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_BEGIN_DISABLED_SIZE,
 				&DMUI_UIAPI::beginDisabled, disabled);
 		}
 
@@ -656,7 +570,6 @@ namespace dmui::ui
 			void) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_END_DISABLED_SIZE,
 				&DMUI_UIAPI::endDisabled);
 		}
 
@@ -669,7 +582,6 @@ namespace dmui::ui
 		uint32_t* visible) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_BEGIN_TABLE_SIZE,
 				&DMUI_UIAPI::beginTable, id, columns, flags, outerSize, innerWidth, visible);
 		}
 
@@ -677,7 +589,6 @@ namespace dmui::ui
 			void) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_END_TABLE_SIZE,
 				&DMUI_UIAPI::endTable);
 		}
 
@@ -685,7 +596,6 @@ namespace dmui::ui
 			uint32_t* visible) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_BEGIN_TOOLTIP_SIZE,
 				&DMUI_UIAPI::beginTooltip, visible);
 		}
 
@@ -693,7 +603,6 @@ namespace dmui::ui
 			void) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_END_TOOLTIP_SIZE,
 				&DMUI_UIAPI::endTooltip);
 		}
 
@@ -703,7 +612,6 @@ namespace dmui::ui
 		uint32_t* pressed) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_BUTTON_SIZE,
 				&DMUI_UIAPI::button, label, size, pressed);
 		}
 
@@ -715,7 +623,6 @@ namespace dmui::ui
 		DMUI_Vec2* size) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_CALC_TEXT_SIZE_SIZE,
 				&DMUI_UIAPI::calcTextSize, text, textLength, hideTextAfterDoubleHash, wrapWidth, size);
 		}
 
@@ -725,7 +632,6 @@ namespace dmui::ui
 		uint32_t* changed) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_CHECKBOX_SIZE,
 				&DMUI_UIAPI::checkbox, label, value, changed);
 		}
 
@@ -735,7 +641,6 @@ namespace dmui::ui
 		uint32_t* open) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_COLLAPSING_HEADER_SIZE,
 				&DMUI_UIAPI::collapsingHeader, label, flags, open);
 		}
 
@@ -746,7 +651,6 @@ namespace dmui::ui
 		uint32_t* open) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_COLLAPSING_HEADER_VISIBLE_SIZE,
 				&DMUI_UIAPI::collapsingHeaderVisible, label, visible, flags, open);
 		}
 
@@ -765,7 +669,6 @@ namespace dmui::ui
 		uint32_t* changed) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_DRAG_SCALAR_SIZE,
 				&DMUI_UIAPI::dragScalar, label, dataType, data, dataSize, speed, minimum, minimumSize, maximum, maximumSize, format, flags, changed);
 		}
 
@@ -773,7 +676,6 @@ namespace dmui::ui
 			DMUI_Vec2 size) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_DUMMY_SIZE,
 				&DMUI_UIAPI::dummy, size);
 		}
 
@@ -781,7 +683,6 @@ namespace dmui::ui
 			DMUI_Vec2* size) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_GET_CONTENT_REGION_AVAIL_SIZE,
 				&DMUI_UIAPI::getContentRegionAvail, size);
 		}
 
@@ -789,7 +690,6 @@ namespace dmui::ui
 			DMUI_Vec2* position) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_GET_CURSOR_SCREEN_POS_SIZE,
 				&DMUI_UIAPI::getCursorScreenPos, position);
 		}
 
@@ -797,7 +697,6 @@ namespace dmui::ui
 			float* size) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_GET_FONT_SIZE_SIZE,
 				&DMUI_UIAPI::getFontSize, size);
 		}
 
@@ -805,7 +704,6 @@ namespace dmui::ui
 			float* height) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_GET_FRAME_HEIGHT_SIZE,
 				&DMUI_UIAPI::getFrameHeight, height);
 		}
 
@@ -814,7 +712,6 @@ namespace dmui::ui
 		DMUI_Vec4* value) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_GET_STYLE_COLOR_SIZE,
 				&DMUI_UIAPI::getStyleColor, color, value);
 		}
 
@@ -822,7 +719,6 @@ namespace dmui::ui
 			float* height) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_GET_TEXT_LINE_HEIGHT_WITH_SPACING_SIZE,
 				&DMUI_UIAPI::getTextLineHeightWithSpacing, height);
 		}
 
@@ -830,7 +726,6 @@ namespace dmui::ui
 			float width) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_INDENT_SIZE,
 				&DMUI_UIAPI::indent, width);
 		}
 
@@ -848,7 +743,6 @@ namespace dmui::ui
 		uint32_t* changed) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_INPUT_SCALAR_SIZE,
 				&DMUI_UIAPI::inputScalar, label, dataType, data, dataSize, step, stepSize, fastStep, fastStepSize, format, flags, changed);
 		}
 
@@ -860,7 +754,6 @@ namespace dmui::ui
 		uint32_t* changed) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_INPUT_TEXT_SIZE,
 				&DMUI_UIAPI::inputText, label, buffer, capacity, flags, changed);
 		}
 
@@ -873,7 +766,6 @@ namespace dmui::ui
 		uint32_t* changed) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_INPUT_TEXT_MULTILINE_SIZE,
 				&DMUI_UIAPI::inputTextMultiline, label, buffer, capacity, size, flags, changed);
 		}
 
@@ -886,7 +778,6 @@ namespace dmui::ui
 		uint32_t* changed) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_INPUT_TEXT_WITH_HINT_SIZE,
 				&DMUI_UIAPI::inputTextWithHint, label, hint, buffer, capacity, flags, changed);
 		}
 
@@ -894,7 +785,6 @@ namespace dmui::ui
 			uint32_t* deactivated) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_IS_ITEM_DEACTIVATED_AFTER_EDIT_SIZE,
 				&DMUI_UIAPI::isItemDeactivatedAfterEdit, deactivated);
 		}
 
@@ -903,7 +793,6 @@ namespace dmui::ui
 		uint32_t* hovered) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_IS_ITEM_HOVERED_SIZE,
 				&DMUI_UIAPI::isItemHovered, flags, hovered);
 		}
 
@@ -911,7 +800,6 @@ namespace dmui::ui
 			void) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_POP_ID_SIZE,
 				&DMUI_UIAPI::popID);
 		}
 
@@ -919,7 +807,6 @@ namespace dmui::ui
 			int32_t count) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_POP_STYLE_COLOR_SIZE,
 				&DMUI_UIAPI::popStyleColor, count);
 		}
 
@@ -927,7 +814,6 @@ namespace dmui::ui
 			void) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_POP_TEXT_WRAP_POS_SIZE,
 				&DMUI_UIAPI::popTextWrapPos);
 		}
 
@@ -938,7 +824,6 @@ namespace dmui::ui
 		size_t overlayLength) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_PROGRESS_BAR_SIZE,
 				&DMUI_UIAPI::progressBar, fraction, size, overlay, overlayLength);
 		}
 
@@ -946,7 +831,6 @@ namespace dmui::ui
 			const char* id) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_PUSH_ID_STRING_SIZE,
 				&DMUI_UIAPI::pushIDString, id);
 		}
 
@@ -955,7 +839,6 @@ namespace dmui::ui
 		size_t length) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_PUSH_ID_RANGE_SIZE,
 				&DMUI_UIAPI::pushIDRange, id, length);
 		}
 
@@ -963,7 +846,6 @@ namespace dmui::ui
 			uint64_t id) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_PUSH_ID_VALUE_SIZE,
 				&DMUI_UIAPI::pushIDValue, id);
 		}
 
@@ -972,7 +854,6 @@ namespace dmui::ui
 		uint32_t rgba) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_PUSH_STYLE_COLOR_U32_SIZE,
 				&DMUI_UIAPI::pushStyleColorU32, color, rgba);
 		}
 
@@ -981,7 +862,6 @@ namespace dmui::ui
 		DMUI_Vec4 value) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_PUSH_STYLE_COLOR_SIZE,
 				&DMUI_UIAPI::pushStyleColor, color, value);
 		}
 
@@ -989,7 +869,6 @@ namespace dmui::ui
 			float localX) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_PUSH_TEXT_WRAP_POS_SIZE,
 				&DMUI_UIAPI::pushTextWrapPos, localX);
 		}
 
@@ -998,7 +877,6 @@ namespace dmui::ui
 		float spacing) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_SAME_LINE_SIZE,
 				&DMUI_UIAPI::sameLine, offsetFromStartX, spacing);
 		}
 
@@ -1010,7 +888,6 @@ namespace dmui::ui
 		uint32_t* pressed) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_SELECTABLE_SIZE,
 				&DMUI_UIAPI::selectable, label, selected, flags, size, pressed);
 		}
 
@@ -1022,7 +899,6 @@ namespace dmui::ui
 		uint32_t* pressed) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_SELECTABLE_TOGGLE_SIZE,
 				&DMUI_UIAPI::selectableToggle, label, selected, flags, size, pressed);
 		}
 
@@ -1030,7 +906,6 @@ namespace dmui::ui
 			void) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_SEPARATOR_SIZE,
 				&DMUI_UIAPI::separator);
 		}
 
@@ -1039,7 +914,6 @@ namespace dmui::ui
 		size_t textLength) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_SET_CLIPBOARD_TEXT_SIZE,
 				&DMUI_UIAPI::setClipboardText, text, textLength);
 		}
 
@@ -1047,7 +921,6 @@ namespace dmui::ui
 			DMUI_Vec2 position) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_SET_CURSOR_SCREEN_POS_SIZE,
 				&DMUI_UIAPI::setCursorScreenPos, position);
 		}
 
@@ -1055,7 +928,6 @@ namespace dmui::ui
 			void) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_SET_ITEM_DEFAULT_FOCUS_SIZE,
 				&DMUI_UIAPI::setItemDefaultFocus);
 		}
 
@@ -1063,7 +935,6 @@ namespace dmui::ui
 			float width) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_SET_NEXT_ITEM_WIDTH_SIZE,
 				&DMUI_UIAPI::setNextItemWidth, width);
 		}
 
@@ -1072,7 +943,6 @@ namespace dmui::ui
 		size_t textLength) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_SET_TOOLTIP_TEXT_SIZE,
 				&DMUI_UIAPI::setTooltipText, text, textLength);
 		}
 
@@ -1090,7 +960,6 @@ namespace dmui::ui
 		uint32_t* changed) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_SLIDER_SCALAR_SIZE,
 				&DMUI_UIAPI::sliderScalar, label, dataType, data, dataSize, minimum, minimumSize, maximum, maximumSize, format, flags, changed);
 		}
 
@@ -1098,7 +967,6 @@ namespace dmui::ui
 			void) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_SPACING_SIZE,
 				&DMUI_UIAPI::spacing);
 		}
 
@@ -1106,7 +974,6 @@ namespace dmui::ui
 			void) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_TABLE_HEADERS_ROW_SIZE,
 				&DMUI_UIAPI::tableHeadersRow);
 		}
 
@@ -1114,7 +981,6 @@ namespace dmui::ui
 			uint32_t* visible) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_TABLE_NEXT_COLUMN_SIZE,
 				&DMUI_UIAPI::tableNextColumn, visible);
 		}
 
@@ -1123,7 +989,6 @@ namespace dmui::ui
 		float minimumHeight) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_TABLE_NEXT_ROW_SIZE,
 				&DMUI_UIAPI::tableNextRow, flags, minimumHeight);
 		}
 
@@ -1132,7 +997,6 @@ namespace dmui::ui
 		uint32_t* visible) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_TABLE_SET_COLUMN_INDEX_SIZE,
 				&DMUI_UIAPI::tableSetColumnIndex, column, visible);
 		}
 
@@ -1143,7 +1007,6 @@ namespace dmui::ui
 		uint32_t userId) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_TABLE_SETUP_COLUMN_SIZE,
 				&DMUI_UIAPI::tableSetupColumn, label, flags, initialWidthOrWeight, userId);
 		}
 
@@ -1152,7 +1015,6 @@ namespace dmui::ui
 		int32_t rows) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_TABLE_SETUP_SCROLL_FREEZE_SIZE,
 				&DMUI_UIAPI::tableSetupScrollFreeze, columns, rows);
 		}
 
@@ -1161,7 +1023,6 @@ namespace dmui::ui
 		size_t textLength) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_TEXT_SIZE,
 				&DMUI_UIAPI::text, text, textLength);
 		}
 
@@ -1171,7 +1032,6 @@ namespace dmui::ui
 		size_t textLength) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_TEXT_COLORED_SIZE,
 				&DMUI_UIAPI::textColored, color, text, textLength);
 		}
 
@@ -1180,7 +1040,6 @@ namespace dmui::ui
 		size_t textLength) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_TEXT_DISABLED_SIZE,
 				&DMUI_UIAPI::textDisabled, text, textLength);
 		}
 
@@ -1189,7 +1048,6 @@ namespace dmui::ui
 		size_t textLength) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_TEXT_WRAPPED_SIZE,
 				&DMUI_UIAPI::textWrapped, text, textLength);
 		}
 
@@ -1197,7 +1055,6 @@ namespace dmui::ui
 			float width) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_UNINDENT_SIZE,
 				&DMUI_UIAPI::unindent, width);
 		}
 
@@ -1205,7 +1062,6 @@ namespace dmui::ui
 			void) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_NEW_LINE_SIZE,
 				&DMUI_UIAPI::newLine);
 		}
 
@@ -1222,7 +1078,6 @@ namespace dmui::ui
 		uint32_t strideBytes) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_PLOT_LINES_SIZE,
 				&DMUI_UIAPI::plotLines, label, values, valueCount, valueOffset, overlay, overlayLength, scaleMinimum, scaleMaximum, size, strideBytes);
 		}
 
@@ -1231,7 +1086,6 @@ namespace dmui::ui
 		float value) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_PUSH_STYLE_VAR_FLOAT_SIZE,
 				&DMUI_UIAPI::pushStyleVarFloat, styleVar, value);
 		}
 
@@ -1240,7 +1094,6 @@ namespace dmui::ui
 		DMUI_Vec2 value) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_PUSH_STYLE_VAR_VEC2_SIZE,
 				&DMUI_UIAPI::pushStyleVarVec2, styleVar, value);
 		}
 
@@ -1248,7 +1101,6 @@ namespace dmui::ui
 			int32_t count) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_POP_STYLE_VAR_SIZE,
 				&DMUI_UIAPI::popStyleVar, count);
 		}
 
@@ -1258,7 +1110,6 @@ namespace dmui::ui
 		uint64_t* clipper) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_LIST_CLIPPER_BEGIN_SIZE,
 				&DMUI_UIAPI::listClipperBegin, itemsCount, itemsHeight, clipper);
 		}
 
@@ -1269,7 +1120,6 @@ namespace dmui::ui
 		int32_t* displayEnd) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_LIST_CLIPPER_STEP_SIZE,
 				&DMUI_UIAPI::listClipperStep, clipper, stepping, displayStart, displayEnd);
 		}
 
@@ -1277,8 +1127,48 @@ namespace dmui::ui
 			uint64_t clipper) noexcept
 		{
 			return detail::Invoke(
-				DMUI_UI_API_LIST_CLIPPER_END_SIZE,
 				&DMUI_UIAPI::listClipperEnd, clipper);
+		}
+
+		[[nodiscard]] inline DMUI_Result Image(
+			DMUI_ImageHandle image,
+		const DMUI_ImageDrawOptions* options,
+		uint32_t* drawn) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::image, image, options, drawn);
+		}
+
+		[[nodiscard]] inline DMUI_Result PlotAnnotated(
+			const char* id,
+		const DMUI_AnnotatedPlotDescriptor* descriptor) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::plotAnnotated, id, descriptor);
+		}
+
+		[[nodiscard]] inline DMUI_Result GetCursorPos(
+			DMUI_Vec2* position) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::getCursorPos, position);
+		}
+
+		[[nodiscard]] inline DMUI_Result SetCursorPos(
+			DMUI_Vec2 position) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::setCursorPos, position);
+		}
+
+		[[nodiscard]] inline DMUI_Result TextAligned(
+			float alignX,
+		float width,
+		const char* text,
+		size_t length) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::textAligned, alignX, width, text, length);
 		}
 	}
 }

@@ -7,13 +7,6 @@
 
 namespace
 {
-	DMUI_Result DMUI_CALL RegisterClientStub(
-		const DMUI_ClientDescriptor*,
-		DMUI_ClientHandle*) noexcept
-	{
-		return DMUI_RESULT_OK;
-	}
-
 	bool TestTextInputBuffer()
 	{
 		dmui::TextInputBuffer growable{ "seed" };
@@ -83,7 +76,6 @@ namespace
 int main()
 {
 	const DMUI_ImageDescriptor descriptor{
-		sizeof(DMUI_ImageDescriptor),
 		1,
 		1,
 		DMUI_PIXEL_FORMAT_RGBA8_UNORM,
@@ -105,13 +97,11 @@ int main()
 	api.drawTextView = nullptr;
 	api.drawSearchInputBuffer = nullptr;
 	const DMUI_IconResolutionRequest iconRequest{
-		sizeof(DMUI_IconResolutionRequest),
 		"wrench",
 		"Graphics Settings",
 		"General"
 	};
 	const DMUI_CategoryDescriptor category{
-		DMUI_CATEGORY_DESCRIPTOR_ICON_SIZE,
 		"lighting",
 		"Lighting",
 		0,
@@ -119,7 +109,6 @@ int main()
 		"sun-horizon"
 	};
 	const DMUI_PageDescriptor page{
-		DMUI_PAGE_DESCRIPTOR_ICON_SIZE,
 		"settings",
 		"Settings",
 		"lighting",
@@ -132,7 +121,6 @@ int main()
 	};
 	const size_t lineOffsets[]{ 0 };
 	const DMUI_TextViewDescriptor textView{
-		sizeof(DMUI_TextViewDescriptor),
 		"preview",
 		"",
 		0,
@@ -146,48 +134,16 @@ int main()
 		{ 0.0f, 320.0f }
 	};
 	const DMUI_TextViewState textState{
-		sizeof(DMUI_TextViewState),
 		1,
 		1,
 		DMUI_TEXT_VIEW_NO_OFFSET,
 		DMUI_TEXT_VIEW_NO_OFFSET
 	};
 	const DMUI_TextBuffer textBuffer{
-		DMUI_TEXT_BUFFER_0_2_SIZE,
 		nullptr,
 		1,
 		nullptr,
 		nullptr
 	};
-	DMUI_HostAPI prefixAPI{};
-	prefixAPI.structSize = DMUI_HOST_API_REGISTER_CLIENT_SIZE;
-	prefixAPI.hostAbiVersion = DMUI_HOST_ABI_1;
-	prefixAPI.registerClient = &RegisterClientStub;
-	const auto defaultPrefixResult =
-		dmui::PreflightHostAPI(&prefixAPI, {});
-	dmui::ClientOptions textViewOptions;
-	textViewOptions.minimumHostAPISize =
-		DMUI_HOST_API_DRAW_TEXT_VIEW_SIZE;
-	const auto textViewPrefixResult =
-		dmui::PreflightHostAPI(&prefixAPI, textViewOptions);
-	dmui::ClientOptions searchBufferOptions;
-	searchBufferOptions.minimumHostAPISize =
-		DMUI_HOST_API_DRAW_SEARCH_INPUT_BUFFER_SIZE;
-	const auto searchBufferPrefixResult =
-		dmui::PreflightHostAPI(&prefixAPI, searchBufferOptions);
-	return descriptor.structSize == DMUI_IMAGE_DESCRIPTOR_0_1_SIZE &&
-			iconRequest.structSize == DMUI_ICON_RESOLUTION_REQUEST_0_1_SIZE &&
-			category.structSize == sizeof(category) &&
-			page.structSize == sizeof(page) &&
-			textView.structSize == DMUI_TEXT_VIEW_DESCRIPTOR_0_2_SIZE &&
-			textState.structSize == DMUI_TEXT_VIEW_STATE_0_2_SIZE &&
-			textBuffer.structSize == DMUI_TEXT_BUFFER_0_2_SIZE &&
-			DMUI_FONT_ROLE_MONOSPACE + 1u == DMUI_FONT_ROLE_COUNT &&
-			DMUI_API_VERSION_CURRENT == DMUI_API_VERSION_0_2 &&
-			defaultPrefixResult == DMUI_RESULT_UNSUPPORTED_ABI &&
-			textViewPrefixResult == DMUI_RESULT_STRUCT_TOO_SMALL &&
-			searchBufferPrefixResult == DMUI_RESULT_STRUCT_TOO_SMALL &&
-			TestTextInputBuffer() ?
-		0 :
-		1;
+	return TestTextInputBuffer() ? 0 : 1;
 }

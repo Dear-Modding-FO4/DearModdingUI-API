@@ -21,15 +21,10 @@ def load_schema(path: Path) -> dict:
     if [operation[0] for operation in operations] != list(
         range(1, len(operations) + 1)
     ):
-        raise GenerationError("operation IDs must be contiguous and immutable")
+        raise GenerationError("operation IDs must be contiguous")
     names = [operation[1] for operation in operations]
     if len(names) != len(set(names)) or set(names) != set(schema["signatures"]):
         raise GenerationError("operation names and signatures must match exactly")
-    optional_seen = False
-    for operation in operations:
-        optional_seen = optional_seen or not operation[4]
-        if optional_seen and operation[4]:
-            raise GenerationError("required operations must precede optional operations")
     return schema
 
 
@@ -73,7 +68,6 @@ def declaration(type_name: str, name: str) -> str:
 
 
 def render_c_header(schema: dict) -> str:
-    contract = schema["contract"]
     operations = schema["operations"]
     signatures = schema["signatures"]
     lines = [
@@ -83,19 +77,7 @@ def render_c_header(schema: dict) -> str:
         "",
         "#include <DearModdingUI/API.h>",
         "",
-        f"#define DMUI_UI_ABI_{contract['abi']} {contract['abi']}u",
-        f"#define DMUI_UI_ABI_CURRENT DMUI_UI_ABI_{contract['abi']}",
     ]
-    lines.extend(
-        f"#define DMUI_UI_REVISION_{revision} {revision}u"
-        for revision in range(1, contract["revision"] + 1)
-    )
-    lines.extend(
-        [
-            f"#define DMUI_UI_REVISION_CURRENT DMUI_UI_REVISION_{contract['revision']}",
-            "",
-        ]
-    )
     for enum in schema["enums"]:
         c_name = enum["cName"]
         lines.append(f"typedef uint32_t {c_name};")
@@ -115,7 +97,7 @@ def render_c_header(schema: dict) -> str:
             )
         lines.append("")
 
-    for _, name, _, _, _ in operations:
+    for _, name, _, _ in operations:
         parameters = ",\n\t".join(
             declaration(type_name, argument_name)
             for type_name, argument_name in signatures[name]
@@ -131,47 +113,11 @@ def render_c_header(schema: dict) -> str:
             "",
             "typedef struct DMUI_UIAPI",
             "{",
-            "\tuint32_t structSize;",
-            "\tuint32_t abiVersion;",
-            "\tuint32_t revision;",
-            "\tuint32_t reserved;",
         ]
     )
-    for _, name, field, _, _ in operations:
+    for _, name, field, _ in operations:
         lines.append(f"\tDMUI_UI{name}Fn {field};")
     lines.extend(["} DMUI_UIAPI;", ""])
-    for _, name, field, _, _ in operations:
-        lines.extend(
-            [
-                f"#define DMUI_UI_API_{upper_snake(name)}_SIZE \\",
-                f"\t((uint32_t)(offsetof(DMUI_UIAPI, {field}) + "
-                f"sizeof(DMUI_UI{name}Fn)))",
-            ]
-        )
-    required = [operation for operation in operations if operation[4]][-1]
-    lines.extend(
-        [
-            f"#define DMUI_UI_API_REQUIRED_SIZE "
-            f"DMUI_UI_API_{upper_snake(required[1])}_SIZE",
-            f"#define DMUI_UI_API_CURRENT_SIZE "
-            f"DMUI_UI_API_{upper_snake(operations[-1][1])}_SIZE",
-            "",
-            "typedef struct DMUI_UIAPIInfo",
-            "{",
-            "\tuint32_t structSize;",
-            "\tuint32_t abiVersion;",
-            "\tuint32_t revision;",
-            "\tuint32_t tableSize;",
-            "\tconst DMUI_UIAPI* api;",
-            "} DMUI_UIAPIInfo;",
-            "",
-            "#define DMUI_UI_API_INFO_PREFIX_SIZE \\",
-            "\t((uint32_t)(offsetof(DMUI_UIAPIInfo, tableSize) + sizeof(uint32_t)))",
-            "#define DMUI_UI_API_INFO_1_SIZE \\",
-            "\t((uint32_t)(offsetof(DMUI_UIAPIInfo, api) + sizeof(const DMUI_UIAPI*)))",
-            "",
-        ]
-    )
     return "\n".join(lines)
 
 
@@ -245,40 +191,8 @@ def render_checked_header(schema: dict) -> str:
                 f"{c_macro(c_name)}_REJECTED_CALLBACK_MASK }};"
             )
             lines.append("")
-    required_fields = [
-        field for _, _, field, _, required in schema["operations"] if required
-    ]
-    optional_operations = [
-        (name, field)
-        for _, name, field, _, required in schema["operations"]
-        if not required
-    ]
-    lines.extend(
-        [
-            "\tnamespace detail",
-            "\t{",
-            "\t\t[[nodiscard]] inline bool HasOperationsThroughSize(",
-            "\t\t\tconst DMUI_UIAPI* a_api,",
-            "\t\t\tuint32_t a_minimumSize) noexcept",
-            "\t\t{",
-            "\t\t\treturn a_api &&",
-            "\t\t\t\ta_minimumSize >= DMUI_UI_API_REQUIRED_SIZE &&",
-            "\t\t\t\ta_minimumSize <= DMUI_UI_API_CURRENT_SIZE &&",
-            "\t\t\t\ta_api->structSize >= a_minimumSize &&",
-        ]
-    )
-    operation_checks = [
-        f"a_api->{field}" for field in required_fields
-    ] + [
-        f"(a_minimumSize < DMUI_UI_API_{upper_snake(name)}_SIZE || "
-        f"a_api->{field})"
-        for name, field in optional_operations
-    ]
-    for index, check in enumerate(operation_checks):
-        suffix = ";" if index + 1 == len(operation_checks) else " &&"
-        lines.append(f"\t\t\t\t{check}{suffix}")
-    lines.extend(["\t\t}", "\t}", "", "\tnamespace checked", "\t{"])
-    for _, name, field, _, _ in schema["operations"]:
+    lines.extend(["\tnamespace checked", "\t{"])
+    for _, name, field, _ in schema["operations"]:
         parameters = schema["signatures"][name][1:]
         rendered = ",\n\t\t".join(
             declaration(type_name, argument_name)
@@ -292,7 +206,6 @@ def render_checked_header(schema: dict) -> str:
                 f"\t\t\t{rendered}) noexcept" if rendered else "\t\t\tvoid) noexcept",
                 "\t\t{",
                 f"\t\t\treturn detail::Invoke(",
-                f"\t\t\t\tDMUI_UI_API_{upper_snake(name)}_SIZE,",
                 f"\t\t\t\t&DMUI_UIAPI::{field}{comma}{arguments});",
                 "\t\t}",
                 "",
@@ -408,7 +321,7 @@ def render_host_bindings(schema: dict) -> str:
                 )
             lines.extend(["\t\treturn DMUI_RESULT_OK;", "\t}", ""])
 
-    for _, name, _, _, _ in schema["operations"]:
+    for _, name, _, _ in schema["operations"]:
         parameters = ",\n\t\t".join(
             declaration(type_name, f"a_{argument_name}")
             for type_name, argument_name in schema["signatures"][name]
@@ -425,13 +338,9 @@ def render_host_bindings(schema: dict) -> str:
             "\t[[nodiscard]] inline DMUI_UIAPI MakeAPI() noexcept",
             "\t{",
             "\t\treturn {",
-            "\t\t\tDMUI_UI_API_CURRENT_SIZE,",
-            "\t\t\tDMUI_UI_ABI_CURRENT,",
-            "\t\t\tDMUI_UI_REVISION_CURRENT,",
-            "\t\t\t0u,",
         ]
     )
-    for index, (_, name, _, _, _) in enumerate(schema["operations"]):
+    for index, (_, name, _, _) in enumerate(schema["operations"]):
         comma = "," if index + 1 < len(schema["operations"]) else ""
         lines.append(f"\t\t\t&{name}{comma}")
     lines.extend(["\t\t};", "\t}", "}", ""])
@@ -464,10 +373,9 @@ def build_manifest(schema: dict) -> dict:
                 "name": name,
                 "field": field,
                 "kind": kind,
-                "required": required,
                 "signature": schema["signatures"][name],
             }
-            for operation_id, name, field, kind, required in schema["operations"]
+            for operation_id, name, field, kind in schema["operations"]
         ],
     }
 
@@ -487,60 +395,8 @@ def load_baseline_manifest(path: Path) -> dict:
 
 def validate_compatibility(schema: dict, baseline: dict) -> None:
     current = build_manifest(schema)
-    baseline_contract = baseline["contract"]
-    current_contract = current["contract"]
-    for field in ("name", "abi", "namespace", "packedColor"):
-        if current_contract.get(field) != baseline_contract.get(field):
-            raise GenerationError(f"published contract field changed: {field}")
-
-    baseline_revision = baseline_contract.get("revision")
-    current_revision = current_contract.get("revision")
-    if not isinstance(baseline_revision, int) or not isinstance(current_revision, int):
-        raise GenerationError("contract revisions must be integers")
-    if current_revision < baseline_revision:
-        raise GenerationError("contract revision moved backwards")
-
-    additions = False
-    baseline_enums = baseline["enums"]
-    current_enums = current["enums"]
-    if len(current_enums) < len(baseline_enums):
-        raise GenerationError("published enum family was removed")
-    for index, published in enumerate(baseline_enums):
-        candidate = current_enums[index]
-        for field in ("name", "cName", "kind", "rejectedMask"):
-            if candidate.get(field) != published.get(field):
-                raise GenerationError(
-                    f"published enum definition changed: {published.get('name', index)}"
-                )
-        for field in ("values", "aliases"):
-            published_values = published.get(field, [])
-            candidate_values = candidate.get(field, [])
-            if candidate_values[: len(published_values)] != published_values:
-                raise GenerationError(
-                    f"published enum {field} changed or reordered: "
-                    f"{published.get('name', index)}"
-                )
-            additions = additions or len(candidate_values) > len(published_values)
-    additions = additions or len(current_enums) > len(baseline_enums)
-
-    baseline_operations = baseline["operations"]
-    current_operations = current["operations"]
-    if len(current_operations) < len(baseline_operations):
-        raise GenerationError("published UI operation was removed")
-    if current_operations[: len(baseline_operations)] != baseline_operations:
-        raise GenerationError(
-            "published UI operation IDs, slots, signatures, or requirements changed"
-        )
-    additions = additions or len(current_operations) > len(baseline_operations)
-
-    if additions and current_revision <= baseline_revision:
-        raise GenerationError(
-            "additive enum values or UI slots require a newer contract revision"
-        )
-    if not additions and current_revision != baseline_revision:
-        raise GenerationError(
-            "contract revision changed without an additive enum value or UI slot"
-        )
+    if current["contract"]["abi"] == baseline["contract"]["abi"] and current != baseline:
+        raise GenerationError("UI contract changed without a DMUI_ABI_VERSION change")
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -564,7 +420,11 @@ def main() -> int:
     arguments = parse_arguments()
     schema = load_schema(arguments.schema.resolve())
     baseline = load_baseline_manifest(arguments.baseline_manifest.resolve())
-    validate_compatibility(schema, baseline)
+    if not arguments.update_baseline:
+        validate_compatibility(schema, baseline)
+    api_header = arguments.schema.resolve().parents[1] / "include/DearModdingUI/API.h"
+    if f"#define DMUI_ABI_VERSION {schema['contract']['abi']}u" not in api_header.read_text(encoding="utf-8"):
+        raise GenerationError("schema ABI must match DMUI_ABI_VERSION in API.h")
     outputs = {
         arguments.c_header.resolve(): render_c_header(schema),
         arguments.checked_header.resolve(): render_checked_header(schema),

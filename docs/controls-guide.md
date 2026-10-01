@@ -47,9 +47,6 @@ Rows must have uniform height. Omit `itemsHeight` or pass a value <= 0 to measur
 the first row. Keep each clipper inside one drawing callback and the same window
 and table; end nested clippers in reverse order. Destruction ends a clipper early.
 
-To require clipping at connect time, set `ClientOptions::minimumUIAPISize` to
-`DMUI_UI_API_LIST_CLIPPER_END_SIZE`.
-
 ### Search and Read-Only Text
 
 `Client::DrawSearchInput(id, hint, text)` is growable by default, with no
@@ -181,10 +178,8 @@ Reset is reflected next frame.
 ### Compatibility
 
 Existing `SettingsRowScope`, `BeginSettingsRow`, and `EndSettingsRow` code works
-unchanged. `FieldScope` is optional for standalone fields and feedback. Appended
-host-table entries, the search-capacity wrapper, and the appended monospace font
-role retain host ABI 1. Clients that require the text viewer opt into its table
-prefix with `ClientOptions::minimumHostAPISize`.
+unchanged after rebuilding for ABI 2. `FieldScope` is optional for standalone
+fields and feedback. All host and UI operations share one exact-match ABI.
 
 ## Choice Dropdowns (`dmui::DrawChoice`)
 

@@ -14,6 +14,19 @@
 #include <type_traits>
 #include <vector>
 
+namespace dmui
+{
+	struct ImageHandle
+	{
+		DMUI_ImageHandle value{ DMUI_INVALID_IMAGE_HANDLE };
+
+		[[nodiscard]] explicit operator bool() const noexcept
+		{
+			return value != DMUI_INVALID_IMAGE_HANDLE;
+		}
+	};
+}
+
 namespace dmui::ui::detail
 {
 	struct Context
@@ -80,7 +93,6 @@ namespace dmui::ui::detail
 
 	template <class Function, class... Arguments>
 	[[nodiscard]] DMUI_Result Invoke(
-		uint32_t a_requiredSize,
 		Function DMUI_UIAPI::*a_member,
 		Arguments... a_arguments) noexcept
 	{
@@ -89,8 +101,6 @@ namespace dmui::ui::detail
 			!context->api ||
 			context->client == DMUI_INVALID_CLIENT_HANDLE)
 			return DMUI_RESULT_HOST_NOT_READY;
-		if (context->api->structSize < a_requiredSize)
-			return DMUI_RESULT_UNSUPPORTED_ABI;
 		const auto function = context->api->*a_member;
 		if (!function)
 			return DMUI_RESULT_UNSUPPORTED_ABI;
@@ -178,6 +188,59 @@ namespace dmui::ui::detail
 
 namespace dmui::ui
 {
+	// Deduction keeps Image(handle, {width, height}) unambiguous.
+	template <class Options>
+		requires std::is_same_v<Options, DMUI_ImageDrawOptions>
+	[[nodiscard]] inline bool Image(
+		ImageHandle a_image, const Options& a_options) noexcept
+	{
+		uint32_t drawn{};
+		detail::Record(checked::Image(a_image.value, &a_options, &drawn));
+		return drawn != 0;
+	}
+
+	[[nodiscard]] inline bool Image(ImageHandle a_image, Vec2 a_size) noexcept
+	{
+		const DMUI_ImageDrawOptions options{
+			a_size, { 0.0f, 0.0f }, { 1.0f, 1.0f },
+			{ 1.0f, 1.0f, 1.0f, 1.0f }, 1u
+		};
+		return Image(a_image, options);
+	}
+
+	inline void PlotAnnotated(
+		const char* a_id, const DMUI_AnnotatedPlotDescriptor& a_plot) noexcept
+	{
+		detail::Record(checked::PlotAnnotated(a_id, &a_plot));
+	}
+
+	[[nodiscard]] inline Vec2 GetCursorPos() noexcept
+	{
+		Vec2 position{};
+		detail::Record(checked::GetCursorPos(&position));
+		return position;
+	}
+
+	inline void SetCursorPos(Vec2 a_position) noexcept
+	{
+		detail::Record(checked::SetCursorPos(a_position));
+	}
+
+	[[nodiscard]] inline float GetCursorPosX() noexcept { return GetCursorPos().x; }
+	[[nodiscard]] inline float GetCursorPosY() noexcept { return GetCursorPos().y; }
+	inline void SetCursorPosX(float a_x) noexcept { SetCursorPos({ a_x, GetCursorPosY() }); }
+	inline void SetCursorPosY(float a_y) noexcept { SetCursorPos({ GetCursorPosX(), a_y }); }
+
+	inline void TextAligned(float a_alignX, float a_width, const char* a_text, size_t a_length) noexcept
+	{
+		detail::Record(checked::TextAligned(a_alignX, a_width, a_text, a_length));
+	}
+
+	inline void TextAligned(float a_alignX, float a_width, std::string_view a_text) noexcept
+	{
+		TextAligned(a_alignX, a_width, detail::TextData(a_text), a_text.size());
+	}
+
 	class ListClipper
 	{
 	public:
@@ -237,9 +300,8 @@ namespace dmui::ui
 	[[nodiscard]] inline DMUI_Result GetStyleMetrics(
 		DMUI_StyleMetrics& a_metrics) noexcept
 	{
-		const auto size = a_metrics.structSize;
+
 		a_metrics = {};
-		a_metrics.structSize = size ? size : sizeof(a_metrics);
 		const auto result = checked::GetStyleMetrics(&a_metrics);
 		detail::Record(result);
 		return result;
@@ -646,6 +708,11 @@ namespace dmui::ui
 			static_cast<DMUI_UIHoveredFlags>(a_flags),
 			&hovered));
 		return hovered != 0;
+	}
+
+	[[nodiscard]] inline bool BeginItemTooltip() noexcept
+	{
+		return IsItemHovered(HoveredFlags::kForTooltip) && BeginTooltip();
 	}
 
 	inline void PopID() noexcept
