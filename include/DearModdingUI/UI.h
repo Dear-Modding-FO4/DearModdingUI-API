@@ -102,8 +102,6 @@ namespace dmui::ui::detail
 			context->client == DMUI_INVALID_CLIENT_HANDLE)
 			return DMUI_RESULT_HOST_NOT_READY;
 		const auto function = context->api->*a_member;
-		if (!function)
-			return DMUI_RESULT_UNSUPPORTED_ABI;
 		return function(context->client, a_arguments...);
 	}
 

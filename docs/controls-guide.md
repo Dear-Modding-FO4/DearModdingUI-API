@@ -72,9 +72,6 @@ resize callback. New input is limited to the remaining capacity, so a paste may
 be inserted partially at a complete UTF-8 boundary. Existing text is never
 truncated. Both forms reject embedded NUL bytes. The bounded form also rejects
 an existing string longer than the maximum or a maximum of `INT_MAX` or greater.
-Both C++ overloads require the appended
-`DMUI_HOST_API_DRAW_SEARCH_INPUT_BUFFER_SIZE` host-table prefix and do not fall
-back to a separate editing implementation.
 
 For large immutable text, pass existing storage and indexes to the host-owned
 viewer:

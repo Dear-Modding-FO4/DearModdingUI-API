@@ -1055,8 +1055,6 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (!api_->registerCategory)
-				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 
 			DMUI_CategoryDescriptor descriptor{};
 			descriptor.id = a_category.id;
@@ -1075,8 +1073,6 @@ namespace dmui
 				*a_nativeError = 0;
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (!api_->openExternal)
-				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 			if (a_external.arguments.size() >
 				(static_cast<size_t>((std::numeric_limits<uint32_t>::max)())))
 				return Fail(DMUI_RESULT_INVALID_ARGUMENT);
@@ -1137,11 +1133,6 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (!api_->registerHotkeyAction)
-			{
-				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
-				return std::nullopt;
-			}
 
 			try
 			{
@@ -1196,11 +1187,6 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (!api_->queryHotkeyBinding)
-			{
-				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
-				return std::nullopt;
-			}
 			DMUI_HotkeyBindingInfo binding{};
 			lastResult_ = api_->queryHotkeyBinding(clientHandle_, a_action, &binding);
 			if (lastResult_ != DMUI_RESULT_OK)
@@ -1212,8 +1198,6 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (!api_->unregisterHotkeyAction)
-				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 			const auto registration = std::ranges::find(
 				hotkeyActions_, a_action, &HotkeyActionRegistration::handle);
 			if (registration == hotkeyActions_.end())
@@ -1239,8 +1223,6 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (!api_->registerAction)
-				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 
 			try
 			{
@@ -1289,11 +1271,6 @@ namespace dmui
 			if (!IsConnected())
 			{
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-				return std::nullopt;
-			}
-			if (!api_->registerFrameObserver)
-			{
-				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
 			}
 
@@ -1346,11 +1323,6 @@ namespace dmui
 			if (!IsConnected())
 			{
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-				return std::nullopt;
-			}
-			if (!api_->registerPageActivityObserver)
-			{
-				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
 			}
 
@@ -1409,11 +1381,6 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (!api_->queryVideoMemory)
-			{
-				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
-				return std::nullopt;
-			}
 
 			VideoMemoryInfo info{};
 			lastResult_ =
@@ -1427,8 +1394,6 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (!api_->requestFrame)
-				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 			lastResult_ = api_->requestFrame(clientHandle_, a_page);
 			return lastResult_ == DMUI_RESULT_OK;
 		}
@@ -1437,8 +1402,6 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (!api_->releaseFrame)
-				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 			lastResult_ = api_->releaseFrame(clientHandle_, a_page);
 			return lastResult_ == DMUI_RESULT_OK;
 		}
@@ -1447,8 +1410,6 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (!api_->attachSwapChain)
-				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 			lastResult_ =
 				api_->attachSwapChain(clientHandle_, a_nativeSwapChain);
 			return lastResult_ == DMUI_RESULT_OK;
@@ -1460,8 +1421,6 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (!api_->setHotkeyActionEnabled)
-				return Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
 			lastResult_ = api_->setHotkeyActionEnabled(
 				clientHandle_, a_action, a_enabled ? 1u : 0u);
 			return lastResult_ == DMUI_RESULT_OK;
@@ -1475,12 +1434,6 @@ namespace dmui
 			if (!IsConnected())
 			{
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-				return std::nullopt;
-			}
-			if (!api_->importD3D11Image ||
-				!api_->releaseImage)
-			{
-				Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
 				return std::nullopt;
 			}
 			const DMUI_D3D11ImageDescriptor descriptor{
@@ -1508,12 +1461,6 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (!api_->createImage ||
-				!api_->releaseImage)
-			{
-				Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
-				return std::nullopt;
-			}
 			DMUI_ImageHandle handle{};
 			lastResult_ = api_->createImage(
 				clientHandle_, &a_descriptor, &handle);
@@ -1533,11 +1480,6 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (!api_->loadImageFile || !api_->releaseImage)
-			{
-				Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
-				return std::nullopt;
-			}
 			DMUI_ImageHandle handle{};
 			lastResult_ = api_->loadImageFile(clientHandle_, a_utf8Path, &handle);
 			if (lastResult_ != DMUI_RESULT_OK)
@@ -1551,8 +1493,6 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (!api_->updateImage)
-				return Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
 			lastResult_ = api_->updateImage(
 				clientHandle_, a_image.value, &a_descriptor);
 			return lastResult_ == DMUI_RESULT_OK;
@@ -1564,11 +1504,6 @@ namespace dmui
 			if (!IsConnected())
 			{
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-				return std::nullopt;
-			}
-			if (!api_->queryImage)
-			{
-				Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
 				return std::nullopt;
 			}
 			DMUI_ImageInfo info{};
@@ -1585,8 +1520,6 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (!api_->configureOverlay)
-				return Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
 			lastResult_ = api_->configureOverlay(
 				clientHandle_, a_page, &a_options);
 			return lastResult_ == DMUI_RESULT_OK;
@@ -1598,11 +1531,6 @@ namespace dmui
 			if (!IsConnected())
 			{
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-				return std::nullopt;
-			}
-			if (!api_->queryOverlay)
-			{
-				Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
 				return std::nullopt;
 			}
 			DMUI_ManagedOverlayPlacement placement{};
@@ -1621,8 +1549,6 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (!api_->postNotification)
-				return Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
 			const DMUI_NotificationDescriptor descriptor{
 				a_severity,
 				a_message,
@@ -1641,11 +1567,6 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (!api_->requestDialog)
-			{
-				Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
-				return std::nullopt;
-			}
 			DMUI_DialogHandle dialog{};
 			lastResult_ = api_->requestDialog(
 				clientHandle_, &a_descriptor, &dialog);
@@ -1661,11 +1582,6 @@ namespace dmui
 			if (!IsConnected())
 			{
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-				return std::nullopt;
-			}
-			if (!api_->pollDialogEvent)
-			{
-				Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
 				return std::nullopt;
 			}
 			DMUI_DialogEvent event{};
@@ -1714,8 +1630,6 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (!api_->resolveDialogSubmission)
-				return Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
 			lastResult_ = api_->resolveDialogSubmission(
 				clientHandle_,
 				a_dialog,
@@ -1730,8 +1644,6 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (!api_->cancelDialog)
-				return Fail(DMUI_RESULT_SERVICE_UNAVAILABLE);
 			lastResult_ = api_->cancelDialog(clientHandle_, a_dialog);
 			return lastResult_ == DMUI_RESULT_OK;
 		}
@@ -1740,8 +1652,6 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (!api_->setStatus)
-				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 
 			lastResult_ = api_->setStatus(clientHandle_, a_severity, a_message);
 			return lastResult_ == DMUI_RESULT_OK;
@@ -1751,8 +1661,6 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (!api_->reportDiagnostic)
-				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 
 			const DMUI_DiagnosticDescriptor descriptor{
 				a_diagnostic.severity,
@@ -1770,11 +1678,6 @@ namespace dmui
 			if (!IsConnected())
 			{
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-				return std::nullopt;
-			}
-			if (!api_->getThemeColors)
-			{
-				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
 			}
 
@@ -1803,8 +1706,6 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (!api_->pushFont)
-				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 
 			lastResult_ = api_->pushFont(clientHandle_, a_role);
 			return lastResult_ == DMUI_RESULT_OK;
@@ -1814,8 +1715,6 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (!api_->popFont)
-				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 
 			lastResult_ = api_->popFont(clientHandle_);
 			return lastResult_ == DMUI_RESULT_OK;
@@ -1825,8 +1724,6 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (!api_->drawSectionHeader)
-				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 
 			lastResult_ = api_->drawSectionHeader(
 				clientHandle_,
@@ -1843,11 +1740,6 @@ namespace dmui
 			if (!IsConnected())
 			{
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-				return std::nullopt;
-			}
-			if (!api_->resolveIconGlyph)
-			{
-				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
 			}
 
@@ -1867,8 +1759,6 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (!api_->drawBulletText)
-				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 
 			lastResult_ = api_->drawBulletText(clientHandle_, a_text);
 			return lastResult_ == DMUI_RESULT_OK;
@@ -1906,8 +1796,6 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (!api_->drawTextView)
-				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 
 			auto presentation = a_state;
 			SynchronizeTextViewState(a_request, presentation);
@@ -1954,8 +1842,6 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (!api_->drawCollapsingSectionHeader)
-				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 
 			uint32_t expanded = a_expanded ? 1u : 0u;
 			lastResult_ = api_->drawCollapsingSectionHeader(
@@ -1977,8 +1863,6 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (!api_->drawLinkRow)
-				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 
 			try
 			{
@@ -2033,8 +1917,6 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (!api_->drawFaq)
-				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 
 			try
 			{
@@ -2078,11 +1960,6 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (!api_->drawSettingsActionButton)
-			{
-				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
-				return std::nullopt;
-			}
 
 			uint32_t pressed{};
 			lastResult_ = api_->drawSettingsActionButton(
@@ -2110,11 +1987,6 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (!api_->settingsActionButtonWidth)
-			{
-				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
-				return std::nullopt;
-			}
 
 			float width{};
 			lastResult_ = api_->settingsActionButtonWidth(
@@ -2135,11 +2007,6 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (!api_->settingsActionButtonExtent)
-			{
-				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
-				return std::nullopt;
-			}
 
 			float extent{};
 			lastResult_ = api_->settingsActionButtonExtent(clientHandle_, &extent);
@@ -2153,12 +2020,6 @@ namespace dmui
 			if (!IsConnected())
 			{
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-				return std::nullopt;
-			}
-			if (!api_->beginSettingsTable ||
-				!api_->endSettingsTable)
-			{
-				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
 			}
 
@@ -2179,11 +2040,6 @@ namespace dmui
 			if (!IsConnected())
 			{
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-				return std::nullopt;
-			}
-			if (!api_->beginSettingsRowEx || !api_->endSettingsRow)
-			{
-				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
 			}
 
@@ -2207,11 +2063,6 @@ namespace dmui
 			if (!IsConnected())
 			{
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-				return std::nullopt;
-			}
-			if (!api_->endSettingsRow)
-			{
-				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
 			}
 
@@ -2241,12 +2092,6 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (!api_->beginField || !api_->setFieldFeedback ||
-				!api_->endField)
-			{
-				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
-				return std::nullopt;
-			}
 			const DMUI_FieldBeginOptions options{
 				a_layout == RowPresentation::Layout::kFullSpan ?
 					DMUI_FIELD_LAYOUT_FULL_SPAN :
@@ -2271,8 +2116,6 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (!api_->setFieldFeedback)
-				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 			const DMUI_FieldFeedback feedback{
 				static_cast<DMUI_FieldFeedbackSeverity>(a_severity),
 				a_message
@@ -2299,11 +2142,6 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			if (!api_->endField)
-			{
-				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
-				return std::nullopt;
-			}
 			const DMUI_FieldEndOptions options{
 				a_resetVisible ? 1u : 0u,
 				a_resetEnabled ? 1u : 0u
@@ -2322,8 +2160,6 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (!api_->endSettingsTable)
-				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 
 			lastResult_ = api_->endSettingsTable(clientHandle_);
 			return lastResult_ == DMUI_RESULT_OK;
@@ -2333,8 +2169,6 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (!api_->selectPage)
-				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 
 			lastResult_ = api_->selectPage(clientHandle_, a_page);
 			return lastResult_ == DMUI_RESULT_OK;
@@ -2345,11 +2179,6 @@ namespace dmui
 			if (!api_)
 			{
 				Fail(DMUI_RESULT_HOST_NOT_INITIALIZED);
-				return std::nullopt;
-			}
-			if (!api_->isMenuVisible)
-			{
-				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
 			}
 
@@ -2365,11 +2194,6 @@ namespace dmui
 			if (!api_)
 			{
 				Fail(DMUI_RESULT_HOST_NOT_INITIALIZED);
-				return std::nullopt;
-			}
-			if (!api_->queryState)
-			{
-				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 				return std::nullopt;
 			}
 
@@ -2437,11 +2261,6 @@ namespace dmui
 				Fail(buffer.Result());
 				return std::nullopt;
 			}
-			if (!api_->drawSearchInputBuffer)
-			{
-				Fail(DMUI_RESULT_UNSUPPORTED_ABI);
-				return std::nullopt;
-			}
 
 			uint32_t changed{};
 			lastResult_ = api_->drawSearchInputBuffer(
@@ -2504,8 +2323,6 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			if (!api_->registerPage)
-				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 			return true;
 		}
 
@@ -2518,7 +2335,6 @@ namespace dmui
 		void ReportUIFailure(DMUI_Result a_result) noexcept
 		{
 			if (!api_ ||
-				!api_->reportDiagnostic ||
 				clientHandle_ == DMUI_INVALID_CLIENT_HANDLE)
 				return;
 			const DMUI_DiagnosticDescriptor diagnostic{
