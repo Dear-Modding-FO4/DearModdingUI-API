@@ -305,6 +305,37 @@ namespace dmui::ui
 		return result;
 	}
 
+	[[nodiscard]] inline bool BeginPanel(
+		const char* a_id, Vec2 a_size = {}, PanelFlags a_flags = PanelFlags::kNone) noexcept
+	{
+		uint32_t visible{};
+		detail::Record(checked::BeginPanel(a_id, a_size,
+			static_cast<DMUI_UIPanelFlags>(a_flags), &visible));
+		return visible != 0;
+	}
+
+	inline void EndPanel() noexcept { detail::Record(checked::EndPanel()); }
+
+	class PanelScope
+	{
+	public:
+		explicit PanelScope(const char* a_id, Vec2 a_size = {},
+			PanelFlags a_flags = PanelFlags::kNone) noexcept :
+			m_visible(BeginPanel(a_id, a_size, a_flags)) {}
+		~PanelScope() noexcept { End(); }
+		PanelScope(const PanelScope&) = delete;
+		PanelScope& operator=(const PanelScope&) = delete;
+		[[nodiscard]] explicit operator bool() const noexcept { return m_visible; }
+		void End() noexcept
+		{
+			if (std::exchange(m_visible, false))
+				EndPanel();
+		}
+
+	private:
+		bool m_visible{};
+	};
+
 	[[nodiscard]] inline bool BeginCombo(
 		const char* a_label,
 		const char* a_previewValue,

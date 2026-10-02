@@ -376,11 +376,25 @@
         ["SeparatorTextBorderSize", 2041, "ImGuiStyleVar_SeparatorTextBorderSize"],
         ["SeparatorTextAlign", 2042, "ImGuiStyleVar_SeparatorTextAlign"],
         ["SeparatorTextPadding", 2043, "ImGuiStyleVar_SeparatorTextPadding"],
-        ["DockingSeparatorSize", 2044, "ImGuiStyleVar_DockingSeparatorSize"]
+        ["DockingSeparatorSize", 2044, "ImGuiStyleVar_DockingSeparatorSize"],
+        ["SectionGap", 2045, null],
+        ["PanelPadding", 2046, null]
+      ]
+    },
+    {
+      "name": "PanelFlags",
+      "cName": "DMUI_UIPanelFlags",
+      "kind": "flags",
+      "hostTranslated": false,
+      "values": [
+        ["NoBackground", 1, null],
+        ["Scrollable", 2, null]
       ]
     }
   ],
   "signatures": {
+    "BeginPanel": [["DMUI_ClientHandle", "client"], ["const char*", "id"], ["DMUI_Vec2", "size"], ["DMUI_UIPanelFlags", "flags"], ["uint32_t*", "visible"]],
+    "EndPanel": [["DMUI_ClientHandle", "client"]],
     "Image": [["DMUI_ClientHandle", "client"], ["DMUI_ImageHandle", "image"], ["const DMUI_ImageDrawOptions*", "options"], ["uint32_t*", "drawn"]],
     "PlotAnnotated": [["DMUI_ClientHandle", "client"], ["const char*", "id"], ["const DMUI_AnnotatedPlotDescriptor*", "descriptor"]],
     "GetCursorPos": [["DMUI_ClientHandle", "client"], ["DMUI_Vec2*", "position"]],
@@ -572,6 +586,8 @@
     [92, "DrawListAddImage", "drawListAddImage", "void"],
     [93, "DrawListPushClipRect", "drawListPushClipRect", "void"],
     [94, "DrawListPopClipRect", "drawListPopClipRect", "void"],
-    [95, "GetThemeColors", "getThemeColors", "custom"]
+    [95, "GetThemeColors", "getThemeColors", "custom"],
+    [96, "BeginPanel", "beginPanel", "bool"],
+    [97, "EndPanel", "endPanel", "void"]
   ]
 }

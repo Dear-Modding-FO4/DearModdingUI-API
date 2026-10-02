@@ -206,6 +206,22 @@ update its `LastResult()`.
 
 ---
 
+## Layout and panels
+
+The host owns default spacing and panel appearance. `ui::PanelScope` wraps
+`BeginPanel` / `EndPanel`; end only a begin that returned true. Panels clip their
+contents and use the theme's frame background, border, rounding, and padding.
+Zero size fills available width or fits content height; positive components are
+fixed, and negative components fill minus that amount. Scrolling is opt-in with
+`PanelFlags::kScrollable`; `kNoBackground` gives a layout-only panel.
+
+`GetStyleMetrics` exposes `sectionGap` and `panelPadding`. Consecutive panels use
+the section gap vertically and with default `SameLine()`. Override them through
+`PushStyleVar(StyleVar::kSectionGap, float)` or
+`PushStyleVar(StyleVar::kPanelPadding, Vec2)`, then `PopStyleVar`.
+Raw cursor positioning, explicit `SameLine` spacing, `Dummy`, and draw lists remain
+available. Rebuild ABI 2 clients for the added operations and metrics.
+
 ## Custom draw lists
 
 Use theme colors so custom drawing follows the user's accent:

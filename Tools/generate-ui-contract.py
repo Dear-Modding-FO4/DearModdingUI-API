@@ -268,6 +268,8 @@ def render_host_bindings(schema: dict) -> str:
                 ]
             )
             for value_name, _, native_name in enum["values"]:
+                if native_name is None:
+                    continue
                 lines.extend(
                     [
                         f"\t\tcase {c_macro(c_name)}_{upper_snake(value_name)}:",

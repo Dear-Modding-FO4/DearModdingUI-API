@@ -91,6 +91,12 @@ void CompileStableUI()
 		dmui::ui::StyleVar::kFramePadding,
 		dmui::ui::Vec2{ 4.0f, 2.0f });
 	dmui::ui::PopStyleVar(2);
+	dmui::ui::PushStyleVar(dmui::ui::StyleVar::kSectionGap, 16.0f);
+	dmui::ui::PushStyleVar(dmui::ui::StyleVar::kPanelPadding, dmui::ui::Vec2{ 12.0f, 12.0f });
+	if (const dmui::ui::PanelScope panel{ "Panel", { 200.0f, 120.0f },
+			dmui::ui::PanelFlags::kScrollable | dmui::ui::PanelFlags::kNoBackground })
+		dmui::ui::TextUnformatted("Panel contents");
+	dmui::ui::PopStyleVar(2);
 	dmui::ui::ListClipper clipper;
 	clipper.Begin(1000);
 	while (clipper.Step())

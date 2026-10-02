@@ -574,8 +574,40 @@ namespace dmui::ui
 		kSeparatorTextBorderSize = DMUI_UI_STYLE_VAR_SEPARATOR_TEXT_BORDER_SIZE,
 		kSeparatorTextAlign = DMUI_UI_STYLE_VAR_SEPARATOR_TEXT_ALIGN,
 		kSeparatorTextPadding = DMUI_UI_STYLE_VAR_SEPARATOR_TEXT_PADDING,
-		kDockingSeparatorSize = DMUI_UI_STYLE_VAR_DOCKING_SEPARATOR_SIZE
+		kDockingSeparatorSize = DMUI_UI_STYLE_VAR_DOCKING_SEPARATOR_SIZE,
+		kSectionGap = DMUI_UI_STYLE_VAR_SECTION_GAP,
+		kPanelPadding = DMUI_UI_STYLE_VAR_PANEL_PADDING
 	};
+
+	enum class PanelFlags : uint32_t
+	{
+		kNone = 0u,
+		kNoBackground = DMUI_UI_PANEL_FLAGS_NO_BACKGROUND,
+		kScrollable = DMUI_UI_PANEL_FLAGS_SCROLLABLE
+	};
+
+	[[nodiscard]] constexpr PanelFlags operator|(
+		PanelFlags a_left, PanelFlags a_right) noexcept
+	{
+		return static_cast<PanelFlags>(
+			static_cast<uint32_t>(a_left) |
+			static_cast<uint32_t>(a_right));
+	}
+
+	[[nodiscard]] constexpr PanelFlags operator&(
+		PanelFlags a_left, PanelFlags a_right) noexcept
+	{
+		return static_cast<PanelFlags>(
+			static_cast<uint32_t>(a_left) &
+			static_cast<uint32_t>(a_right));
+	}
+
+	constexpr PanelFlags& operator|=(
+		PanelFlags& a_left, PanelFlags a_right) noexcept
+	{
+		a_left = a_left | a_right;
+		return a_left;
+	}
 
 	namespace checked
 	{
@@ -1427,6 +1459,23 @@ namespace dmui::ui
 		{
 			return detail::Invoke(
 				&DMUI_UIAPI::getThemeColors, colors);
+		}
+
+		[[nodiscard]] inline DMUI_Result BeginPanel(
+			const char* id,
+		DMUI_Vec2 size,
+		DMUI_UIPanelFlags flags,
+		uint32_t* visible) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::beginPanel, id, size, flags, visible);
+		}
+
+		[[nodiscard]] inline DMUI_Result EndPanel(
+			void) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::endPanel);
 		}
 	}
 }

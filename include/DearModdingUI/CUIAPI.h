@@ -311,6 +311,13 @@ typedef uint32_t DMUI_UIStyleVar;
 #define DMUI_UI_STYLE_VAR_SEPARATOR_TEXT_ALIGN 2042u
 #define DMUI_UI_STYLE_VAR_SEPARATOR_TEXT_PADDING 2043u
 #define DMUI_UI_STYLE_VAR_DOCKING_SEPARATOR_SIZE 2044u
+#define DMUI_UI_STYLE_VAR_SECTION_GAP 2045u
+#define DMUI_UI_STYLE_VAR_PANEL_PADDING 2046u
+
+typedef uint32_t DMUI_UIPanelFlags;
+#define DMUI_UI_PANEL_FLAGS_NONE 0u
+#define DMUI_UI_PANEL_FLAGS_NO_BACKGROUND 1u
+#define DMUI_UI_PANEL_FLAGS_SCROLLABLE 2u
 
 typedef DMUI_Result (DMUI_CALL *DMUI_UIGetStyleMetricsFn)(
 	DMUI_ClientHandle client,
@@ -769,6 +776,14 @@ typedef DMUI_Result (DMUI_CALL *DMUI_UIDrawListPopClipRectFn)(
 typedef DMUI_Result (DMUI_CALL *DMUI_UIGetThemeColorsFn)(
 	DMUI_ClientHandle client,
 	DMUI_ThemeColors* colors) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIBeginPanelFn)(
+	DMUI_ClientHandle client,
+	const char* id,
+	DMUI_Vec2 size,
+	DMUI_UIPanelFlags flags,
+	uint32_t* visible) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIEndPanelFn)(
+	DMUI_ClientHandle client) DMUI_NOEXCEPT;
 
 typedef struct DMUI_UIAPI
 {
@@ -867,4 +882,6 @@ typedef struct DMUI_UIAPI
 	DMUI_UIDrawListPushClipRectFn drawListPushClipRect;
 	DMUI_UIDrawListPopClipRectFn drawListPopClipRect;
 	DMUI_UIGetThemeColorsFn getThemeColors;
+	DMUI_UIBeginPanelFn beginPanel;
+	DMUI_UIEndPanelFn endPanel;
 } DMUI_UIAPI;

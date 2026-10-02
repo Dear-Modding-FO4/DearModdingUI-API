@@ -575,6 +575,8 @@ typedef struct DMUI_StyleMetrics
 	float alpha;
 	float frameRounding;
 	float frameBorderSize;
+	float sectionGap;
+	DMUI_Vec2 panelPadding;
 } DMUI_StyleMetrics;
 
 typedef struct DMUI_SettingsRowOptions

@@ -1190,6 +1190,31 @@
         {
           "name": "DockingSeparatorSize",
           "value": 2044
+        },
+        {
+          "name": "SectionGap",
+          "value": 2045
+        },
+        {
+          "name": "PanelPadding",
+          "value": 2046
+        }
+      ],
+      "aliases": [],
+      "rejectedMask": 0
+    },
+    {
+      "name": "PanelFlags",
+      "cName": "DMUI_UIPanelFlags",
+      "kind": "flags",
+      "values": [
+        {
+          "name": "NoBackground",
+          "value": 1
+        },
+        {
+          "name": "Scrollable",
+          "value": 2
         }
       ],
       "aliases": [],
@@ -3402,6 +3427,46 @@
         [
           "DMUI_ThemeColors*",
           "colors"
+        ]
+      ]
+    },
+    {
+      "id": 96,
+      "name": "BeginPanel",
+      "field": "beginPanel",
+      "kind": "bool",
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "id"
+        ],
+        [
+          "DMUI_Vec2",
+          "size"
+        ],
+        [
+          "DMUI_UIPanelFlags",
+          "flags"
+        ],
+        [
+          "uint32_t*",
+          "visible"
+        ]
+      ]
+    },
+    {
+      "id": 97,
+      "name": "EndPanel",
+      "field": "endPanel",
+      "kind": "void",
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
         ]
       ]
     }
