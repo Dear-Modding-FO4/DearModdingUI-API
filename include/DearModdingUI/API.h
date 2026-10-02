@@ -616,6 +616,7 @@ typedef struct DMUI_ThemeColors
 	DMUI_Vec4 muted;
 	DMUI_Vec4 accent;
 	DMUI_Vec4 accentMuted;
+	DMUI_Vec4 panel;
 	DMUI_Vec4 statusDisable;
 	DMUI_Vec4 statusError;
 	DMUI_Vec4 statusWarning;
@@ -672,6 +673,8 @@ typedef struct DMUI_ManagedOverlayOptions
 {
 	DMUI_OverlayAnchor anchor;
 	DMUI_Vec2 offset;
+	// Screen pixels, matching placement.size; changed values apply once, zero uses minimum size or auto.
+	DMUI_Vec2 size;
 	DMUI_Vec2 minimumSize;
 	DMUI_Vec2 maximumSize;
 	float opacity;
@@ -679,7 +682,6 @@ typedef struct DMUI_ManagedOverlayOptions
 	uint32_t backgroundVisible;
 	uint32_t borderVisible;
 	uint32_t allowArrangement;
-	uint32_t reserved;
 } DMUI_ManagedOverlayOptions;
 
 typedef struct DMUI_ManagedOverlayPlacement

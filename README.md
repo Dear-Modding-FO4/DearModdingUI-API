@@ -210,7 +210,7 @@ update its `LastResult()`.
 
 The host owns default spacing and panel appearance. `ui::PanelScope` wraps
 `BeginPanel` / `EndPanel`; end only a begin that returned true. Panels clip their
-contents and use the theme's frame background, border, rounding, and padding.
+contents and use the `DMUI_ThemeColors::panel` surface, border, rounding, and padding.
 Zero size fills available width or fits content height; positive components are
 fixed, and negative components fill minus that amount. Scrolling is opt-in with
 `PanelFlags::kScrollable`; `kNoBackground` gives a layout-only panel.
