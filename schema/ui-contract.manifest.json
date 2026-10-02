@@ -3388,6 +3388,22 @@
           "target"
         ]
       ]
+    },
+    {
+      "id": 95,
+      "name": "GetThemeColors",
+      "field": "getThemeColors",
+      "kind": "custom",
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_ThemeColors*",
+          "colors"
+        ]
+      ]
     }
   ]
 }

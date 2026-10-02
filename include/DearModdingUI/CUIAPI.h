@@ -766,6 +766,9 @@ typedef DMUI_Result (DMUI_CALL *DMUI_UIDrawListPushClipRectFn)(
 typedef DMUI_Result (DMUI_CALL *DMUI_UIDrawListPopClipRectFn)(
 	DMUI_ClientHandle client,
 	DMUI_DrawTarget target) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIGetThemeColorsFn)(
+	DMUI_ClientHandle client,
+	DMUI_ThemeColors* colors) DMUI_NOEXCEPT;
 
 typedef struct DMUI_UIAPI
 {
@@ -863,4 +866,5 @@ typedef struct DMUI_UIAPI
 	DMUI_UIDrawListAddImageFn drawListAddImage;
 	DMUI_UIDrawListPushClipRectFn drawListPushClipRect;
 	DMUI_UIDrawListPopClipRectFn drawListPopClipRect;
+	DMUI_UIGetThemeColorsFn getThemeColors;
 } DMUI_UIAPI;

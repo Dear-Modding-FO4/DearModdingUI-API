@@ -572,6 +572,9 @@ typedef struct DMUI_StyleMetrics
 	float indentSpacing;
 	float scrollbarSize;
 	float fontSizeBase;
+	float alpha;
+	float frameRounding;
+	float frameBorderSize;
 } DMUI_StyleMetrics;
 
 typedef struct DMUI_SettingsRowOptions

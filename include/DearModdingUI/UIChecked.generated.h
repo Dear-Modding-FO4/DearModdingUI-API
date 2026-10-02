@@ -1421,5 +1421,12 @@ namespace dmui::ui
 			return detail::Invoke(
 				&DMUI_UIAPI::drawListPopClipRect, target);
 		}
+
+		[[nodiscard]] inline DMUI_Result GetThemeColors(
+			DMUI_ThemeColors* colors) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::getThemeColors, colors);
+		}
 	}
 }

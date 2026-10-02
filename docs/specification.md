@@ -147,6 +147,9 @@ font family.
 - `indentSpacing`
 - `scrollbarSize`
 - `fontSizeBase`
+- `alpha`
+- `frameRounding`
+- `frameBorderSize`
 
 `GetStyleMetrics` populates the complete structure.
 

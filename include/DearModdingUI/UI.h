@@ -1168,4 +1168,5 @@ namespace dmui::ui
 	}
 }
 
+#include <DearModdingUI/UI/Colors.h>
 #include <DearModdingUI/UI/DrawList.h>

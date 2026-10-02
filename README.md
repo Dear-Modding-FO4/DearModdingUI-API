@@ -206,6 +206,16 @@ update its `LastResult()`.
 
 ---
 
+## Custom draw lists
+
+Use theme colors so custom drawing follows the user's accent:
+`ui::GetColorU32(&DMUI_ThemeColors::accent)` or `ui::GetColorU32(ui::Color::kText)`.
+Both accept an alpha multiplier and apply live style alpha. For raw `0xRRGGBBAA`
+packing without style alpha, use `ui::ColorConvertFloat4ToU32(Vec4)`.
+`ui::GetThemeColors()` returns the current theme; `ui::GetStyleMetrics` supplies
+spacing, padding, frame rounding, and border thickness. Rebuild ABI 2 clients
+for the expanded style metrics and UI table.
+
 ## Verification
 
 Build the test suites and example plugin:

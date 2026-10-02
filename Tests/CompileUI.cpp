@@ -56,6 +56,8 @@ void CompileStableUI()
 	drawing.AddPolyline(points, 0xFFFFFFFF);
 	drawing.AddPolygonFilled(points, 0xFFFFFFFF);
 	drawing.AddText({ 0, 0 }, 0xFFFFFFFF, "Text", 24);
+	drawing.AddLine({ 0, 0 }, { 20, 20 }, dmui::ui::GetColorU32(&DMUI_ThemeColors::accent));
+	drawing.AddRect({ 0, 0 }, { 20, 20 }, dmui::ui::GetColorU32(dmui::ui::Color::kBorder, 0.5f));
 	{
 		dmui::ui::ClipRectScope clip{ drawing, { 0, 0 }, { 100, 100 } };
 		drawing.AddImage(dmui::ImageHandle{ 1 }, { 0, 0 }, { 50, 50 });

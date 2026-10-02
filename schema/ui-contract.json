@@ -387,6 +387,7 @@
     "SetCursorPos": [["DMUI_ClientHandle", "client"], ["DMUI_Vec2", "position"]],
     "TextAligned": [["DMUI_ClientHandle", "client"], ["float", "alignX"], ["float", "width"], ["const char*", "text"], ["size_t", "length"]],
     "GetStyleMetrics": [["DMUI_ClientHandle", "client"], ["DMUI_StyleMetrics*", "metrics"]],
+    "GetThemeColors": [["DMUI_ClientHandle", "client"], ["DMUI_ThemeColors*", "colors"]],
     "BeginCombo": [["DMUI_ClientHandle", "client"], ["const char*", "label"], ["const char*", "previewValue"], ["DMUI_UIComboFlags", "flags"], ["uint32_t*", "visible"]],
     "EndCombo": [["DMUI_ClientHandle", "client"]],
     "BeginDisabled": [["DMUI_ClientHandle", "client"], ["uint32_t", "disabled"]],
@@ -570,6 +571,7 @@
     [91, "DrawListAddText", "drawListAddText", "void"],
     [92, "DrawListAddImage", "drawListAddImage", "void"],
     [93, "DrawListPushClipRect", "drawListPushClipRect", "void"],
-    [94, "DrawListPopClipRect", "drawListPopClipRect", "void"]
+    [94, "DrawListPopClipRect", "drawListPopClipRect", "void"],
+    [95, "GetThemeColors", "getThemeColors", "custom"]
   ]
 }
