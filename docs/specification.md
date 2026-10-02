@@ -150,6 +150,8 @@ font family.
 - `alpha`
 - `frameRounding`
 - `frameBorderSize`
+- `sectionGap`
+- `panelPadding`
 
 `GetStyleMetrics` populates the complete structure.
 

@@ -231,6 +231,8 @@ packing without style alpha, use `ui::ColorConvertFloat4ToU32(Vec4)`.
 `ui::GetThemeColors()` returns the current theme; `ui::GetStyleMetrics` supplies
 spacing, padding, frame rounding, and border thickness. Rebuild ABI 2 clients
 for the expanded style metrics and UI table.
+Theme colors have one ABI path: `DMUI_UIAPI::getThemeColors`.
+`Client::GetThemeColors` delegates to it; the host-table slot is removed.
 
 ## Verification
 

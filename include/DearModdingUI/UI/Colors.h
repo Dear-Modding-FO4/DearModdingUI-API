@@ -14,10 +14,17 @@ namespace dmui::ui
 			(byte(a_color.z) << 8u) | byte(a_color.w);
 	}
 
+	inline DMUI_Result GetThemeColors(DMUI_ThemeColors& a_colors) noexcept
+	{
+		const auto result = checked::GetThemeColors(&a_colors);
+		detail::Record(result);
+		return result;
+	}
+
 	[[nodiscard]] inline DMUI_ThemeColors GetThemeColors() noexcept
 	{
 		DMUI_ThemeColors colors{};
-		detail::Record(checked::GetThemeColors(&colors));
+		(void)GetThemeColors(colors);
 		return colors;
 	}
 

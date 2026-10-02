@@ -1682,7 +1682,7 @@ namespace dmui
 			}
 
 			DMUI_ThemeColors colors{};
-			lastResult_ = api_->getThemeColors(clientHandle_, &colors);
+			lastResult_ = ui::GetThemeColors(colors);
 			if (lastResult_ != DMUI_RESULT_OK)
 				return std::nullopt;
 			return colors;
@@ -2835,13 +2835,12 @@ namespace dmui
 				return DMUI_RESULT_INVALID_ARGUMENT;
 			if (a_style.tone == TextTone::kInherit)
 				return DMUI_RESULT_OK;
-			const auto theme = a_client.GetThemeColors();
-			if (!theme)
-				return a_client.LastResult();
-			const auto color = ResolveTextColor(*theme, a_style.tone);
+			const auto result = ui::GetThemeColors(a_prepared.theme);
+			if (result != DMUI_RESULT_OK)
+				return result;
+			const auto color = ResolveTextColor(a_prepared.theme, a_style.tone);
 			if (!color)
 				return color.result;
-			a_prepared.theme = *theme;
 			return DMUI_RESULT_OK;
 		}
 

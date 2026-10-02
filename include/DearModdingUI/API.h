@@ -786,9 +786,6 @@ typedef DMUI_Result (DMUI_CALL *DMUI_SetStatusFn)(
 	DMUI_ClientHandle client,
 	DMUI_StatusSeverity severity,
 	const char* message) DMUI_NOEXCEPT;
-typedef DMUI_Result (DMUI_CALL *DMUI_GetThemeColorsFn)(
-	DMUI_ClientHandle client,
-	DMUI_ThemeColors* colors) DMUI_NOEXCEPT;
 typedef DMUI_Result (DMUI_CALL *DMUI_PushFontFn)(
 	DMUI_ClientHandle client,
 	DMUI_FontRole role) DMUI_NOEXCEPT;
@@ -1053,7 +1050,6 @@ typedef struct DMUI_HostAPI
 	DMUI_AttachSwapChainFn attachSwapChain;
 	DMUI_RegisterActionFn registerAction;
 	DMUI_SetStatusFn setStatus;
-	DMUI_GetThemeColorsFn getThemeColors;
 	DMUI_PushFontFn pushFont;
 	DMUI_PopFontFn popFont;
 	DMUI_DrawSectionHeaderFn drawSectionHeader;
