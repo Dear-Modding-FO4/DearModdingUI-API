@@ -20,6 +20,7 @@ The host translates every stable enum and flag symbolically. Values do not neces
 Every table slot is part of the ABI. There are no `structSize` fields, table-prefix constants, UI revisions, service bits, or minimum-version options. Resource byte counts and buffer capacities remain runtime validation inputs. Runtime unavailability is reported through operation results and lifecycle callbacks.
 
 Drawing wrappers record the first failure in a callback-scoped sticky result. The trampoline passes this result back to the host, which disables the malfunctioning callback. Scope-end operations continue to dispatch so nested stacks unwind cleanly.
+Page and action C callbacks return `DMUI_Result`; frame callbacks remain void and non-drawing.
 
 `ListClipper` clips uniform-height rows. Counts must be nonnegative and less than
 `INT32_MAX`; heights must be finite, with values <= 0 measuring the first row.
@@ -286,7 +287,7 @@ resolved before polling again and acceptance is drained through completion.
 active destruction has the same render-callback requirement. User exceptions do
 not cross the helper boundary. The client must outlive its session.
 
-- **Render Thread**: All drawing calls must execute synchronously inside the registered page or overlay callback on the render thread. Dialog queries and polling also run here.
+- **Render Thread**: All drawing calls must execute synchronously inside the registered page, overlay, or action callback on the render thread. Actions run inside the shell's ImGui frame; dialog queries and polling also run here. Settings fields/tables and client popups retain their page-specific requirements.
 - **Background / Any Thread**: Image handle release, notification submission, and dialog completion resolution may be called from any thread.
 - **D3D11 Texture Views**: Imported shader resource views (`ID3D11ShaderResourceView`) require single-sample 2D textures on the same Direct3D device. The host maintains COM references and per-frame draw leases. Handles carry generational counters to prevent aliasing after handle reuse.
 - **CPU Pixel Buffers**: `DMUI_ImageDescriptor` supplies RGBA8 (straight alpha) pixel buffers. The host validates `rowPitch` (minimum `width * 4`) and `accessibleByteCount` before creating textures, copying bytes synchronously so the caller does not need to retain pixel memory after the call returns.

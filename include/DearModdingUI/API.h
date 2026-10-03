@@ -338,7 +338,7 @@ typedef void (DMUI_CALL *DMUI_HostUnavailableCallback)(
 	DMUI_UnavailableReason reason,
 	void* userData);
 typedef DMUI_Result (DMUI_CALL *DMUI_PageDrawCallback)(void* userData);
-typedef void (DMUI_CALL *DMUI_ActionCallback)(void* userData);
+typedef DMUI_Result (DMUI_CALL *DMUI_ActionCallback)(void* userData);
 typedef struct DMUI_PageActivityInfo DMUI_PageActivityInfo;
 typedef void (DMUI_CALL *DMUI_PageActivityCallback)(
 	const DMUI_PageActivityInfo* info,

@@ -234,6 +234,11 @@ for the expanded style metrics and UI table.
 Theme colors have one ABI path: `DMUI_UIAPI::getThemeColors`.
 `Client::GetThemeColors` delegates to it; the host-table slot is removed.
 
+## Actions
+
+`AddAction` callbacks run inside the render-thread ImGui frame with the same scoped UI context and failure isolation as page callbacks; frame observers and hotkeys remain non-drawing.
+ABI 2 C action callbacks now return `DMUI_Result` (`OK` on success); rebuild clients.
+
 ## Dialog sessions
 
 `dmui::DialogSession` owns one host dialog and is non-copyable/non-movable. Its

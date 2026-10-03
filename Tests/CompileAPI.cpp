@@ -7,6 +7,7 @@
 
 namespace
 {
+	static_assert(std::is_same_v<std::invoke_result_t<DMUI_ActionCallback, void*>, DMUI_Result>);
 	bool TestTextInputBuffer()
 	{
 		dmui::TextInputBuffer growable{ "seed" };

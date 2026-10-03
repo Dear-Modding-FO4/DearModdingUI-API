@@ -1029,7 +1029,7 @@ namespace dmui
 				descriptor.summary = a_page.summary;
 				descriptor.sortKey = a_page.sortKey;
 				descriptor.kind = a_page.kind;
-				descriptor.draw = &InvokePage;
+				descriptor.draw = &InvokeDrawingCallback<PageRegistration>;
 				descriptor.userData = &registration;
 				descriptor.iconName = a_page.iconName;
 
@@ -1236,7 +1236,7 @@ namespace dmui
 				if (!callback)
 					return Fail(DMUI_RESULT_INVALID_ARGUMENT);
 
-				actions_.push_back({ DMUI_INVALID_ACTION_HANDLE, std::move(callback) });
+				actions_.push_back({ DMUI_INVALID_ACTION_HANDLE, this, std::move(callback) });
 				auto& registration = actions_.back();
 
 				DMUI_ActionDescriptor descriptor{};
@@ -1245,8 +1245,8 @@ namespace dmui
 				descriptor.iconName = a_iconName;
 				descriptor.tooltip = a_tooltip;
 				descriptor.sortKey = a_sortKey;
-				descriptor.callback = &Invoke;
-				descriptor.userData = &registration.callback;
+				descriptor.callback = &InvokeDrawingCallback<ActionRegistration>;
+				descriptor.userData = &registration;
 
 				DMUI_ActionHandle handle{ DMUI_INVALID_ACTION_HANDLE };
 				lastResult_ = api_->registerAction(clientHandle_, &descriptor, &handle);
@@ -2304,6 +2304,7 @@ namespace dmui
 		struct ActionRegistration
 		{
 			DMUI_ActionHandle handle;
+			Client* owner;
 			std::function<void()> callback;
 		};
 
@@ -2385,10 +2386,11 @@ namespace dmui
 				self->unavailableReason_.store(a_reason, std::memory_order_relaxed);
 		}
 
-		static DMUI_Result DMUI_CALL InvokePage(void* a_userData) noexcept
+		template <class Registration>
+		static DMUI_Result DMUI_CALL InvokeDrawingCallback(void* a_userData) noexcept
 		{
 			auto* const registration =
-				static_cast<PageRegistration*>(a_userData);
+				static_cast<Registration*>(a_userData);
 			if (!registration || !registration->owner)
 				return DMUI_RESULT_INVALID_ARGUMENT;
 			auto& owner = *registration->owner;
