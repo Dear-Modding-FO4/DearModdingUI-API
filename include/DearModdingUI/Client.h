@@ -32,6 +32,12 @@
 
 namespace dmui
 {
+#if defined(DMUI_UI_TESTING)
+	namespace detail
+	{
+		struct ClientTestAccess;
+	}
+#endif
 	struct Version
 	{
 		uint16_t major{};
@@ -1592,42 +1598,42 @@ namespace dmui
 				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 				return std::nullopt;
 			}
-			DMUI_DialogEvent event{};
-			if (a_text.size() >=
-				static_cast<size_t>((std::numeric_limits<uint32_t>::max)()))
+			try
 			{
-				Fail(DMUI_RESULT_RESOURCE_EXHAUSTED);
-				return std::nullopt;
-			}
-			std::vector<char> text((std::max)(a_text.size() + 1, size_t{ 65 }));
-			lastResult_ = api_->pollDialogEvent(
-				clientHandle_,
-				a_dialog,
-				&event,
-				text.data(),
-				static_cast<uint32_t>(text.size()));
-			if (lastResult_ == DMUI_RESULT_BUFFER_TOO_SMALL)
-			{
-				try
-				{
-					text.resize(event.requiredTextCapacity);
-				}
-				catch (...)
+				DMUI_DialogEvent event{};
+				if (a_text.size() >=
+					static_cast<size_t>((std::numeric_limits<uint32_t>::max)()))
 				{
 					Fail(DMUI_RESULT_RESOURCE_EXHAUSTED);
 					return std::nullopt;
 				}
+				std::vector<char> text((std::max)(a_text.size() + 1, size_t{ 65 }));
 				lastResult_ = api_->pollDialogEvent(
 					clientHandle_,
 					a_dialog,
 					&event,
 					text.data(),
 					static_cast<uint32_t>(text.size()));
+				if (lastResult_ == DMUI_RESULT_BUFFER_TOO_SMALL)
+				{
+					text.resize(event.requiredTextCapacity);
+					lastResult_ = api_->pollDialogEvent(
+						clientHandle_,
+						a_dialog,
+						&event,
+						text.data(),
+						static_cast<uint32_t>(text.size()));
+				}
+				if (lastResult_ != DMUI_RESULT_OK)
+					return std::nullopt;
+				a_text.assign(text.data());
+				return event;
 			}
-			if (lastResult_ != DMUI_RESULT_OK)
+			catch (...)
+			{
+				Fail(DMUI_RESULT_RESOURCE_EXHAUSTED);
 				return std::nullopt;
-			a_text.assign(text.data());
-			return event;
+			}
 		}
 
 		[[nodiscard]] bool ResolveDialogSubmission(
@@ -2234,6 +2240,9 @@ namespace dmui
 
 	private:
 		friend class FontGuard;
+#if defined(DMUI_UI_TESTING)
+		friend struct detail::ClientTestAccess;
+#endif
 		friend class FieldScope;
 		friend class SettingsTableScope;
 		friend class SettingsRowScope;
@@ -2498,6 +2507,144 @@ namespace dmui
 		{
 			return result == DMUI_RESULT_OK;
 		}
+	};
+
+	class DialogSession
+	{
+	public:
+		using Submit = std::function<std::optional<std::string>(std::string_view)>;
+
+		DialogSession() = default;
+		~DialogSession() noexcept { Cancel(); }
+		DialogSession(const DialogSession&) = delete;
+		DialogSession& operator=(const DialogSession&) = delete;
+		DialogSession(DialogSession&&) = delete;
+		DialogSession& operator=(DialogSession&&) = delete;
+
+		[[nodiscard]] bool Open(
+			Client& a_client,
+			const DMUI_DialogDescriptor& a_descriptor,
+			Submit a_submit) noexcept
+		{
+			if (Active())
+			{
+				lastResult_ = DMUI_RESULT_BUSY;
+				return false;
+			}
+			if (!a_submit)
+			{
+				lastResult_ = DMUI_RESULT_INVALID_ARGUMENT;
+				return false;
+			}
+			const auto handle = a_client.RequestDialog(a_descriptor);
+			lastResult_ = a_client.LastResult();
+			if (!handle)
+				return false;
+			client_ = &a_client;
+			handle_ = *handle;
+			submit_ = std::move(a_submit);
+			return true;
+		}
+
+		void Poll() noexcept
+		{
+			while (Active())
+			{
+				const auto event = client_->PollDialogEvent(handle_, text_);
+				lastResult_ = client_->LastResult();
+				if (!event)
+				{
+					FailAndCancel(lastResult_);
+					return;
+				}
+				if (event->kind == DMUI_DIALOG_EVENT_PENDING)
+					return;
+				if (event->kind == DMUI_DIALOG_EVENT_CANCELLED ||
+					event->kind == DMUI_DIALOG_EVENT_COMPLETED)
+				{
+					Clear();
+					return;
+				}
+				try
+				{
+					const auto error = submit_(text_);
+					if (!client_->ResolveDialogSubmission(
+							handle_, event->submissionId, !error, error ? error->c_str() : nullptr))
+					{
+						FailAndCancel(client_->LastResult());
+						return;
+					}
+				}
+				catch (const std::bad_alloc&)
+				{
+					FailAndCancel(DMUI_RESULT_RESOURCE_EXHAUSTED);
+					return;
+				}
+				catch (...)
+				{
+					FailAndCancel(DMUI_RESULT_CALLBACK_FAILED);
+					return;
+				}
+			}
+		}
+
+		[[nodiscard]] bool Active() const noexcept { return client_ != nullptr; }
+		[[nodiscard]] DMUI_Result LastResult() const noexcept { return lastResult_; }
+
+		void Cancel() noexcept
+		{
+			if (!Active())
+				return;
+			if (!client_->CancelDialog(handle_))
+			{
+				lastResult_ = client_->LastResult();
+				if (lastResult_ == DMUI_RESULT_BUSY)
+				{
+					const auto event = client_->PollDialogEvent(handle_, text_);
+					lastResult_ = client_->LastResult();
+					if (event && event->kind == DMUI_DIALOG_EVENT_SUBMITTED)
+					{
+						if (client_->ResolveDialogSubmission(handle_, event->submissionId, false))
+							(void)client_->CancelDialog(handle_);
+						lastResult_ = client_->LastResult();
+					}
+				}
+				if (lastResult_ != DMUI_RESULT_OK)
+				{
+					if (lastResult_ == DMUI_RESULT_STALE_HANDLE ||
+						lastResult_ == DMUI_RESULT_CLIENT_NOT_FOUND)
+						Clear();
+					return;
+				}
+			}
+			// Consume the terminal event so the host can accept the next request.
+			const auto event = client_->PollDialogEvent(handle_, text_);
+			lastResult_ = client_->LastResult();
+			if (event || lastResult_ == DMUI_RESULT_STALE_HANDLE ||
+				lastResult_ == DMUI_RESULT_CLIENT_NOT_FOUND)
+				Clear();
+		}
+
+	private:
+		void Clear() noexcept
+		{
+			client_ = nullptr;
+			handle_ = DMUI_INVALID_DIALOG_HANDLE;
+			submit_ = {};
+			text_.clear();
+		}
+
+		void FailAndCancel(DMUI_Result a_result) noexcept
+		{
+			Cancel();
+			lastResult_ = a_result;
+		}
+
+		Client* client_{};
+		DMUI_DialogHandle handle_{ DMUI_INVALID_DIALOG_HANDLE };
+		Submit submit_;
+		std::string text_;
+		DMUI_Result lastResult_{ DMUI_RESULT_OK };
 	};
 
 	class FontGuard

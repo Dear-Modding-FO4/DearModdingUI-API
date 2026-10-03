@@ -274,6 +274,16 @@ that page's saved arrangement and reapplies its current defaults once. It uses
 the same client/page ownership and thread contract as configure/query, including
 stale and foreign page rejection. Clients must rebuild for the revised ABI 2 table.
 
+### Dialog sessions
+
+`dmui::DialogSession` owns a single handle, callback, and text buffer. `Open` and
+`Poll` run in the client's render callback; `Poll` consumes completion/cancellation
+and stops at pending. Submitted events repeat until resolved, so rejection is
+resolved before polling again and acceptance is drained through completion.
+`Cancel` rejects any unresolved submission before cancellation and terminal drain;
+active destruction has the same render-callback requirement. User exceptions do
+not cross the helper boundary. The client must outlive its session.
+
 - **Render Thread**: All drawing calls must execute synchronously inside the registered page or overlay callback on the render thread. Dialog queries and polling also run here.
 - **Background / Any Thread**: Image handle release, notification submission, and dialog completion resolution may be called from any thread.
 - **D3D11 Texture Views**: Imported shader resource views (`ID3D11ShaderResourceView`) require single-sample 2D textures on the same Direct3D device. The host maintains COM references and per-frame draw leases. Handles carry generational counters to prevent aliasing after handle reuse.

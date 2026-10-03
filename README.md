@@ -234,6 +234,21 @@ for the expanded style metrics and UI table.
 Theme colors have one ABI path: `DMUI_UIAPI::getThemeColors`.
 `Client::GetThemeColors` delegates to it; the host-table slot is removed.
 
+## Dialog sessions
+
+`dmui::DialogSession` owns one host dialog and is non-copyable/non-movable. Its
+`Submit` callback is `std::function<std::optional<std::string>(std::string_view)>`:
+return an error to show it and keep the dialog open, or `std::nullopt` to complete.
+Use `Open(Client&, const DMUI_DialogDescriptor&, Submit)`, then call `Poll()` once
+per frame in that client's render callback. It drains events until pending or
+terminal, including required text-buffer growth and terminal release. `Active()`
+reports ownership and `LastResult()` reports request, polling, resolution, and
+callback failures; `BUSY` does not replace an active session. Callback exceptions
+cancel the session and report `CALLBACK_FAILED` (`RESOURCE_EXHAUSTED` for allocation).
+`Cancel()` rejects unresolved submissions and consumes cancellation. Destroy or
+cancel active sessions in the same render-callback context; destruction cancels,
+and the `Client` must outlive the session.
+
 ## Managed overlays
 
 `Client::ConfigureOverlay` treats `offset` and `size` as author defaults. The host

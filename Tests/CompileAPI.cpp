@@ -87,6 +87,7 @@ int main()
 	DMUI_HostAPI api{};
 	api.createImage = nullptr;
 	api.loadImageFile = nullptr;
+	api.resetOverlay = nullptr;
 	api.updateImage = nullptr;
 	api.resolveIconGlyph = nullptr;
 	api.beginSettingsRow = nullptr;
@@ -146,5 +147,17 @@ int main()
 		nullptr,
 		nullptr
 	};
-	return TestTextInputBuffer() ? 0 : 1;
+	dmui::Client client{ "compile.test", "Compile test", { 1, 0 } };
+	dmui::DialogSession dialog;
+	const DMUI_DialogDescriptor dialogDescriptor{
+		DMUI_DIALOG_KIND_CONFIRM, "Confirm", nullptr, "OK", "Cancel"
+	};
+	(void)client.ResetOverlay(1);
+	(void)dialog.Open(client, dialogDescriptor,
+		[](std::string_view) -> std::optional<std::string> { return std::nullopt; });
+	dialog.Poll();
+	dialog.Cancel();
+	static_assert(!std::is_copy_constructible_v<dmui::DialogSession>);
+	return TestTextInputBuffer() && !dialog.Active() &&
+		dialog.LastResult() == DMUI_RESULT_CLIENT_NOT_FOUND ? 0 : 1;
 }
