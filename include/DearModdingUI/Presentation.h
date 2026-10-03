@@ -152,7 +152,8 @@ namespace dmui
 				return a_option.label;
 			if constexpr (std::same_as<Value, std::string>)
 				return a_option.value;
-			return a_option.key;
+			else
+				return a_option.key;
 		};
 		const auto previewLabel = selectedOption ?
 			optionLabel(*selectedOption) :

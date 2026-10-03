@@ -22,7 +22,7 @@ namespace dmui
 			using namespace std::literals;
 
 			_W32_IMPORT(int32_t, WideCharToMultiByte, uint32_t, uint32_t, const wchar_t*, int32_t, char*, int32_t, const char*, int32_t*);
-			
+
 			constexpr static std::string WHITESPACEA = " \n\r\t\f\v";
 
 			// Trim from the start (left trim)
@@ -184,7 +184,7 @@ namespace dmui
 				std::unordered_map<std::string, std::string> translations{};
 
 				bool UTF8_LoadLanguageFile(std::ifstream& a_stm, const std::string& a_filePath,
-					uintmax_t a_size, bool a_isBom)
+					[[maybe_unused]] uintmax_t a_size, bool a_isBom)
 				{
 					try {
 						if (a_isBom)
