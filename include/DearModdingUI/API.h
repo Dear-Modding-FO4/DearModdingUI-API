@@ -818,10 +818,13 @@ typedef struct DMUI_ManagedOverlayOptions
 	uint32_t borderVisible;
 	uint32_t allowArrangement;
 	uint32_t reserved;
+	DMUI_Vec2 initialSize;
 } DMUI_ManagedOverlayOptions;
 
 #define DMUI_MANAGED_OVERLAY_OPTIONS_0_1_SIZE \
 	((uint32_t)(offsetof(DMUI_ManagedOverlayOptions, reserved) + sizeof(uint32_t)))
+#define DMUI_MANAGED_OVERLAY_OPTIONS_INITIAL_SIZE_SIZE \
+	((uint32_t)(offsetof(DMUI_ManagedOverlayOptions, initialSize) + sizeof(DMUI_Vec2)))
 
 typedef struct DMUI_ManagedOverlayPlacement
 {
