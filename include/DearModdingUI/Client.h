@@ -1541,6 +1541,14 @@ namespace dmui
 			return placement;
 		}
 
+		[[nodiscard]] bool ResetOverlay(DMUI_PageHandle a_page) noexcept
+		{
+			if (!IsConnected())
+				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			lastResult_ = api_->resetOverlay(clientHandle_, a_page);
+			return lastResult_ == DMUI_RESULT_OK;
+		}
+
 		[[nodiscard]] bool PostNotification(
 			DMUI_StatusSeverity a_severity,
 			const char* a_message,

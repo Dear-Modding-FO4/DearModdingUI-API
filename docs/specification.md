@@ -257,6 +257,23 @@ because its vocabulary remains compiled into the mod.
 
 ## Thread Affinity and Resources
 
+### Managed overlay placement
+
+`configureOverlay` supplies author defaults, not client-persisted placement.
+Completed arrangements are stored in the host's existing `imgui.ini` as
+`[DMUIOverlay][<hex client ID>/<hex page ID>]` with `Offset=x,y` and `Size=x,y`.
+Hex encodes UTF-8 bytes and avoids ini delimiters. Offset is host-unscaled
+viewport position for free overlays and anchor inset for anchored overlays.
+Size is pixel geometry, matching `DMUI_ManagedOverlayPlacement::size`; it is not
+multiplied by host or content scale, but current size constraints still apply.
+Unconfigured entries survive writes. Saved geometry wins on first configuration;
+subsequent changed offset/anchor or size defaults apply once to their component.
+
+`DMUI_Result resetOverlay(DMUI_ClientHandle client, DMUI_PageHandle page)` removes
+that page's saved arrangement and reapplies its current defaults once. It uses
+the same client/page ownership and thread contract as configure/query, including
+stale and foreign page rejection. Clients must rebuild for the revised ABI 2 table.
+
 - **Render Thread**: All drawing calls must execute synchronously inside the registered page or overlay callback on the render thread. Dialog queries and polling also run here.
 - **Background / Any Thread**: Image handle release, notification submission, and dialog completion resolution may be called from any thread.
 - **D3D11 Texture Views**: Imported shader resource views (`ID3D11ShaderResourceView`) require single-sample 2D textures on the same Direct3D device. The host maintains COM references and per-frame draw leases. Handles carry generational counters to prevent aliasing after handle reuse.

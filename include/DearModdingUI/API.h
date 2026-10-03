@@ -963,6 +963,9 @@ typedef DMUI_Result (DMUI_CALL *DMUI_QueryOverlayFn)(
 	DMUI_ClientHandle client,
 	DMUI_PageHandle page,
 	DMUI_ManagedOverlayPlacement* placement) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_ResetOverlayFn)(
+	DMUI_ClientHandle client,
+	DMUI_PageHandle page) DMUI_NOEXCEPT;
 typedef DMUI_Result (DMUI_CALL *DMUI_PostNotificationFn)(
 	DMUI_ClientHandle client,
 	const DMUI_NotificationDescriptor* descriptor) DMUI_NOEXCEPT;
@@ -1079,6 +1082,7 @@ typedef struct DMUI_HostAPI
 	DMUI_QueryImageFn queryImage;
 	DMUI_ConfigureOverlayFn configureOverlay;
 	DMUI_QueryOverlayFn queryOverlay;
+	DMUI_ResetOverlayFn resetOverlay;
 	DMUI_PostNotificationFn postNotification;
 	DMUI_RequestDialogFn requestDialog;
 	DMUI_PollDialogEventFn pollDialogEvent;

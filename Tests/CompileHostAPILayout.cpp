@@ -9,7 +9,9 @@ static_assert(DMUI_ABI_VERSION == 2);
 static_assert(offsetof(DMUI_HostAPI, abiVersion) == 0);
 static_assert(offsetof(DMUI_HostAPI, ui) == 8);
 static_assert(offsetof(DMUI_HostAPI, registerClient) == 16);
-static_assert(sizeof(DMUI_HostAPI) == 456);
-static_assert(offsetof(DMUI_HostAPI, drawSearchInputBuffer) == 440);
-static_assert(offsetof(DMUI_HostAPI, loadImageFile) == 448);
+static_assert(sizeof(DMUI_HostAPI) == 464);
+static_assert(offsetof(DMUI_HostAPI, resetOverlay) ==
+	offsetof(DMUI_HostAPI, queryOverlay) + sizeof(void*));
+static_assert(offsetof(DMUI_HostAPI, drawSearchInputBuffer) == 448);
+static_assert(offsetof(DMUI_HostAPI, loadImageFile) == 456);
 #endif
