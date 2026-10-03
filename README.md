@@ -253,9 +253,11 @@ and the `Client` must outlive the session.
 
 `Client::ConfigureOverlay` treats `offset` and `size` as author defaults. The host
 restores the user's completed arrangement from its `imgui.ini`, keyed by stable
-client ID and page ID, even if that mod is absent in a later session. Offset uses
-host-unscaled units (viewport position for free overlays, anchor inset otherwise);
-size uses the same pixel units as `QueryOverlay().size`, without content scaling.
+client ID and page ID, even if that mod is absent in a later session. Only free
+overlays persist offset, in host-unscaled viewport units; anchored
+overlays retain the author's inset and persist size only. Saved offsets restore
+only when both saved and current anchors are free. Size uses the same pixel units
+as `QueryOverlay().size`, without content scaling.
 Changing a default applies that component once; unchanged configuration preserves
 the arrangement. `[[nodiscard]] bool Client::ResetOverlay(DMUI_PageHandle) noexcept`
 discards the saved arrangement and reapplies defaults once. Clients do not persist

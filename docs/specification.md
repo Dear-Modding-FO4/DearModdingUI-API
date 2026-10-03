@@ -261,9 +261,11 @@ because its vocabulary remains compiled into the mod.
 
 `configureOverlay` supplies author defaults, not client-persisted placement.
 Completed arrangements are stored in the host's existing `imgui.ini` as
-`[DMUIOverlay][<hex client ID>/<hex page ID>]` with `Offset=x,y` and `Size=x,y`.
-Hex encodes UTF-8 bytes and avoids ini delimiters. Offset is host-unscaled
-viewport position for free overlays and anchor inset for anchored overlays.
+`[DMUIOverlay][<hex client ID>/<hex page ID>]` with `Anchor=n` and `Size=x,y`.
+Free overlays also store `Offset=x,y`, the host-unscaled viewport position, and
+restore it only when both saved and current anchors are free. Anchored overlays
+retain the author's inset and persist size only. Records without an anchor
+restore size only. Hex encodes UTF-8 bytes and avoids ini delimiters.
 Size is pixel geometry, matching `DMUI_ManagedOverlayPlacement::size`; it is not
 multiplied by host or content scale, but current size constraints still apply.
 Unconfigured entries survive writes. Saved geometry wins on first configuration;
