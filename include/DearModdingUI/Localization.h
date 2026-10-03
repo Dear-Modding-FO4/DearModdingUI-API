@@ -183,8 +183,7 @@ namespace dmui
 			{
 				std::unordered_map<std::string, std::string> translations{};
 
-				bool UTF8_LoadLanguageFile(std::ifstream& a_stm, const std::string& a_filePath,
-					[[maybe_unused]] uintmax_t a_size, bool a_isBom)
+				bool UTF8_LoadLanguageFile(std::ifstream& a_stm, const std::string& a_filePath, bool a_isBom)
 				{
 					try {
 						if (a_isBom)
@@ -340,7 +339,7 @@ namespace dmui
 						case Encoding::UTF16_BE:
 							return UTF16BE_LoadLanguageFile(file, a_filePath, fileSize, isBom);
 						default:
-							return UTF8_LoadLanguageFile(file, a_filePath, fileSize, isBom);
+							return UTF8_LoadLanguageFile(file, a_filePath, isBom);
 					}
 
 					file.close();
