@@ -319,6 +319,24 @@ typedef uint32_t DMUI_UIPanelFlags;
 #define DMUI_UI_PANEL_FLAGS_NO_BACKGROUND 1u
 #define DMUI_UI_PANEL_FLAGS_SCROLLABLE 2u
 
+typedef uint32_t DMUI_UITextEditFlags;
+#define DMUI_UI_TEXT_EDIT_FLAGS_NONE 0u
+#define DMUI_UI_TEXT_EDIT_FLAGS_HISTORY_KEYS 1u
+#define DMUI_UI_TEXT_EDIT_FLAGS_COMPLETION_KEY 2u
+#define DMUI_UI_TEXT_EDIT_FLAGS_CAPTURE_CANCEL 4u
+#define DMUI_UI_TEXT_EDIT_FLAGS_KEEP_FOCUS_ON_SUBMIT 8u
+#define DMUI_UI_TEXT_EDIT_FLAGS_REQUEST_FOCUS 16u
+#define DMUI_UI_TEXT_EDIT_FLAGS_RELOAD 32u
+
+typedef uint32_t DMUI_UITextEditEvents;
+#define DMUI_UI_TEXT_EDIT_EVENTS_NONE 0u
+#define DMUI_UI_TEXT_EDIT_EVENTS_EDITED 1u
+#define DMUI_UI_TEXT_EDIT_EVENTS_SUBMITTED 2u
+#define DMUI_UI_TEXT_EDIT_EVENTS_HISTORY_PREVIOUS 4u
+#define DMUI_UI_TEXT_EDIT_EVENTS_HISTORY_NEXT 8u
+#define DMUI_UI_TEXT_EDIT_EVENTS_COMPLETION 16u
+#define DMUI_UI_TEXT_EDIT_EVENTS_CANCELED 32u
+
 typedef DMUI_Result (DMUI_CALL *DMUI_UIGetStyleMetricsFn)(
 	DMUI_ClientHandle client,
 	DMUI_StyleMetrics* metrics) DMUI_NOEXCEPT;
@@ -784,6 +802,20 @@ typedef DMUI_Result (DMUI_CALL *DMUI_UIBeginPanelFn)(
 	uint32_t* visible) DMUI_NOEXCEPT;
 typedef DMUI_Result (DMUI_CALL *DMUI_UIEndPanelFn)(
 	DMUI_ClientHandle client) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIInputTextEditorFn)(
+	DMUI_ClientHandle client,
+	const char* label,
+	const char* hint,
+	DMUI_TextBuffer* buffer,
+	DMUI_UIInputTextFlags flags,
+	DMUI_UITextEditFlags editFlags,
+	size_t cursor,
+	DMUI_TextEditState* state) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIBeginTooltipAtFn)(
+	DMUI_ClientHandle client,
+	DMUI_Vec2 position,
+	DMUI_Vec2 pivot,
+	uint32_t* visible) DMUI_NOEXCEPT;
 
 typedef struct DMUI_UIAPI
 {
@@ -884,4 +916,6 @@ typedef struct DMUI_UIAPI
 	DMUI_UIGetThemeColorsFn getThemeColors;
 	DMUI_UIBeginPanelFn beginPanel;
 	DMUI_UIEndPanelFn endPanel;
+	DMUI_UIInputTextEditorFn inputTextEditor;
+	DMUI_UIBeginTooltipAtFn beginTooltipAt;
 } DMUI_UIAPI;

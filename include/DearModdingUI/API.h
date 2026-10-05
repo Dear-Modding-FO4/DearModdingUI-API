@@ -27,7 +27,13 @@
 #define DMUI_VERSION_MAJOR(version) ((uint32_t)(version) >> 16u)
 #define DMUI_VERSION_MINOR(version) ((uint32_t)(version) & 0xFFFFu)
 
-#define DMUI_ABI_VERSION 2u
+#define DMUI_ABI_MAJOR 2u
+#define DMUI_ABI_MINOR 1u
+// Minor occupies the high half so ABI 2.0 equals the original exact-match request 2.
+#define DMUI_MAKE_ABI_VERSION(major, minor) ((((uint32_t)(major)) & 0xFFFFu) | (((uint32_t)(minor)) << 16u))
+#define DMUI_ABI_VERSION_MAJOR(version) ((uint32_t)(version) & 0xFFFFu)
+#define DMUI_ABI_VERSION_MINOR(version) ((uint32_t)(version) >> 16u)
+#define DMUI_ABI_VERSION DMUI_MAKE_ABI_VERSION(DMUI_ABI_MAJOR, DMUI_ABI_MINOR)
 
 typedef uint32_t DMUI_Result;
 
@@ -328,7 +334,7 @@ typedef uint32_t DMUI_LinkAction;
 
 typedef struct DMUI_HostReadyInfo
 {
-	uint32_t abiVersion;
+	uint32_t abiMajor;
 } DMUI_HostReadyInfo;
 
 typedef void (DMUI_CALL *DMUI_HostReadyCallback)(
@@ -518,6 +524,18 @@ typedef struct DMUI_TextBuffer
 	DMUI_ResizeTextBufferFn resize;
 	void* userData;
 } DMUI_TextBuffer;
+
+// inputTextEditor output (ABI 2.1); UTF-8 byte offsets and caret are zero while inactive.
+typedef struct DMUI_TextEditState
+{
+	uint32_t events;
+	uint32_t active;
+	size_t cursor;
+	size_t selectionStart;
+	size_t selectionEnd;
+	DMUI_Vec2 caretPosition;
+	float lineHeight;
+} DMUI_TextEditState;
 
 #define DMUI_TEXT_VIEW_NO_OFFSET SIZE_MAX
 
@@ -1039,9 +1057,10 @@ typedef DMUI_Result (DMUI_CALL *DMUI_EndFieldFn)(
 	const DMUI_FieldEndOptions* options,
 	uint32_t* resetPressed) DMUI_NOEXCEPT;
 
+// Slots are appended in minor versions; the table never shrinks within a major.
 typedef struct DMUI_HostAPI
 {
-	uint32_t abiVersion;
+	uint32_t abiMajor;
 	const DMUI_UIAPI* ui;
 	DMUI_RegisterClientFn registerClient;
 	DMUI_RegisterPageFn registerPage;
@@ -1105,5 +1124,6 @@ typedef struct DMUI_HostAPI
 #pragma pack(pop)
 #endif
 
+// Pass DMUI_ABI_VERSION; null for another major or a newer minor than the host's.
 DMUI_EXPORT const DMUI_HostAPI* DMUI_CALL DMUI_GetAPI(
-	uint32_t requestedHostAbi) DMUI_NOEXCEPT;
+	uint32_t requestedAbiVersion) DMUI_NOEXCEPT;

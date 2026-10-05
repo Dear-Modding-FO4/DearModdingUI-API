@@ -1,7 +1,8 @@
 {
   "contract": {
     "name": "DearModdingUI stable UI",
-    "abi": 2,
+    "abiMajor": 2,
+    "abiMinor": 1,
     "namespace": "dmui::ui",
     "packedColor": "RRGGBBAA"
   },
@@ -1215,6 +1216,72 @@
         {
           "name": "Scrollable",
           "value": 2
+        }
+      ],
+      "aliases": [],
+      "rejectedMask": 0
+    },
+    {
+      "name": "TextEditFlags",
+      "cName": "DMUI_UITextEditFlags",
+      "kind": "flags",
+      "values": [
+        {
+          "name": "HistoryKeys",
+          "value": 1
+        },
+        {
+          "name": "CompletionKey",
+          "value": 2
+        },
+        {
+          "name": "CaptureCancel",
+          "value": 4
+        },
+        {
+          "name": "KeepFocusOnSubmit",
+          "value": 8
+        },
+        {
+          "name": "RequestFocus",
+          "value": 16
+        },
+        {
+          "name": "Reload",
+          "value": 32
+        }
+      ],
+      "aliases": [],
+      "rejectedMask": 0
+    },
+    {
+      "name": "TextEditEvents",
+      "cName": "DMUI_UITextEditEvents",
+      "kind": "flags",
+      "values": [
+        {
+          "name": "Edited",
+          "value": 1
+        },
+        {
+          "name": "Submitted",
+          "value": 2
+        },
+        {
+          "name": "HistoryPrevious",
+          "value": 4
+        },
+        {
+          "name": "HistoryNext",
+          "value": 8
+        },
+        {
+          "name": "Completion",
+          "value": 16
+        },
+        {
+          "name": "Canceled",
+          "value": 32
         }
       ],
       "aliases": [],
@@ -3469,6 +3536,648 @@
           "client"
         ]
       ]
+    },
+    {
+      "id": 98,
+      "name": "InputTextEditor",
+      "field": "inputTextEditor",
+      "kind": "input_text",
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "label"
+        ],
+        [
+          "const char*",
+          "hint"
+        ],
+        [
+          "DMUI_TextBuffer*",
+          "buffer"
+        ],
+        [
+          "DMUI_UIInputTextFlags",
+          "flags"
+        ],
+        [
+          "DMUI_UITextEditFlags",
+          "editFlags"
+        ],
+        [
+          "size_t",
+          "cursor"
+        ],
+        [
+          "DMUI_TextEditState*",
+          "state"
+        ]
+      ]
+    },
+    {
+      "id": 99,
+      "name": "BeginTooltipAt",
+      "field": "beginTooltipAt",
+      "kind": "bool",
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_Vec2",
+          "position"
+        ],
+        [
+          "DMUI_Vec2",
+          "pivot"
+        ],
+        [
+          "uint32_t*",
+          "visible"
+        ]
+      ]
     }
-  ]
+  ],
+  "host": {
+    "defines": {
+      "DMUI_ABI_MAJOR": "2u",
+      "DMUI_RESULT_OK": "0u",
+      "DMUI_RESULT_UNSUPPORTED_ABI": "1u",
+      "DMUI_RESULT_INVALID_ARGUMENT": "2u",
+      "DMUI_RESULT_INVALID_DESCRIPTOR": "4u",
+      "DMUI_RESULT_DUPLICATE_CLIENT_ID": "6u",
+      "DMUI_RESULT_DUPLICATE_PAGE_ID": "7u",
+      "DMUI_RESULT_REGISTRATION_CLOSED": "8u",
+      "DMUI_RESULT_HOST_DISABLED": "9u",
+      "DMUI_RESULT_HOST_NOT_INITIALIZED": "10u",
+      "DMUI_RESULT_HOST_NOT_READY": "11u",
+      "DMUI_RESULT_BACKEND_FAILED": "12u",
+      "DMUI_RESULT_RESOURCE_EXHAUSTED": "13u",
+      "DMUI_RESULT_CLIENT_NOT_FOUND": "14u",
+      "DMUI_RESULT_PAGE_NOT_FOUND": "15u",
+      "DMUI_RESULT_INVALID_PAGE_KIND": "16u",
+      "DMUI_RESULT_NO_FRAME_DEMAND": "17u",
+      "DMUI_RESULT_CALLBACK_FAILED": "18u",
+      "DMUI_RESULT_CLIENT_CAPABILITY_REQUIRED": "19u",
+      "DMUI_RESULT_SWAPCHAIN_REJECTED": "20u",
+      "DMUI_RESULT_RENDERER_BUSY": "21u",
+      "DMUI_RESULT_DUPLICATE_ACTION_ID": "22u",
+      "DMUI_RESULT_ACTION_NOT_FOUND": "23u",
+      "DMUI_RESULT_MALFORMED_ACTION_ID": "24u",
+      "DMUI_RESULT_UNKNOWN_CHORD": "25u",
+      "DMUI_RESULT_WRONG_THREAD": "26u",
+      "DMUI_RESULT_UNBALANCED_BRACKET": "27u",
+      "DMUI_RESULT_UNSUPPORTED_RESOURCE": "30u",
+      "DMUI_RESULT_STALE_HANDLE": "31u",
+      "DMUI_RESULT_BUSY": "32u",
+      "DMUI_RESULT_BUFFER_TOO_SMALL": "33u",
+      "DMUI_RESULT_NOT_VISIBLE": "34u",
+      "DMUI_RESULT_STALE_SUBMISSION": "35u",
+      "DMUI_RESULT_DUPLICATE_CATEGORY_ID": "37u",
+      "DMUI_RESULT_CATEGORY_NOT_FOUND": "38u",
+      "DMUI_RESULT_EXTERNAL_OPEN_FAILED": "39u",
+      "DMUI_RESULT_EXTERNAL_RESOLUTION_FAILED": "40u",
+      "DMUI_RESULT_EXTERNAL_RESOLUTION_UNSUPPORTED": "41u",
+      "DMUI_RESULT_FILE_NOT_FOUND": "42u",
+      "DMUI_RESULT_ACCESS_DENIED": "43u",
+      "DMUI_RESULT_IMAGE_TOO_LARGE": "44u",
+      "DMUI_RESULT_IMAGE_DECODE_FAILED": "45u",
+      "DMUI_RESULT_IMAGE_DEVICE_FAILED": "46u",
+      "DMUI_HOST_STATE_NOT_INITIALIZED": "0u",
+      "DMUI_HOST_STATE_WAITING_FOR_PRESENT": "1u",
+      "DMUI_HOST_STATE_INITIALIZING": "2u",
+      "DMUI_HOST_STATE_READY": "3u",
+      "DMUI_HOST_STATE_UNAVAILABLE": "4u",
+      "DMUI_UNAVAILABLE_NONE": "0u",
+      "DMUI_UNAVAILABLE_HOST_DISABLED": "1u",
+      "DMUI_UNAVAILABLE_BACKEND_FAILED": "2u",
+      "DMUI_PAGE_KIND_SETTINGS": "1u",
+      "DMUI_PAGE_KIND_OVERLAY": "2u",
+      "DMUI_STATUS_SEVERITY_INFO": "0u",
+      "DMUI_STATUS_SEVERITY_SUCCESS": "1u",
+      "DMUI_STATUS_SEVERITY_WARNING": "2u",
+      "DMUI_STATUS_SEVERITY_ERROR": "3u",
+      "DMUI_FONT_ROLE_BODY": "0u",
+      "DMUI_FONT_ROLE_TITLE": "1u",
+      "DMUI_FONT_ROLE_HEADING": "2u",
+      "DMUI_FONT_ROLE_SUBHEADING": "3u",
+      "DMUI_FONT_ROLE_SUBTEXT": "4u",
+      "DMUI_FONT_ROLE_MONOSPACE": "5u",
+      "DMUI_FONT_ROLE_COUNT": "6u",
+      "DMUI_SETTINGS_ACTION_RESET": "0u",
+      "DMUI_SETTINGS_ACTION_REVERT": "1u",
+      "DMUI_SETTINGS_ACTION_APPLY": "2u",
+      "DMUI_HOTKEY_BINDING_BOUND": "0u",
+      "DMUI_HOTKEY_BINDING_UNBOUND_USER": "1u",
+      "DMUI_HOTKEY_BINDING_UNBOUND_DEFAULT_CONFLICT": "2u",
+      "DMUI_HOTKEY_BINDING_UNBOUND_NEVER_SET": "3u",
+      "DMUI_HOTKEY_BINDING_UNBOUND_OVERRIDE_CONFLICT": "4u",
+      "DMUI_HOTKEY_BINDING_UNBOUND_INVALID_OVERRIDE": "5u",
+      "DMUI_CLIENT_CAPABILITY_NONE": "0u",
+      "DMUI_CLIENT_CAPABILITY_RENDERER_REPLACEMENT": "0x00000001u",
+      "DMUI_CLIENT_ORIGIN_NATIVE": "0u",
+      "DMUI_CLIENT_ORIGIN_BRIDGED": "1u",
+      "DMUI_INVALID_CLIENT_HANDLE": "((DMUI_ClientHandle)0u)",
+      "DMUI_INVALID_PAGE_HANDLE": "((DMUI_PageHandle)0u)",
+      "DMUI_INVALID_ACTION_HANDLE": "((DMUI_ActionHandle)0u)",
+      "DMUI_INVALID_FRAME_OBSERVER_HANDLE": "((DMUI_FrameObserverHandle)0u)",
+      "DMUI_INVALID_HOTKEY_ACTION_HANDLE": "((DMUI_HotkeyActionHandle)0u)",
+      "DMUI_INVALID_PAGE_ACTIVITY_OBSERVER_HANDLE": "((DMUI_PageActivityObserverHandle)0u)",
+      "DMUI_INVALID_IMAGE_HANDLE": "((DMUI_ImageHandle)0u)",
+      "DMUI_INVALID_DIALOG_HANDLE": "((DMUI_DialogHandle)0u)",
+      "DMUI_PAGE_ACTIVITY_ACTIVATED": "1u",
+      "DMUI_PAGE_ACTIVITY_CHANGED": "2u",
+      "DMUI_PAGE_ACTIVITY_DEACTIVATED": "3u",
+      "DMUI_SETTINGS_ROW_LAYOUT_LABEL_VALUE": "0u",
+      "DMUI_SETTINGS_ROW_LAYOUT_FULL_SPAN": "1u",
+      "DMUI_FIELD_LAYOUT_LABEL_VALUE": "0u",
+      "DMUI_FIELD_LAYOUT_FULL_SPAN": "1u",
+      "DMUI_FIELD_FEEDBACK_SEVERITY_INFO": "0u",
+      "DMUI_FIELD_FEEDBACK_SEVERITY_WARNING": "1u",
+      "DMUI_FIELD_FEEDBACK_SEVERITY_ERROR": "2u",
+      "DMUI_FIELD_FEEDBACK_MAX_MESSAGE_BYTES": "16384u",
+      "DMUI_HOTKEY_CONTEXT_ALWAYS": "0u",
+      "DMUI_HOTKEY_CONTEXT_HOST_INPUT_INACTIVE": "1u",
+      "DMUI_HOTKEY_CONTEXT_GAMEPLAY_UNOBSTRUCTED": "2u",
+      "DMUI_IMAGE_STATUS_READY": "0u",
+      "DMUI_IMAGE_STATUS_INVALIDATED": "1u",
+      "DMUI_IMAGE_STATUS_RELEASED": "2u",
+      "DMUI_IMAGE_STATUS_LOADING": "3u",
+      "DMUI_IMAGE_STATUS_FAILED": "4u",
+      "DMUI_PIXEL_FORMAT_RGBA8_UNORM": "1u",
+      "DMUI_OVERLAY_ANCHOR_TOP_LEFT": "0u",
+      "DMUI_OVERLAY_ANCHOR_TOP_RIGHT": "1u",
+      "DMUI_OVERLAY_ANCHOR_BOTTOM_LEFT": "2u",
+      "DMUI_OVERLAY_ANCHOR_BOTTOM_RIGHT": "3u",
+      "DMUI_OVERLAY_ANCHOR_FREE": "4u",
+      "DMUI_DIALOG_KIND_CONFIRM": "0u",
+      "DMUI_DIALOG_KIND_TEXT_ENTRY": "1u",
+      "DMUI_DIALOG_EVENT_PENDING": "0u",
+      "DMUI_DIALOG_EVENT_SUBMITTED": "1u",
+      "DMUI_DIALOG_EVENT_CANCELLED": "2u",
+      "DMUI_DIALOG_EVENT_COMPLETED": "3u",
+      "DMUI_EXTERNAL_TARGET_NONE": "0u",
+      "DMUI_EXTERNAL_TARGET_URI": "1u",
+      "DMUI_EXTERNAL_TARGET_FILE": "2u",
+      "DMUI_EXTERNAL_TARGET_DIRECTORY": "3u",
+      "DMUI_EXTERNAL_TARGET_VIRTUAL_FILE": "4u",
+      "DMUI_EXTERNAL_TARGET_VIRTUAL_FILE_PARENT": "5u",
+      "DMUI_LINK_ACTION_COPY_TARGET": "0u",
+      "DMUI_LINK_ACTION_OPEN_EXTERNAL": "1u",
+      "DMUI_TEXT_VIEW_NO_OFFSET": "SIZE_MAX"
+    },
+    "types": {
+      "DMUI_Result": "uint32_t",
+      "DMUI_HostState": "uint32_t",
+      "DMUI_UnavailableReason": "uint32_t",
+      "DMUI_PageKind": "uint32_t",
+      "DMUI_StatusSeverity": "uint32_t",
+      "DMUI_FontRole": "uint32_t",
+      "DMUI_SettingsAction": "uint32_t",
+      "DMUI_HotkeyBindingState": "uint32_t",
+      "DMUI_ClientCapabilities": "uint32_t",
+      "DMUI_ClientOrigin": "uint32_t",
+      "DMUI_ClientHandle": "uint64_t",
+      "DMUI_PageHandle": "uint64_t",
+      "DMUI_ActionHandle": "uint64_t",
+      "DMUI_FrameObserverHandle": "uint64_t",
+      "DMUI_HotkeyActionHandle": "uint64_t",
+      "DMUI_PageActivityObserverHandle": "uint64_t",
+      "DMUI_ImageHandle": "uint64_t",
+      "DMUI_DialogHandle": "uint64_t",
+      "DMUI_PageActivityKind": "uint32_t",
+      "DMUI_SettingsRowLayout": "uint32_t",
+      "DMUI_FieldLayout": "uint32_t",
+      "DMUI_FieldFeedbackSeverity": "uint32_t",
+      "DMUI_HotkeyContextPolicy": "uint32_t",
+      "DMUI_ImageStatus": "uint32_t",
+      "DMUI_PixelFormat": "uint32_t",
+      "DMUI_OverlayAnchor": "uint32_t",
+      "DMUI_DialogKind": "uint32_t",
+      "DMUI_DialogEventKind": "uint32_t",
+      "DMUI_ExternalTargetKind": "uint32_t",
+      "DMUI_LinkAction": "uint32_t"
+    },
+    "functions": {
+      "DMUI_HostReadyCallback": "void (const DMUI_HostReadyInfo* info, void* userData)",
+      "DMUI_HostUnavailableCallback": "void (DMUI_UnavailableReason reason, void* userData)",
+      "DMUI_PageDrawCallback": "DMUI_Result (void* userData)",
+      "DMUI_ActionCallback": "DMUI_Result (void* userData)",
+      "DMUI_PageActivityCallback": "void (const DMUI_PageActivityInfo* info, void* userData)",
+      "DMUI_FrameCallback": "void (void* userData)",
+      "DMUI_HotkeyCallback": "void (DMUI_HotkeyActionHandle action, uint32_t pressed, void* userData)",
+      "DMUI_ResizeTextBufferFn": "DMUI_Result (void* userData, size_t minimumCapacity, char** data, size_t* capacity) DMUI_NOEXCEPT",
+      "DMUI_RegisterClientFn": "DMUI_Result (const DMUI_ClientDescriptor* descriptor, DMUI_ClientHandle* client) DMUI_NOEXCEPT",
+      "DMUI_RegisterCategoryFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_CategoryDescriptor* descriptor) DMUI_NOEXCEPT",
+      "DMUI_RegisterPageFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_PageDescriptor* descriptor, DMUI_PageHandle* page) DMUI_NOEXCEPT",
+      "DMUI_QueryStateFn": "DMUI_Result (DMUI_HostStateInfo* state) DMUI_NOEXCEPT",
+      "DMUI_RequestFrameFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_PageHandle page) DMUI_NOEXCEPT",
+      "DMUI_ReleaseFrameFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_PageHandle page) DMUI_NOEXCEPT",
+      "DMUI_IsMenuVisibleFn": "DMUI_Result (uint32_t* visible) DMUI_NOEXCEPT",
+      "DMUI_SelectPageFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_PageHandle page) DMUI_NOEXCEPT",
+      "DMUI_AttachSwapChainFn": "DMUI_Result (DMUI_ClientHandle client, void* nativeSwapChain) DMUI_NOEXCEPT",
+      "DMUI_RegisterActionFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_ActionDescriptor* descriptor, DMUI_ActionHandle* action) DMUI_NOEXCEPT",
+      "DMUI_SetStatusFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_StatusSeverity severity, const char* message) DMUI_NOEXCEPT",
+      "DMUI_PushFontFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_FontRole role) DMUI_NOEXCEPT",
+      "DMUI_PopFontFn": "DMUI_Result (DMUI_ClientHandle client) DMUI_NOEXCEPT",
+      "DMUI_DrawSectionHeaderFn": "DMUI_Result (DMUI_ClientHandle client, const char* text, uint32_t glyph) DMUI_NOEXCEPT",
+      "DMUI_DrawBulletTextFn": "DMUI_Result (DMUI_ClientHandle client, const char* text) DMUI_NOEXCEPT",
+      "DMUI_DrawSearchInputFn": "DMUI_Result (DMUI_ClientHandle client, const char* id, const char* hint, char* buffer, size_t capacity, uint32_t* changed) DMUI_NOEXCEPT",
+      "DMUI_DrawSearchInputBufferFn": "DMUI_Result (DMUI_ClientHandle client, const char* id, const char* hint, DMUI_TextBuffer* buffer, uint32_t* changed) DMUI_NOEXCEPT",
+      "DMUI_DrawTextViewFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_TextViewDescriptor* descriptor, DMUI_TextViewState* state) DMUI_NOEXCEPT",
+      "DMUI_DrawCollapsingSectionHeaderFn": "DMUI_Result (DMUI_ClientHandle client, const char* key, const char* text, uint32_t glyph, uint32_t* expanded, size_t count) DMUI_NOEXCEPT",
+      "DMUI_DrawLinkRowFn": "DMUI_Result (DMUI_ClientHandle client, const char* id, const DMUI_LinkDescriptor* links, size_t count) DMUI_NOEXCEPT",
+      "DMUI_DrawFaqFn": "DMUI_Result (DMUI_ClientHandle client, const char* id, const DMUI_FaqEntry* entries, size_t count) DMUI_NOEXCEPT",
+      "DMUI_ReportDiagnosticFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_DiagnosticDescriptor* diagnostic) DMUI_NOEXCEPT",
+      "DMUI_DrawSettingsActionButtonFn": "DMUI_Result (DMUI_ClientHandle client, const char* id, DMUI_Vec2 origin, DMUI_Vec2 size, DMUI_SettingsAction action, const char* fallbackLabel, const char* tooltip, uint32_t enabled, uint32_t* pressed) DMUI_NOEXCEPT",
+      "DMUI_SettingsActionButtonWidthFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_SettingsAction action, const char* fallbackLabel, float buttonExtent, float* width) DMUI_NOEXCEPT",
+      "DMUI_SettingsActionButtonExtentFn": "DMUI_Result (DMUI_ClientHandle client, float* extent) DMUI_NOEXCEPT",
+      "DMUI_RegisterFrameObserverFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_FrameObserverDescriptor* descriptor, DMUI_FrameObserverHandle* observer) DMUI_NOEXCEPT",
+      "DMUI_QueryVideoMemoryFn": "DMUI_Result (DMUI_ClientHandle client, uint64_t* used, uint64_t* budget) DMUI_NOEXCEPT",
+      "DMUI_RegisterHotkeyActionFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_HotkeyActionDescriptor* descriptor, DMUI_HotkeyActionHandle* action) DMUI_NOEXCEPT",
+      "DMUI_QueryHotkeyBindingFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_HotkeyActionHandle action, DMUI_HotkeyBindingInfo* binding) DMUI_NOEXCEPT",
+      "DMUI_UnregisterHotkeyActionFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_HotkeyActionHandle action) DMUI_NOEXCEPT",
+      "DMUI_BeginSettingsTableFn": "DMUI_Result (DMUI_ClientHandle client, const char* id, uint32_t* visible) DMUI_NOEXCEPT",
+      "DMUI_BeginSettingsRowFn": "DMUI_Result (DMUI_ClientHandle client, const char* id, const char* label, const char* description, uint32_t* visible) DMUI_NOEXCEPT",
+      "DMUI_EndSettingsRowFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_SettingsRowOptions* options, uint32_t* resetPressed) DMUI_NOEXCEPT",
+      "DMUI_EndSettingsTableFn": "DMUI_Result (DMUI_ClientHandle client) DMUI_NOEXCEPT",
+      "DMUI_BeginSettingsRowExFn": "DMUI_Result (DMUI_ClientHandle client, const char* id, const char* label, const char* description, const DMUI_SettingsRowBeginOptions* options, uint32_t* visible) DMUI_NOEXCEPT",
+      "DMUI_RegisterPageActivityObserverFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_PageActivityObserverDescriptor* descriptor, DMUI_PageActivityObserverHandle* observer) DMUI_NOEXCEPT",
+      "DMUI_SetHotkeyActionEnabledFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_HotkeyActionHandle action, uint32_t enabled) DMUI_NOEXCEPT",
+      "DMUI_ImportD3D11ImageFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_D3D11ImageDescriptor* descriptor, DMUI_ImageHandle* image) DMUI_NOEXCEPT",
+      "DMUI_ReleaseImageFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_ImageHandle image) DMUI_NOEXCEPT",
+      "DMUI_QueryImageFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_ImageHandle image, DMUI_ImageInfo* info) DMUI_NOEXCEPT",
+      "DMUI_ConfigureOverlayFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_PageHandle page, const DMUI_ManagedOverlayOptions* options) DMUI_NOEXCEPT",
+      "DMUI_QueryOverlayFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_PageHandle page, DMUI_ManagedOverlayPlacement* placement) DMUI_NOEXCEPT",
+      "DMUI_ResetOverlayFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_PageHandle page) DMUI_NOEXCEPT",
+      "DMUI_PostNotificationFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_NotificationDescriptor* descriptor) DMUI_NOEXCEPT",
+      "DMUI_RequestDialogFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_DialogDescriptor* descriptor, DMUI_DialogHandle* dialog) DMUI_NOEXCEPT",
+      "DMUI_PollDialogEventFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_DialogHandle dialog, DMUI_DialogEvent* event, char* textBuffer, uint32_t textCapacity) DMUI_NOEXCEPT",
+      "DMUI_ResolveDialogSubmissionFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_DialogHandle dialog, uint64_t submissionId, uint32_t accepted, const char* error) DMUI_NOEXCEPT",
+      "DMUI_CancelDialogFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_DialogHandle dialog) DMUI_NOEXCEPT",
+      "DMUI_CreateImageFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_ImageDescriptor* descriptor, DMUI_ImageHandle* image) DMUI_NOEXCEPT",
+      "DMUI_UpdateImageFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_ImageHandle image, const DMUI_ImageDescriptor* descriptor) DMUI_NOEXCEPT",
+      "DMUI_LoadImageFileFn": "DMUI_Result (DMUI_ClientHandle client, const char* utf8Path, DMUI_ImageHandle* image) DMUI_NOEXCEPT",
+      "DMUI_OpenExternalFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_ExternalOpenDescriptor* descriptor, uint32_t* nativeError) DMUI_NOEXCEPT",
+      "DMUI_ResolveIconGlyphFn": "DMUI_Result (const DMUI_IconResolutionRequest* request, uint32_t* glyph) DMUI_NOEXCEPT",
+      "DMUI_BeginFieldFn": "DMUI_Result (DMUI_ClientHandle client, const char* id, const char* label, const char* description, const DMUI_FieldBeginOptions* options, uint32_t* visible) DMUI_NOEXCEPT",
+      "DMUI_SetFieldFeedbackFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_FieldFeedback* feedback) DMUI_NOEXCEPT",
+      "DMUI_EndFieldFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_FieldEndOptions* options, uint32_t* resetPressed) DMUI_NOEXCEPT"
+    },
+    "structs": {
+      "DMUI_HostReadyInfo": [
+        "uint32_t abiMajor"
+      ],
+      "DMUI_ClientDescriptor": [
+        "const char* id",
+        "const char* displayName",
+        "uint32_t version",
+        "DMUI_HostReadyCallback onHostReady",
+        "DMUI_HostUnavailableCallback onHostUnavailable",
+        "void* userData",
+        "DMUI_ClientCapabilities capabilities",
+        "const char* iconName",
+        "DMUI_ClientOrigin origin",
+        "const char* bridgeSourceLabel"
+      ],
+      "DMUI_PageDescriptor": [
+        "const char* id",
+        "const char* displayName",
+        "const char* categoryId",
+        "const char* summary",
+        "int32_t sortKey",
+        "DMUI_PageKind kind",
+        "DMUI_PageDrawCallback draw",
+        "void* userData",
+        "const char* iconName"
+      ],
+      "DMUI_CategoryDescriptor": [
+        "const char* id",
+        "const char* displayName",
+        "int32_t sortKey",
+        "uint32_t reserved",
+        "const char* iconName"
+      ],
+      "DMUI_ActionDescriptor": [
+        "const char* id",
+        "const char* displayLabel",
+        "const char* iconName",
+        "const char* tooltip",
+        "int32_t sortKey",
+        "DMUI_ActionCallback callback",
+        "void* userData"
+      ],
+      "DMUI_FrameObserverDescriptor": [
+        "DMUI_FrameCallback callback",
+        "void* userData"
+      ],
+      "DMUI_HotkeyActionDescriptor": [
+        "const char* id",
+        "const char* displayName",
+        "const char* suggestedDefaultChord",
+        "DMUI_HotkeyCallback callback",
+        "void* userData",
+        "DMUI_HotkeyContextPolicy contextPolicy",
+        "uint32_t reserved"
+      ],
+      "DMUI_ExternalOpenDescriptor": [
+        "DMUI_ExternalTargetKind targetKind",
+        "const char* target",
+        "const char* application",
+        "const char* const* arguments",
+        "uint32_t argumentCount",
+        "uint32_t reserved",
+        "const char* workingDirectory"
+      ],
+      "DMUI_LinkDescriptor": [
+        "const char* label",
+        "const char* note",
+        "uint32_t glyph",
+        "uint32_t enabled",
+        "DMUI_LinkAction action",
+        "uint32_t reserved",
+        "const DMUI_ExternalOpenDescriptor* external"
+      ],
+      "DMUI_FaqEntry": [
+        "const char* question",
+        "const char* answer"
+      ],
+      "DMUI_DiagnosticDescriptor": [
+        "DMUI_StatusSeverity severity",
+        "const char* scope",
+        "const char* summary",
+        "const char* detail"
+      ],
+      "DMUI_PageActivityInfo": [
+        "DMUI_PageActivityKind kind",
+        "DMUI_PageHandle previousPage",
+        "DMUI_PageHandle activePage"
+      ],
+      "DMUI_PageActivityObserverDescriptor": [
+        "DMUI_PageActivityCallback callback",
+        "void* userData"
+      ],
+      "DMUI_HotkeyBindingInfo": [
+        "DMUI_HotkeyBindingState state",
+        "char chord[32]"
+      ],
+      "DMUI_HostStateInfo": [
+        "DMUI_HostState state",
+        "DMUI_UnavailableReason unavailableReason",
+        "uint32_t registrationOpen",
+        "uint32_t clientCount",
+        "uint32_t pageCount",
+        "uint32_t demandedOverlayCount"
+      ],
+      "DMUI_Vec2": [
+        "float x",
+        "float y"
+      ],
+      "DMUI_TextBuffer": [
+        "char* data",
+        "size_t capacity",
+        "DMUI_ResizeTextBufferFn resize",
+        "void* userData"
+      ],
+      "DMUI_TextEditState": [
+        "uint32_t events",
+        "uint32_t active",
+        "size_t cursor",
+        "size_t selectionStart",
+        "size_t selectionEnd",
+        "DMUI_Vec2 caretPosition",
+        "float lineHeight"
+      ],
+      "DMUI_TextViewDescriptor": [
+        "const char* id",
+        "const char* text",
+        "size_t textLength",
+        "const size_t* lineOffsets",
+        "size_t lineCount",
+        "const size_t* matchByteOffsets",
+        "size_t matchCount",
+        "size_t matchByteLength",
+        "uint64_t contentRevision",
+        "uint64_t matchRevision",
+        "DMUI_Vec2 viewport"
+      ],
+      "DMUI_TextViewState": [
+        "uint64_t contentRevision",
+        "uint64_t matchRevision",
+        "size_t activeMatch",
+        "size_t revealByteOffset"
+      ],
+      "DMUI_Vec4": [
+        "float x",
+        "float y",
+        "float z",
+        "float w"
+      ],
+      "DMUI_StyleMetrics": [
+        "DMUI_Vec2 itemSpacing",
+        "DMUI_Vec2 framePadding",
+        "DMUI_Vec2 itemInnerSpacing",
+        "DMUI_Vec2 cellPadding",
+        "DMUI_Vec2 windowPadding",
+        "float indentSpacing",
+        "float scrollbarSize",
+        "float fontSizeBase",
+        "float alpha",
+        "float frameRounding",
+        "float frameBorderSize",
+        "float sectionGap",
+        "DMUI_Vec2 panelPadding"
+      ],
+      "DMUI_SettingsRowOptions": [
+        "uint32_t resetVisible",
+        "uint32_t resetEnabled"
+      ],
+      "DMUI_SettingsRowBeginOptions": [
+        "DMUI_SettingsRowLayout layout"
+      ],
+      "DMUI_FieldBeginOptions": [
+        "DMUI_FieldLayout layout"
+      ],
+      "DMUI_FieldEndOptions": [
+        "uint32_t resetVisible",
+        "uint32_t resetEnabled"
+      ],
+      "DMUI_FieldFeedback": [
+        "DMUI_FieldFeedbackSeverity severity",
+        "const char* message"
+      ],
+      "DMUI_ThemeColors": [
+        "DMUI_Vec4 success",
+        "DMUI_Vec4 warning",
+        "DMUI_Vec4 error",
+        "DMUI_Vec4 info",
+        "DMUI_Vec4 muted",
+        "DMUI_Vec4 accent",
+        "DMUI_Vec4 accentMuted",
+        "DMUI_Vec4 panel",
+        "DMUI_Vec4 statusDisable",
+        "DMUI_Vec4 statusError",
+        "DMUI_Vec4 statusWarning",
+        "DMUI_Vec4 statusRestartNeeded",
+        "DMUI_Vec4 statusCurrentHotkey",
+        "DMUI_Vec4 statusSuccess",
+        "DMUI_Vec4 statusInfo"
+      ],
+      "DMUI_D3D11ImageDescriptor": [
+        "void* shaderResourceView",
+        "uint32_t contentWidth",
+        "uint32_t contentHeight"
+      ],
+      "DMUI_ImageDescriptor": [
+        "uint32_t width",
+        "uint32_t height",
+        "DMUI_PixelFormat pixelFormat",
+        "uint32_t reserved",
+        "uint64_t rowPitch",
+        "uint64_t accessibleByteCount",
+        "const void* pixels"
+      ],
+      "DMUI_ImageDrawOptions": [
+        "DMUI_Vec2 size",
+        "DMUI_Vec2 uv0",
+        "DMUI_Vec2 uv1",
+        "DMUI_Vec4 tint",
+        "uint32_t preserveAspect",
+        "uint32_t reserved"
+      ],
+      "DMUI_ImageInfo": [
+        "DMUI_ImageStatus status",
+        "DMUI_Result failure",
+        "uint32_t contentWidth",
+        "uint32_t contentHeight",
+        "uint64_t deviceGeneration"
+      ],
+      "DMUI_ManagedOverlayOptions": [
+        "DMUI_OverlayAnchor anchor",
+        "DMUI_Vec2 offset",
+        "DMUI_Vec2 size",
+        "DMUI_Vec2 minimumSize",
+        "DMUI_Vec2 maximumSize",
+        "float opacity",
+        "float contentScale",
+        "uint32_t backgroundVisible",
+        "uint32_t borderVisible",
+        "uint32_t allowArrangement"
+      ],
+      "DMUI_ManagedOverlayPlacement": [
+        "DMUI_OverlayAnchor anchor",
+        "DMUI_Vec2 offset",
+        "DMUI_Vec2 position",
+        "DMUI_Vec2 size",
+        "uint64_t changeGeneration",
+        "uint32_t arrangementCompleted",
+        "uint32_t visible"
+      ],
+      "DMUI_NotificationDescriptor": [
+        "DMUI_StatusSeverity severity",
+        "const char* message",
+        "uint32_t durationMilliseconds",
+        "const char* title"
+      ],
+      "DMUI_PlotReferenceLine": [
+        "float value",
+        "DMUI_Vec4 color"
+      ],
+      "DMUI_AnnotatedPlotDescriptor": [
+        "const float* samples",
+        "uint32_t sampleCount",
+        "uint32_t sampleOffset",
+        "float scaleMinimum",
+        "float scaleMaximum",
+        "DMUI_Vec2 size",
+        "const char* overlayText",
+        "const DMUI_PlotReferenceLine* referenceLines",
+        "uint32_t referenceLineCount"
+      ],
+      "DMUI_DialogDescriptor": [
+        "DMUI_DialogKind kind",
+        "const char* title",
+        "const char* body",
+        "const char* acceptLabel",
+        "const char* cancelLabel",
+        "const char* hint",
+        "const char* initialText",
+        "uint32_t maximumTextBytes"
+      ],
+      "DMUI_DialogEvent": [
+        "DMUI_DialogEventKind kind",
+        "uint64_t submissionId",
+        "uint32_t requiredTextCapacity"
+      ],
+      "DMUI_IconResolutionRequest": [
+        "const char* explicitName",
+        "const char* primaryMetadata",
+        "const char* secondaryMetadata"
+      ],
+      "DMUI_HostAPI": [
+        "uint32_t abiMajor",
+        "const DMUI_UIAPI* ui",
+        "DMUI_RegisterClientFn registerClient",
+        "DMUI_RegisterPageFn registerPage",
+        "DMUI_QueryStateFn queryState",
+        "DMUI_RequestFrameFn requestFrame",
+        "DMUI_ReleaseFrameFn releaseFrame",
+        "DMUI_IsMenuVisibleFn isMenuVisible",
+        "DMUI_SelectPageFn selectPage",
+        "DMUI_AttachSwapChainFn attachSwapChain",
+        "DMUI_RegisterActionFn registerAction",
+        "DMUI_SetStatusFn setStatus",
+        "DMUI_PushFontFn pushFont",
+        "DMUI_PopFontFn popFont",
+        "DMUI_DrawSectionHeaderFn drawSectionHeader",
+        "DMUI_DrawSearchInputFn drawSearchInput",
+        "DMUI_DrawCollapsingSectionHeaderFn drawCollapsingSectionHeader",
+        "DMUI_DrawSettingsActionButtonFn drawSettingsActionButton",
+        "DMUI_SettingsActionButtonWidthFn settingsActionButtonWidth",
+        "DMUI_SettingsActionButtonExtentFn settingsActionButtonExtent",
+        "DMUI_RegisterFrameObserverFn registerFrameObserver",
+        "DMUI_QueryVideoMemoryFn queryVideoMemory",
+        "DMUI_DrawBulletTextFn drawBulletText",
+        "DMUI_RegisterHotkeyActionFn registerHotkeyAction",
+        "DMUI_QueryHotkeyBindingFn queryHotkeyBinding",
+        "DMUI_UnregisterHotkeyActionFn unregisterHotkeyAction",
+        "DMUI_BeginSettingsTableFn beginSettingsTable",
+        "DMUI_BeginSettingsRowFn beginSettingsRow",
+        "DMUI_EndSettingsRowFn endSettingsRow",
+        "DMUI_EndSettingsTableFn endSettingsTable",
+        "DMUI_BeginSettingsRowExFn beginSettingsRowEx",
+        "DMUI_RegisterPageActivityObserverFn registerPageActivityObserver",
+        "DMUI_DrawLinkRowFn drawLinkRow",
+        "DMUI_DrawFaqFn drawFaq",
+        "DMUI_ReportDiagnosticFn reportDiagnostic",
+        "DMUI_SetHotkeyActionEnabledFn setHotkeyActionEnabled",
+        "DMUI_ImportD3D11ImageFn importD3D11Image",
+        "DMUI_ReleaseImageFn releaseImage",
+        "DMUI_QueryImageFn queryImage",
+        "DMUI_ConfigureOverlayFn configureOverlay",
+        "DMUI_QueryOverlayFn queryOverlay",
+        "DMUI_ResetOverlayFn resetOverlay",
+        "DMUI_PostNotificationFn postNotification",
+        "DMUI_RequestDialogFn requestDialog",
+        "DMUI_PollDialogEventFn pollDialogEvent",
+        "DMUI_ResolveDialogSubmissionFn resolveDialogSubmission",
+        "DMUI_CancelDialogFn cancelDialog",
+        "DMUI_CreateImageFn createImage",
+        "DMUI_UpdateImageFn updateImage",
+        "DMUI_RegisterCategoryFn registerCategory",
+        "DMUI_OpenExternalFn openExternal",
+        "DMUI_ResolveIconGlyphFn resolveIconGlyph",
+        "DMUI_BeginFieldFn beginField",
+        "DMUI_SetFieldFeedbackFn setFieldFeedback",
+        "DMUI_EndFieldFn endField",
+        "DMUI_DrawTextViewFn drawTextView",
+        "DMUI_DrawSearchInputBufferFn drawSearchInputBuffer",
+        "DMUI_LoadImageFileFn loadImageFile"
+      ]
+    }
+  }
 }

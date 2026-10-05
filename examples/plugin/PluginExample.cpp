@@ -5,6 +5,7 @@
 #include <array>
 #include <chrono>
 #include <cstdint>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -336,6 +337,117 @@ namespace
 	}
 }
 
+namespace
+{
+	// Page 5: Console-style input with history, Tab completion, and a caret-anchored popup.
+	constexpr std::array<const char*, 5> kCommands{
+		"player.additem", "player.setav", "player.placeatme", "tgm", "tcl"
+	};
+
+	struct ConsoleState
+	{
+		std::string input;
+		std::vector<std::string> history;
+		size_t historyIndex{};
+		std::vector<const char*> matches;
+		size_t selected{};
+		bool popupOpen{};
+		dmui::ui::TextEditFlags reload{};
+		size_t reloadCursor{};
+	};
+
+	ConsoleState g_console;
+
+	void ReplaceInput(std::string_view a_text)
+	{
+		// Applied to the active field next frame, before that frame's typing.
+		g_console.input = a_text;
+		g_console.reload = dmui::ui::TextEditFlags::kReload;
+		g_console.reloadCursor = g_console.input.size();
+	}
+
+	void RefreshMatches()
+	{
+		g_console.matches.clear();
+		for (const auto* command : kCommands)
+		{
+			if (!g_console.input.empty() &&
+				std::string_view{ command }.starts_with(g_console.input))
+				g_console.matches.push_back(command);
+		}
+		g_console.selected = 0;
+		g_console.popupOpen = !g_console.matches.empty();
+	}
+
+	void DrawConsolePage(dmui::Client& a_client)
+	{
+		using Flags = dmui::ui::TextEditFlags;
+		using Events = dmui::ui::TextEditEvents;
+
+		(void)a_client.DrawSectionHeader("Console");
+		for (const auto& line : g_console.history)
+			dmui::ui::TextUnformatted(line);
+
+		auto flags = Flags::kHistoryKeys | Flags::kCompletionKey |
+			Flags::kKeepFocusOnSubmit | g_console.reload;
+		if (g_console.popupOpen)
+			flags |= Flags::kCaptureCancel;
+		dmui::ui::TextEditState state{};
+		const auto edited = dmui::ui::InputTextEditor(
+			"##command", "Type a command", g_console.input, flags,
+			g_console.reloadCursor, state);
+		g_console.reload = Flags::kNone;
+
+		const auto has = [&](Events a_event) {
+			return dmui::ui::HasTextEditEvent(state, a_event);
+		};
+		if (edited)
+			RefreshMatches();
+		if (has(Events::kCompletion))
+		{
+			if (g_console.popupOpen)
+			{
+				ReplaceInput(g_console.matches[g_console.selected]);
+				g_console.popupOpen = false;
+			}
+			else
+				RefreshMatches();
+		}
+		const auto step = has(Events::kHistoryPrevious) ? -1 : has(Events::kHistoryNext) ? 1 : 0;
+		if (step != 0 && g_console.popupOpen)
+		{
+			const auto count = g_console.matches.size();
+			g_console.selected = (g_console.selected + count + step) % count;
+		}
+		else if (step != 0 && !g_console.history.empty())
+		{
+			const auto last = g_console.history.size();
+			g_console.historyIndex = step < 0 ?
+				(g_console.historyIndex > 0 ? g_console.historyIndex - 1 : 0) :
+				(std::min)(g_console.historyIndex + 1, last);
+			ReplaceInput(g_console.historyIndex < last ? g_console.history[g_console.historyIndex] : "");
+		}
+		if (has(Events::kCanceled))
+			g_console.popupOpen = false;
+		if (has(Events::kSubmitted) && !g_console.input.empty())
+		{
+			g_console.history.push_back(g_console.input);
+			g_console.historyIndex = g_console.history.size();
+			ReplaceInput("");
+			g_console.popupOpen = false;
+		}
+
+		// Tooltips never take focus, so typing continues in the field.
+		if (g_console.popupOpen && state.active &&
+			dmui::ui::BeginTooltipAt({ state.caretPosition.x, state.caretPosition.y + state.lineHeight }))
+		{
+			for (size_t index = 0; index < g_console.matches.size(); ++index)
+				(void)dmui::ui::Selectable(g_console.matches[index], index == g_console.selected);
+			dmui::ui::EndTooltip();
+		}
+	}
+}
+
 // Plugin entry point called during F4SE kPostPostLoad.
 void InitializeDearModdingUI()
 {
@@ -399,6 +511,19 @@ void InitializeDearModdingUI()
 		},
 		[] {
 			DrawDiagnosticsPage(g_client);
+		});
+
+	(void)g_client.AddPage(
+		{
+			.id = "console",
+			.displayName = "Console",
+			.categoryId = kToolsCategory.id,
+			.summary = "Command input with history and completion.",
+			.sortKey = 1,
+			.iconName = "terminal-window"
+		},
+		[] {
+			DrawConsolePage(g_client);
 		});
 
 	// Register a quick action in the host command palette or action list.

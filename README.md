@@ -23,7 +23,7 @@ draw custom interfaces, and interact with the shared DearModdingUI host menu.
 
 - **No Dear ImGui dependencies**: Client plugins do not compile Dear ImGui sources or link against ImGui libraries.
 - **Header-only C++ client**: Include `<DearModdingUI/Client.h>` to handle discovery, registration, and drawing.
-- **Exact-match C ABI 2**: One ABI covers all public tables and structs; schema generation rejects unversioned UI contract changes.
+- **Versioned C ABI**: Additive minor versions keep existing clients working across host updates. Breaking changes are batched into major versions, and schema generation enforces both rules.
 - **Familiar drawing facade**: Draw controls using `dmui::ui::*` functions that mirror familiar ImGui APIs.
 - **Host theming and layouts**: Built-in helpers for standardized settings rows, standalone fields, semantic feedback, color tones, and font scaling.
 

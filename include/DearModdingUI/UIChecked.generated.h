@@ -609,6 +609,74 @@ namespace dmui::ui
 		return a_left;
 	}
 
+	enum class TextEditFlags : uint32_t
+	{
+		kNone = 0u,
+		kHistoryKeys = DMUI_UI_TEXT_EDIT_FLAGS_HISTORY_KEYS,
+		kCompletionKey = DMUI_UI_TEXT_EDIT_FLAGS_COMPLETION_KEY,
+		kCaptureCancel = DMUI_UI_TEXT_EDIT_FLAGS_CAPTURE_CANCEL,
+		kKeepFocusOnSubmit = DMUI_UI_TEXT_EDIT_FLAGS_KEEP_FOCUS_ON_SUBMIT,
+		kRequestFocus = DMUI_UI_TEXT_EDIT_FLAGS_REQUEST_FOCUS,
+		kReload = DMUI_UI_TEXT_EDIT_FLAGS_RELOAD
+	};
+
+	[[nodiscard]] constexpr TextEditFlags operator|(
+		TextEditFlags a_left, TextEditFlags a_right) noexcept
+	{
+		return static_cast<TextEditFlags>(
+			static_cast<uint32_t>(a_left) |
+			static_cast<uint32_t>(a_right));
+	}
+
+	[[nodiscard]] constexpr TextEditFlags operator&(
+		TextEditFlags a_left, TextEditFlags a_right) noexcept
+	{
+		return static_cast<TextEditFlags>(
+			static_cast<uint32_t>(a_left) &
+			static_cast<uint32_t>(a_right));
+	}
+
+	constexpr TextEditFlags& operator|=(
+		TextEditFlags& a_left, TextEditFlags a_right) noexcept
+	{
+		a_left = a_left | a_right;
+		return a_left;
+	}
+
+	enum class TextEditEvents : uint32_t
+	{
+		kNone = 0u,
+		kEdited = DMUI_UI_TEXT_EDIT_EVENTS_EDITED,
+		kSubmitted = DMUI_UI_TEXT_EDIT_EVENTS_SUBMITTED,
+		kHistoryPrevious = DMUI_UI_TEXT_EDIT_EVENTS_HISTORY_PREVIOUS,
+		kHistoryNext = DMUI_UI_TEXT_EDIT_EVENTS_HISTORY_NEXT,
+		kCompletion = DMUI_UI_TEXT_EDIT_EVENTS_COMPLETION,
+		kCanceled = DMUI_UI_TEXT_EDIT_EVENTS_CANCELED
+	};
+
+	[[nodiscard]] constexpr TextEditEvents operator|(
+		TextEditEvents a_left, TextEditEvents a_right) noexcept
+	{
+		return static_cast<TextEditEvents>(
+			static_cast<uint32_t>(a_left) |
+			static_cast<uint32_t>(a_right));
+	}
+
+	[[nodiscard]] constexpr TextEditEvents operator&(
+		TextEditEvents a_left, TextEditEvents a_right) noexcept
+	{
+		return static_cast<TextEditEvents>(
+			static_cast<uint32_t>(a_left) &
+			static_cast<uint32_t>(a_right));
+	}
+
+	constexpr TextEditEvents& operator|=(
+		TextEditEvents& a_left, TextEditEvents a_right) noexcept
+	{
+		a_left = a_left | a_right;
+		return a_left;
+	}
+
 	namespace checked
 	{
 		[[nodiscard]] inline DMUI_Result GetStyleMetrics(
@@ -1476,6 +1544,28 @@ namespace dmui::ui
 		{
 			return detail::Invoke(
 				&DMUI_UIAPI::endPanel);
+		}
+
+		[[nodiscard]] inline DMUI_Result InputTextEditor(
+			const char* label,
+		const char* hint,
+		DMUI_TextBuffer* buffer,
+		DMUI_UIInputTextFlags flags,
+		DMUI_UITextEditFlags editFlags,
+		size_t cursor,
+		DMUI_TextEditState* state) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::inputTextEditor, label, hint, buffer, flags, editFlags, cursor, state);
+		}
+
+		[[nodiscard]] inline DMUI_Result BeginTooltipAt(
+			DMUI_Vec2 position,
+		DMUI_Vec2 pivot,
+		uint32_t* visible) noexcept
+		{
+			return detail::Invoke(
+				&DMUI_UIAPI::beginTooltipAt, position, pivot, visible);
 		}
 	}
 }

@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import re
 import tempfile
 from pathlib import Path
 
@@ -354,7 +355,59 @@ def render_host_bindings(schema: dict) -> str:
     return "\n".join(lines)
 
 
-def build_manifest(schema: dict) -> dict:
+# Toolchain and version-word macros legitimately vary; everything else in API.h is ABI.
+UNVERSIONED_DEFINES = {
+    "DMUI_EXTERN_C",
+    "DMUI_NOEXCEPT",
+    "DMUI_CALL",
+    "DMUI_EXPORT",
+    "DMUI_ABI_MINOR",
+    "DMUI_ABI_VERSION",
+}
+
+
+def normalize(text: str) -> str:
+    return " ".join(text.split())
+
+
+def build_host_manifest(api_text: str) -> dict:
+    text = re.sub(r"//[^\n]*", "", api_text)
+    return {
+        "defines": {
+            name: normalize(value)
+            for name, value in re.findall(r"^#define (DMUI_\w+) (.+)$", text, re.M)
+            if name not in UNVERSIONED_DEFINES
+        },
+        "types": {
+            name: normalize(type_name)
+            for type_name, name in re.findall(
+                r"^typedef (?!struct )([^;()]+?) (DMUI_\w+);$", text, re.M
+            )
+        },
+        "functions": {
+            name: f"{normalize(result)} ({normalize(parameters)}){qualifier}"
+            for result, name, parameters, qualifier in re.findall(
+                r"typedef ([^;{}]+?) ?\(DMUI_CALL \*(DMUI_\w+)\)\(([^;]*?)\)( DMUI_NOEXCEPT)?;",
+                text,
+                re.S,
+            )
+        },
+        "structs": {
+            name: [normalize(field) for field in body.split(";") if field.strip()]
+            for name, body in re.findall(
+                r"typedef struct (DMUI_\w+)\s*\{(.*?)\}\s*\1;", text, re.S
+            )
+        },
+    }
+
+
+def read_api_header(schema_path: Path) -> str:
+    return (schema_path.parents[1] / "include/DearModdingUI/API.h").read_text(
+        encoding="utf-8"
+    )
+
+
+def build_manifest(schema: dict, api_text: str) -> dict:
     return {
         "contract": schema["contract"],
         "enums": [
@@ -384,6 +437,7 @@ def build_manifest(schema: dict) -> dict:
             }
             for operation_id, name, field, kind in schema["operations"]
         ],
+        "host": build_host_manifest(api_text),
     }
 
 
@@ -392,7 +446,7 @@ def load_baseline_manifest(path: Path) -> dict:
         manifest = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
         raise GenerationError(f"cannot read compatibility baseline {path}: {error}") from error
-    required = {"contract", "enums", "operations"}
+    required = {"contract", "enums", "operations", "host"}
     if not isinstance(manifest, dict) or set(manifest) != required:
         raise GenerationError(
             f"compatibility baseline must contain exactly {sorted(required)}"
@@ -400,10 +454,74 @@ def load_baseline_manifest(path: Path) -> dict:
     return manifest
 
 
-def validate_compatibility(schema: dict, baseline: dict) -> None:
-    current = build_manifest(schema)
-    if current["contract"]["abi"] == baseline["contract"]["abi"] and current != baseline:
-        raise GenerationError("UI contract changed without a DMUI_ABI_VERSION change")
+def abi_version(manifest: dict) -> tuple[int, int]:
+    contract = manifest["contract"]
+    return contract["abiMajor"], contract["abiMinor"]
+
+
+def is_prefix(older: list, newer: list) -> bool:
+    return newer[: len(older)] == older
+
+
+def changed_entries(older: dict, newer: dict) -> list[str]:
+    return [name for name, value in older.items() if newer.get(name) != value]
+
+
+def validate_compatibility(current: dict, baseline: dict) -> None:
+    current_version = abi_version(current)
+    baseline_version = abi_version(baseline)
+    if current_version < baseline_version:
+        raise GenerationError("DMUI ABI version cannot decrease")
+    if current_version[0] > baseline_version[0]:
+        return
+    if current_version == baseline_version:
+        if current != baseline:
+            raise GenerationError(
+                "ABI contract changed without a DMUI_ABI_MINOR or DMUI_ABI_MAJOR change"
+            )
+        return
+
+    # Minors only append, so published slots, fields, and values keep their meaning.
+    breaking = "requires a DMUI_ABI_MAJOR change"
+    if dict(current["contract"], abiMinor=0) != dict(
+        baseline["contract"], abiMinor=0
+    ):
+        raise GenerationError(f"changing contract metadata {breaking}")
+    if not is_prefix(baseline["operations"], current["operations"]):
+        raise GenerationError(f"changing or removing UI operations {breaking}")
+    current_enums = {enum["name"]: enum for enum in current["enums"]}
+    for enum in baseline["enums"]:
+        candidate = current_enums.get(enum["name"])
+        if (
+            candidate is None
+            or any(
+                candidate[key] != enum[key]
+                for key in ("cName", "kind", "rejectedMask")
+            )
+            or not is_prefix(enum["values"], candidate["values"])
+            or not is_prefix(enum["aliases"], candidate["aliases"])
+        ):
+            raise GenerationError(
+                f"changing or removing enum {enum['name']} {breaking}"
+            )
+
+    host = current["host"]
+    published = baseline["host"]
+    changed = [
+        name
+        for section in ("defines", "types", "functions")
+        for name in changed_entries(published[section], host[section])
+    ]
+    for name, fields in published["structs"].items():
+        candidate = host["structs"].get(name, [])
+        # Only the host table grows within a major; every other struct is frozen.
+        grows = name == "DMUI_HostAPI"
+        if not (is_prefix(fields, candidate) if grows else candidate == fields):
+            changed.append(name)
+    if changed:
+        raise GenerationError(
+            f"changing or removing {', '.join(sorted(changed))} {breaking}"
+        )
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -426,12 +544,20 @@ def parse_arguments() -> argparse.Namespace:
 def main() -> int:
     arguments = parse_arguments()
     schema = load_schema(arguments.schema.resolve())
+    api_text = read_api_header(arguments.schema.resolve())
+    major, minor = abi_version(schema)
+    if (
+        f"#define DMUI_ABI_MAJOR {major}u" not in api_text
+        or f"#define DMUI_ABI_MINOR {minor}u" not in api_text
+    ):
+        raise GenerationError(
+            "schema ABI must match DMUI_ABI_MAJOR and DMUI_ABI_MINOR in API.h"
+        )
+    current = build_manifest(schema, api_text)
     baseline = load_baseline_manifest(arguments.baseline_manifest.resolve())
-    if not arguments.update_baseline:
-        validate_compatibility(schema, baseline)
-    api_header = arguments.schema.resolve().parents[1] / "include/DearModdingUI/API.h"
-    if f"#define DMUI_ABI_VERSION {schema['contract']['abi']}u" not in api_header.read_text(encoding="utf-8"):
-        raise GenerationError("schema ABI must match DMUI_ABI_VERSION in API.h")
+    # Refreshing an unchanged version is the deliberate development-slice escape hatch.
+    if not arguments.update_baseline or abi_version(current) != abi_version(baseline):
+        validate_compatibility(current, baseline)
     outputs = {
         arguments.c_header.resolve(): render_c_header(schema),
         arguments.checked_header.resolve(): render_checked_header(schema),
@@ -439,7 +565,7 @@ def main() -> int:
     }
     if arguments.update_baseline:
         outputs[arguments.baseline_manifest.resolve()] = (
-            json.dumps(build_manifest(schema), indent=2) + "\n"
+            json.dumps(current, indent=2) + "\n"
         )
     for path, text in outputs.items():
         atomic_write(path, text)

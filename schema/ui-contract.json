@@ -1,7 +1,8 @@
 {
   "contract": {
     "name": "DearModdingUI stable UI",
-    "abi": 2,
+    "abiMajor": 2,
+    "abiMinor": 1,
     "namespace": "dmui::ui",
     "packedColor": "RRGGBBAA"
   },
@@ -390,6 +391,34 @@
         ["NoBackground", 1, null],
         ["Scrollable", 2, null]
       ]
+    },
+    {
+      "name": "TextEditFlags",
+      "cName": "DMUI_UITextEditFlags",
+      "kind": "flags",
+      "hostTranslated": false,
+      "values": [
+        ["HistoryKeys", 1, null],
+        ["CompletionKey", 2, null],
+        ["CaptureCancel", 4, null],
+        ["KeepFocusOnSubmit", 8, null],
+        ["RequestFocus", 16, null],
+        ["Reload", 32, null]
+      ]
+    },
+    {
+      "name": "TextEditEvents",
+      "cName": "DMUI_UITextEditEvents",
+      "kind": "flags",
+      "hostTranslated": false,
+      "values": [
+        ["Edited", 1, null],
+        ["Submitted", 2, null],
+        ["HistoryPrevious", 4, null],
+        ["HistoryNext", 8, null],
+        ["Completion", 16, null],
+        ["Canceled", 32, null]
+      ]
     }
   ],
   "signatures": {
@@ -489,7 +518,9 @@
     "DrawListAddText": [["DMUI_ClientHandle", "client"], ["DMUI_DrawTarget", "target"], ["DMUI_Vec2", "pos"], ["uint32_t", "color"], ["const char*", "text"], ["size_t", "length"], ["float", "fontSize"]],
     "DrawListAddImage": [["DMUI_ClientHandle", "client"], ["DMUI_DrawTarget", "target"], ["DMUI_ImageHandle", "image"], ["DMUI_Vec2", "min"], ["DMUI_Vec2", "max"], ["DMUI_Vec2", "uv0"], ["DMUI_Vec2", "uv1"], ["uint32_t", "tint"]],
     "DrawListPushClipRect": [["DMUI_ClientHandle", "client"], ["DMUI_DrawTarget", "target"], ["DMUI_Vec2", "min"], ["DMUI_Vec2", "max"], ["uint32_t", "intersectWithCurrent"]],
-    "DrawListPopClipRect": [["DMUI_ClientHandle", "client"], ["DMUI_DrawTarget", "target"]]
+    "DrawListPopClipRect": [["DMUI_ClientHandle", "client"], ["DMUI_DrawTarget", "target"]],
+    "InputTextEditor": [["DMUI_ClientHandle", "client"], ["const char*", "label"], ["const char*", "hint"], ["DMUI_TextBuffer*", "buffer"], ["DMUI_UIInputTextFlags", "flags"], ["DMUI_UITextEditFlags", "editFlags"], ["size_t", "cursor"], ["DMUI_TextEditState*", "state"]],
+    "BeginTooltipAt": [["DMUI_ClientHandle", "client"], ["DMUI_Vec2", "position"], ["DMUI_Vec2", "pivot"], ["uint32_t*", "visible"]]
   },
   "operations": [
     [1, "GetStyleMetrics", "getStyleMetrics", "style_metrics"],
@@ -588,6 +619,8 @@
     [94, "DrawListPopClipRect", "drawListPopClipRect", "void"],
     [95, "GetThemeColors", "getThemeColors", "custom"],
     [96, "BeginPanel", "beginPanel", "bool"],
-    [97, "EndPanel", "endPanel", "void"]
+    [97, "EndPanel", "endPanel", "void"],
+    [98, "InputTextEditor", "inputTextEditor", "input_text"],
+    [99, "BeginTooltipAt", "beginTooltipAt", "bool"]
   ]
 }

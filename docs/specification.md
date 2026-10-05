@@ -2,11 +2,33 @@
 
 This document details the low-level contracts, binary layout requirements, thread affinity rules, and visual helper semantics for the DearModdingUI client API.
 
-## Stable UI Contract and Schema
+## ABI Versioning
 
-`DMUI_ABI_VERSION` (2) covers every public table and struct. `DMUI_GetAPI` returns the host table only for an exact match; mismatches log both versions and `Client::Connect` reports `UNSUPPORTED_ABI`. The host table's `ui` pointer exposes the complete UI table.
+The ABI version is `DMUI_ABI_MAJOR.DMUI_ABI_MINOR` and covers every public table and struct. Clients pass `DMUI_ABI_VERSION` to `DMUI_GetAPI`. It packs the minor into the high 16 bits, so ABI 2.0 is the value `2` requested by released ABI 2 clients. The host returns its single current table when the major matches and the requested minor is at most its own. Otherwise it logs both versions and returns null, and `Client::Connect` reports `UNSUPPORTED_ABI`. `DMUI_HostAPI::abiMajor` and `DMUI_HostReadyInfo::abiMajor` carry the major only.
 
-`schema/ui-contract.json` defines the C UI contract. Generation rejects layout or enum changes without an ABI change relative to `schema/ui-contract.manifest.json`. `--update-baseline` deliberately refreshes this guard, including during unreleased development slices. The generated files are:
+A minor version only appends:
+- Slots at the end of `DMUI_HostAPI` or `DMUI_UIAPI`.
+- New structs, function and callback types, enum families, enum or flag values, constants, and result codes.
+
+Within a major, every existing slot, signature, struct layout, constant, and enum value is frozen. This includes client descriptors, options, out-parameters, and the info structs passed to callbacks. To extend a struct, add a new struct and a new entry point that takes it. Existing entry points keep their behavior for the inputs they already accept, and they never return values that a later minor introduced. The exception is `DMUI_Result`: treat any unknown non-OK code as a failure. A minor may deprecate an entry point. A deprecated entry point keeps working, delegating to the current implementation, until the next major removes it.
+
+A major version is the only point where removals and changes happen. It batches pending deprecations, resets the minor to 0, and requires clients to rebuild. Before DearModdingUI 1.0, a host serves exactly one major.
+
+From DearModdingUI 1.0, a host serves its current major N and the previous major N-1, and no older. The N-1 table is frozen and adapts onto the current implementation; it is removed when major N+1 ships, so at most one compatibility layer exists. Majors should be rare, because minors absorb additions and deprecations.
+
+A newer client meeting an older host fails to connect, and the user updates DearModdingUI. Hosts accept every older minor of their major, so a host update never breaks a client. There is no per-feature negotiation. To run on older hosts, a mod builds against the API revision of the oldest host it supports. The minor bump in this repository therefore lands together with the host release that implements it, because `main` is synchronized into CommonLibF4.
+
+There are no `structSize` fields, table-prefix constants, per-slot revisions, service bits, or minimum-version options. The single version word is the only negotiation. Resource byte counts and buffer capacities remain runtime validation inputs. Runtime unavailability is reported through operation results and lifecycle callbacks.
+
+### Contract Guard
+
+`schema/ui-contract.json` defines the C UI table and enums, and `API.h` defines the host table, structs, function types, and constants. `schema/ui-contract.manifest.json` records both for the last published version. Generation compares them against that baseline:
+- At an unchanged version, any difference is rejected.
+- At a higher minor, the baseline UI operations and `DMUI_HostAPI` slots must be an unchanged prefix. Other baseline structs, types, constants, and enum values must be unchanged.
+- At a higher major, any change is accepted.
+- A lower version is rejected.
+
+`--update-baseline` validates any version change before writing. Refreshing an unchanged version skips validation, and is reserved for unpublished development slices. `Tests/CompileHostAPILayout.cpp` additionally pins compiler-computed `DMUI_HostAPI` offsets. The generated files are:
 - `CUIAPI.h`: The C function table structure.
 - `UIChecked.generated.h`: Explicit result-returning C++ wrappers.
 - `UIBindings.generated.h`: Host declarations and symbolic translations.
@@ -15,9 +37,7 @@ This document details the low-level contracts, binary layout requirements, threa
 
 The host translates every stable enum and flag symbolically. Values do not necessarily match native Dear ImGui enum numeric values. Unknown flag bits return `DMUI_RESULT_INVALID_ARGUMENT`.
 
-### Exact ABI and Drawing Failures
-
-Every table slot is part of the ABI. There are no `structSize` fields, table-prefix constants, UI revisions, service bits, or minimum-version options. Resource byte counts and buffer capacities remain runtime validation inputs. Runtime unavailability is reported through operation results and lifecycle callbacks.
+### Drawing Failures
 
 Drawing wrappers record the first failure in a callback-scoped sticky result. The trampoline passes this result back to the host, which disables the malfunctioning callback. Scope-end operations continue to dispatch so nested stacks unwind cleanly.
 Page and action C callbacks return `DMUI_Result`; frame callbacks remain void and non-drawing.
@@ -97,6 +117,21 @@ The bundled native input widget intentionally suppresses single-line glyph
 rendering above 2 MiB. This limits display work only; it is not a wrapper cap
 and does not change the growable storage contract or the `INT_MAX` capacity
 representation bound.
+
+### Input Text Editor (ABI 2.1)
+
+`inputTextEditor` is a single-line input over the same editing core and `DMUI_TextBuffer` contract as `drawSearchInputBuffer`. It reports per-frame events in `DMUI_TextEditState::events`:
+- `Edited`: the text changed this frame.
+- `Submitted`: Enter was pressed.
+- `HistoryPrevious` / `HistoryNext`: Up / Down, with `HistoryKeys`.
+- `Completion`: Tab, with `CompletionKey`.
+- `Canceled`: Escape, with `CaptureCancel`.
+
+Each opt-in flag consumes its key for the active field, so arrows do not navigate, Tab does not move focus, and Escape neither reverts nor deactivates. `CompletionKey` rejects `AllowTabInput`. `KeepFocusOnSubmit` reactivates the field on the next frame. `RequestFocus` focuses an inactive field.
+
+The client owns the text. To replace it, the client writes the buffer and passes `Reload` with a byte `cursor` on a UTF-8 boundary. An active field reloads before applying that frame's keyboard input, so typing lands after the placed cursor. An inactive field always displays the buffer and ignores the cursor.
+
+While active, the state reports the cursor, the selection bounds (equal to the cursor when nothing is selected), the caret line's screen-space top-left in `caretPosition`, and its `lineHeight`. These fields are zero while inactive, including the frame of a kept-focus submission. `ui::BeginTooltipAt(position, pivot)` opens a non-focusable tooltip at a screen position, for example a completion list below the caret. The C++ `std::string` overload stages the text through `TextInputBuffer`, like `Client::DrawSearchInput`.
 
 ### Read-Only Text View
 

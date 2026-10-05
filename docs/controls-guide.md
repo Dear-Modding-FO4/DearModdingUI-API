@@ -73,6 +73,30 @@ be inserted partially at a complete UTF-8 boundary. Existing text is never
 truncated. Both forms reject embedded NUL bytes. The bounded form also rejects
 an existing string longer than the maximum or a maximum of `INT_MAX` or greater.
 
+For a console or any autocompleting field, `ui::InputTextEditor` reports
+history, completion, submit, cancel, and edit events, plus the caret position
+(ABI 2.1). Replace the text by assigning the string and passing `kReload` with
+the new cursor on the next frame:
+
+```cpp
+using Flags = dmui::ui::TextEditFlags;
+dmui::ui::TextEditState state{};
+(void)dmui::ui::InputTextEditor("##command", "Command", input,
+	Flags::kHistoryKeys | Flags::kCompletionKey | Flags::kKeepFocusOnSubmit | reload,
+	reloadCursor, state);
+if (dmui::ui::HasTextEditEvent(state, dmui::ui::TextEditEvents::kCompletion))
+	ShowCompletions();
+if (state.active && dmui::ui::BeginTooltipAt(
+		{ state.caretPosition.x, state.caretPosition.y + state.lineHeight }))
+{
+	DrawCompletionList();
+	dmui::ui::EndTooltip();
+}
+```
+
+The example plugin's Console page is a complete version with history and a
+selectable suggestion list.
+
 For large immutable text, pass existing storage and indexes to the host-owned
 viewer:
 
@@ -176,7 +200,7 @@ Reset is reflected next frame.
 
 Existing `SettingsRowScope`, `BeginSettingsRow`, and `EndSettingsRow` code works
 unchanged after rebuilding for ABI 2. `FieldScope` is optional for standalone
-fields and feedback. All host and UI operations share one exact-match ABI.
+fields and feedback. All host and UI operations share one ABI version.
 
 ## Choice Dropdowns (`dmui::DrawChoice`)
 

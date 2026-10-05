@@ -1,6 +1,7 @@
 #pragma once
 
 #include <DearModdingUI/CUIAPI.h>
+#include <DearModdingUI/TextInput.h>
 
 #include <cfloat>
 #include <cstdarg>
@@ -10,6 +11,7 @@
 #include <limits>
 #include <new>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 #include <type_traits>
 #include <vector>
@@ -392,6 +394,16 @@ namespace dmui::ui
 	{
 		uint32_t visible{};
 		detail::Record(checked::BeginTooltip(&visible));
+		return visible != 0;
+	}
+
+	// Places the tooltip at a screen position; pivot {0, 0} anchors its top-left.
+	[[nodiscard]] inline bool BeginTooltipAt(
+		Vec2 a_position,
+		Vec2 a_pivot = {}) noexcept
+	{
+		uint32_t visible{};
+		detail::Record(checked::BeginTooltipAt(a_position, a_pivot, &visible));
 		return visible != 0;
 	}
 
@@ -784,6 +796,60 @@ namespace dmui::ui
 			static_cast<DMUI_UIInputTextFlags>(a_flags),
 			&changed));
 		return changed != 0;
+	}
+
+	using TextEditState = DMUI_TextEditState;
+
+	[[nodiscard]] constexpr bool HasTextEditEvent(
+		const TextEditState& a_state,
+		TextEditEvents a_event) noexcept
+	{
+		return (a_state.events & static_cast<uint32_t>(a_event)) != 0;
+	}
+
+	// Single-line input reporting per-frame edit events; returns whether the text was edited.
+	[[nodiscard]] inline bool InputTextEditor(
+		const char* a_label,
+		const char* a_hint,
+		DMUI_TextBuffer& a_buffer,
+		TextEditFlags a_editFlags,
+		size_t a_cursor,
+		TextEditState& a_state,
+		InputTextFlags a_flags = InputTextFlags::kNone) noexcept
+	{
+		a_state = {};
+		detail::Record(checked::InputTextEditor(
+			a_label,
+			a_hint,
+			&a_buffer,
+			static_cast<DMUI_UIInputTextFlags>(a_flags),
+			static_cast<DMUI_UITextEditFlags>(a_editFlags),
+			a_cursor,
+			&a_state));
+		return HasTextEditEvent(a_state, TextEditEvents::kEdited);
+	}
+
+	[[nodiscard]] inline bool InputTextEditor(
+		const char* a_label,
+		const char* a_hint,
+		std::string& a_text,
+		TextEditFlags a_editFlags,
+		size_t a_cursor,
+		TextEditState& a_state,
+		InputTextFlags a_flags = InputTextFlags::kNone) noexcept
+	{
+		a_state = {};
+		TextInputBuffer buffer{ a_text };
+		auto* const data = buffer.Get();
+		if (!data)
+		{
+			detail::Record(buffer.Result());
+			return false;
+		}
+		const auto edited = InputTextEditor(
+			a_label, a_hint, *data, a_editFlags, a_cursor, a_state, a_flags);
+		detail::Record(buffer.CommitTo(a_text));
+		return edited;
 	}
 
 	[[nodiscard]] inline bool IsItemDeactivatedAfterEdit() noexcept

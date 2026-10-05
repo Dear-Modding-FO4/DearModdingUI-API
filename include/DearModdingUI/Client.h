@@ -965,7 +965,7 @@ namespace dmui
 			}
 
 			api_ = getAPI(DMUI_ABI_VERSION);
-			if (!api_ || api_->abiVersion != DMUI_ABI_VERSION)
+			if (!api_ || api_->abiMajor != DMUI_ABI_MAJOR)
 			{
 				api_ = nullptr;
 				uiAPI_ = nullptr;
