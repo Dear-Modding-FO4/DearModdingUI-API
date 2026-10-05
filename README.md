@@ -274,7 +274,7 @@ Build the test suites and example plugin:
 
 ```powershell
 xmake
-xmake run api-header-checks
+xmake build api-header-checks
 xmake build example-plugin
 ```
 

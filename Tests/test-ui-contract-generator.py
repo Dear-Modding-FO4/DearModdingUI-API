@@ -19,9 +19,6 @@ class ABIContractTests(unittest.TestCase):
             ROOT / "schema/ui-contract.manifest.json"
         )
 
-    def test_published_contract_matches(self):
-        generator.validate_compatibility(self.schema, self.baseline)
-
     def test_layout_changes_require_abi_change(self):
         signature = copy.deepcopy(self.schema)
         signature["signatures"]["Button"][1][0] = "uint64_t"

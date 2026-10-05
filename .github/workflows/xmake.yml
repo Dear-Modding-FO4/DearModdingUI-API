@@ -52,11 +52,14 @@ jobs:
           if ($actual -cne $expected) { throw "Generated contract differs from schema: $name" }
         }
 
-    - name: Test Phosphor vocabulary generation
-      run: python Tests/test-phosphor-generator.py -v
+    - name: Check Phosphor vocabulary generation
+      run: python Tools/GeneratePhosphorGlyphs.py --check
 
     - name: Build header checks
       run: xmake build --yes -vD api-header-checks
+
+    - name: Build example plugin
+      run: xmake build --yes example-plugin
 
   sync-commonlibf4:
     needs: build

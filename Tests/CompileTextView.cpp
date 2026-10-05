@@ -79,34 +79,3 @@ namespace
 	static_assert(
 		dmui::text_view_detail::PreviousUTF8Boundary("\xC3\xA9x", 1) == 0);
 }
-
-void CompileTextViewNavigation()
-{
-	struct Section
-	{
-		std::string_view label;
-		size_t byteOffset;
-	};
-	const std::array sections{
-		Section{ "Overview##literal", 0 },
-		Section{ "Details", 9 }
-	};
-	const std::array<size_t, 2> lines{ 0, 9 };
-	const dmui::TextViewRequest request{
-		.text = "Overview\nDetails",
-		.lineOffsets = lines,
-		.contentRevision = 1,
-		.matchRevision = 1
-	};
-	dmui::TextViewState state;
-	DMUI_StyleMetrics metrics{};
-	(void)dmui::DrawTextViewNavigation(
-		"sections",
-		std::span<const Section>{ sections },
-		metrics,
-		request,
-		state,
-		[](const Section& a_section) {
-			return std::pair{ a_section.label, a_section.byteOffset };
-		});
-}

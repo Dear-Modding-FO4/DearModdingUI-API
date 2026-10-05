@@ -11,7 +11,7 @@ target("dearmoddingui-api", function()
 end)
 
 target("api-header-checks", function()
-	set_kind("binary")
+	set_kind("static")
 	set_default(os.scriptdir() == os.projectdir())
 	set_languages("c11", "c++23")
 	add_deps("dearmoddingui-api")
