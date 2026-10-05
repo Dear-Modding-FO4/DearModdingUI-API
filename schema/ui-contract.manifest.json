@@ -3714,6 +3714,13 @@
       "DMUI_OVERLAY_ANCHOR_BOTTOM_LEFT": "2u",
       "DMUI_OVERLAY_ANCHOR_BOTTOM_RIGHT": "3u",
       "DMUI_OVERLAY_ANCHOR_FREE": "4u",
+      "DMUI_OVERLAY_FOCUS_END_NONE": "0u",
+      "DMUI_OVERLAY_FOCUS_END_RELEASED": "1u",
+      "DMUI_OVERLAY_FOCUS_END_CANCELED": "2u",
+      "DMUI_OVERLAY_FOCUS_END_SHELL_OPENED": "3u",
+      "DMUI_OVERLAY_FOCUS_END_INTERRUPTED": "4u",
+      "DMUI_OVERLAY_FOCUS_END_HOST_UNAVAILABLE": "5u",
+      "DMUI_OVERLAY_FOCUS_END_CALLBACK_FAILED": "6u",
       "DMUI_DIALOG_KIND_CONFIRM": "0u",
       "DMUI_DIALOG_KIND_TEXT_ENTRY": "1u",
       "DMUI_DIALOG_EVENT_PENDING": "0u",
@@ -3757,6 +3764,7 @@
       "DMUI_ImageStatus": "uint32_t",
       "DMUI_PixelFormat": "uint32_t",
       "DMUI_OverlayAnchor": "uint32_t",
+      "DMUI_OverlayFocusEndReason": "uint32_t",
       "DMUI_DialogKind": "uint32_t",
       "DMUI_DialogEventKind": "uint32_t",
       "DMUI_ExternalTargetKind": "uint32_t",
@@ -3814,6 +3822,9 @@
       "DMUI_ConfigureOverlayFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_PageHandle page, const DMUI_ManagedOverlayOptions* options) DMUI_NOEXCEPT",
       "DMUI_QueryOverlayFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_PageHandle page, DMUI_ManagedOverlayPlacement* placement) DMUI_NOEXCEPT",
       "DMUI_ResetOverlayFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_PageHandle page) DMUI_NOEXCEPT",
+      "DMUI_RequestOverlayFocusFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_PageHandle page) DMUI_NOEXCEPT",
+      "DMUI_ReleaseOverlayFocusFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_PageHandle page) DMUI_NOEXCEPT",
+      "DMUI_QueryOverlayFocusFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_PageHandle page, DMUI_OverlayFocusInfo* info) DMUI_NOEXCEPT",
       "DMUI_PostNotificationFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_NotificationDescriptor* descriptor) DMUI_NOEXCEPT",
       "DMUI_RequestDialogFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_DialogDescriptor* descriptor, DMUI_DialogHandle* dialog) DMUI_NOEXCEPT",
       "DMUI_PollDialogEventFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_DialogHandle dialog, DMUI_DialogEvent* event, char* textBuffer, uint32_t textCapacity) DMUI_NOEXCEPT",
@@ -4077,6 +4088,11 @@
         "uint32_t arrangementCompleted",
         "uint32_t visible"
       ],
+      "DMUI_OverlayFocusInfo": [
+        "uint32_t focused",
+        "DMUI_OverlayFocusEndReason endReason",
+        "uint64_t generation"
+      ],
       "DMUI_NotificationDescriptor": [
         "DMUI_StatusSeverity severity",
         "const char* message",
@@ -4176,7 +4192,10 @@
         "DMUI_EndFieldFn endField",
         "DMUI_DrawTextViewFn drawTextView",
         "DMUI_DrawSearchInputBufferFn drawSearchInputBuffer",
-        "DMUI_LoadImageFileFn loadImageFile"
+        "DMUI_LoadImageFileFn loadImageFile",
+        "DMUI_RequestOverlayFocusFn requestOverlayFocus",
+        "DMUI_ReleaseOverlayFocusFn releaseOverlayFocus",
+        "DMUI_QueryOverlayFocusFn queryOverlayFocus"
       ]
     }
   }

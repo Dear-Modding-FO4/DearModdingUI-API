@@ -1059,16 +1059,12 @@ namespace dmui
 		[[nodiscard]] bool AddCategory(
 			const CategoryDescriptor& a_category) noexcept
 		{
-			if (!IsConnected())
-				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-
 			DMUI_CategoryDescriptor descriptor{};
 			descriptor.id = a_category.id;
 			descriptor.displayName = a_category.displayName;
 			descriptor.sortKey = a_category.sortKey;
 			descriptor.iconName = a_category.iconName;
-			lastResult_ = api_->registerCategory(clientHandle_, &descriptor);
-			return lastResult_ == DMUI_RESULT_OK;
+			return Call<&DMUI_HostAPI::registerCategory>(&descriptor);
 		}
 
 		[[nodiscard]] bool OpenExternal(
@@ -1188,16 +1184,7 @@ namespace dmui
 		[[nodiscard]] std::optional<DMUI_HotkeyBindingInfo> QueryHotkeyBinding(
 			DMUI_HotkeyActionHandle a_action) noexcept
 		{
-			if (!IsConnected())
-			{
-				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-				return std::nullopt;
-			}
-			DMUI_HotkeyBindingInfo binding{};
-			lastResult_ = api_->queryHotkeyBinding(clientHandle_, a_action, &binding);
-			if (lastResult_ != DMUI_RESULT_OK)
-				return std::nullopt;
-			return binding;
+			return Query<DMUI_HotkeyBindingInfo, &DMUI_HostAPI::queryHotkeyBinding>(a_action);
 		}
 
 		bool UnregisterHotkeyAction(DMUI_HotkeyActionHandle a_action) noexcept
@@ -1382,54 +1369,32 @@ namespace dmui
 
 		[[nodiscard]] std::optional<VideoMemoryInfo> QueryVideoMemory() noexcept
 		{
-			if (!IsConnected())
-			{
-				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-				return std::nullopt;
-			}
-
 			VideoMemoryInfo info{};
-			lastResult_ =
-				api_->queryVideoMemory(clientHandle_, &info.used, &info.budget);
-			if (lastResult_ != DMUI_RESULT_OK)
+			if (!Call<&DMUI_HostAPI::queryVideoMemory>(&info.used, &info.budget))
 				return std::nullopt;
 			return info;
 		}
 
 		[[nodiscard]] bool RequestFrame(DMUI_PageHandle a_page) noexcept
 		{
-			if (!IsConnected())
-				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			lastResult_ = api_->requestFrame(clientHandle_, a_page);
-			return lastResult_ == DMUI_RESULT_OK;
+			return Call<&DMUI_HostAPI::requestFrame>(a_page);
 		}
 
 		[[nodiscard]] bool ReleaseFrame(DMUI_PageHandle a_page) noexcept
 		{
-			if (!IsConnected())
-				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			lastResult_ = api_->releaseFrame(clientHandle_, a_page);
-			return lastResult_ == DMUI_RESULT_OK;
+			return Call<&DMUI_HostAPI::releaseFrame>(a_page);
 		}
 
 		[[nodiscard]] bool AttachSwapChain(void* a_nativeSwapChain) noexcept
 		{
-			if (!IsConnected())
-				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			lastResult_ =
-				api_->attachSwapChain(clientHandle_, a_nativeSwapChain);
-			return lastResult_ == DMUI_RESULT_OK;
+			return Call<&DMUI_HostAPI::attachSwapChain>(a_nativeSwapChain);
 		}
 
 		[[nodiscard]] bool SetHotkeyActionEnabled(
 			DMUI_HotkeyActionHandle a_action,
 			bool a_enabled) noexcept
 		{
-			if (!IsConnected())
-				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			lastResult_ = api_->setHotkeyActionEnabled(
-				clientHandle_, a_action, a_enabled ? 1u : 0u);
-			return lastResult_ == DMUI_RESULT_OK;
+			return Call<&DMUI_HostAPI::setHotkeyActionEnabled>(a_action, a_enabled ? 1u : 0u);
 		}
 
 		[[nodiscard]] std::optional<ImageResource> ImportD3D11Image(
@@ -1437,122 +1402,82 @@ namespace dmui
 			uint32_t a_contentWidth = 0,
 			uint32_t a_contentHeight = 0) noexcept
 		{
-			if (!IsConnected())
-			{
-				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-				return std::nullopt;
-			}
 			const DMUI_D3D11ImageDescriptor descriptor{
 				a_shaderResourceView,
 				a_contentWidth,
 				a_contentHeight
 			};
-			DMUI_ImageHandle handle{};
-			lastResult_ = api_->importD3D11Image(
-				clientHandle_, &descriptor, &handle);
-			if (lastResult_ != DMUI_RESULT_OK)
+			const auto handle =
+				Query<DMUI_ImageHandle, &DMUI_HostAPI::importD3D11Image>(&descriptor);
+			if (!handle)
 				return std::nullopt;
-			return ImageResource{
-				api_->releaseImage,
-				clientHandle_,
-				handle
-			};
+			return ImageResource{ api_->releaseImage, clientHandle_, *handle };
 		}
 
 		[[nodiscard]] std::optional<ImageResource> CreateImage(
 			const DMUI_ImageDescriptor& a_descriptor) noexcept
 		{
-			if (!IsConnected())
-			{
-				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			const auto handle =
+				Query<DMUI_ImageHandle, &DMUI_HostAPI::createImage>(&a_descriptor);
+			if (!handle)
 				return std::nullopt;
-			}
-			DMUI_ImageHandle handle{};
-			lastResult_ = api_->createImage(
-				clientHandle_, &a_descriptor, &handle);
-			if (lastResult_ != DMUI_RESULT_OK)
-				return std::nullopt;
-			return ImageResource{
-				api_->releaseImage,
-				clientHandle_,
-				handle
-			};
+			return ImageResource{ api_->releaseImage, clientHandle_, *handle };
 		}
 
 		[[nodiscard]] std::optional<ImageResource> LoadImageFile(const char* a_utf8Path) noexcept
 		{
-			if (!IsConnected())
-			{
-				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			const auto handle =
+				Query<DMUI_ImageHandle, &DMUI_HostAPI::loadImageFile>(a_utf8Path);
+			if (!handle)
 				return std::nullopt;
-			}
-			DMUI_ImageHandle handle{};
-			lastResult_ = api_->loadImageFile(clientHandle_, a_utf8Path, &handle);
-			if (lastResult_ != DMUI_RESULT_OK)
-				return std::nullopt;
-			return ImageResource{ api_->releaseImage, clientHandle_, handle };
+			return ImageResource{ api_->releaseImage, clientHandle_, *handle };
 		}
 
 		[[nodiscard]] bool UpdateImage(
 			ImageHandle a_image,
 			const DMUI_ImageDescriptor& a_descriptor) noexcept
 		{
-			if (!IsConnected())
-				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			lastResult_ = api_->updateImage(
-				clientHandle_, a_image.value, &a_descriptor);
-			return lastResult_ == DMUI_RESULT_OK;
+			return Call<&DMUI_HostAPI::updateImage>(a_image.value, &a_descriptor);
 		}
 
 		[[nodiscard]] std::optional<DMUI_ImageInfo> QueryImage(
 			ImageHandle a_image) noexcept
 		{
-			if (!IsConnected())
-			{
-				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-				return std::nullopt;
-			}
-			DMUI_ImageInfo info{};
-			lastResult_ = api_->queryImage(
-				clientHandle_, a_image.value, &info);
-			if (lastResult_ != DMUI_RESULT_OK)
-				return std::nullopt;
-			return info;
+			return Query<DMUI_ImageInfo, &DMUI_HostAPI::queryImage>(a_image.value);
 		}
 
 		[[nodiscard]] bool ConfigureOverlay(
 			DMUI_PageHandle a_page,
 			const DMUI_ManagedOverlayOptions& a_options) noexcept
 		{
-			if (!IsConnected())
-				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			lastResult_ = api_->configureOverlay(
-				clientHandle_, a_page, &a_options);
-			return lastResult_ == DMUI_RESULT_OK;
+			return Call<&DMUI_HostAPI::configureOverlay>(a_page, &a_options);
 		}
 
 		[[nodiscard]] std::optional<DMUI_ManagedOverlayPlacement>
 			QueryOverlay(DMUI_PageHandle a_page) noexcept
 		{
-			if (!IsConnected())
-			{
-				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-				return std::nullopt;
-			}
-			DMUI_ManagedOverlayPlacement placement{};
-			lastResult_ = api_->queryOverlay(
-				clientHandle_, a_page, &placement);
-			if (lastResult_ != DMUI_RESULT_OK)
-				return std::nullopt;
-			return placement;
+			return Query<DMUI_ManagedOverlayPlacement, &DMUI_HostAPI::queryOverlay>(a_page);
 		}
 
 		[[nodiscard]] bool ResetOverlay(DMUI_PageHandle a_page) noexcept
 		{
-			if (!IsConnected())
-				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			lastResult_ = api_->resetOverlay(clientHandle_, a_page);
-			return lastResult_ == DMUI_RESULT_OK;
+			return Call<&DMUI_HostAPI::resetOverlay>(a_page);
+		}
+
+		[[nodiscard]] bool RequestOverlayFocus(DMUI_PageHandle a_page) noexcept
+		{
+			return Call<&DMUI_HostAPI::requestOverlayFocus>(a_page);
+		}
+
+		[[nodiscard]] bool ReleaseOverlayFocus(DMUI_PageHandle a_page) noexcept
+		{
+			return Call<&DMUI_HostAPI::releaseOverlayFocus>(a_page);
+		}
+
+		[[nodiscard]] std::optional<DMUI_OverlayFocusInfo>
+			QueryOverlayFocus(DMUI_PageHandle a_page) noexcept
+		{
+			return Query<DMUI_OverlayFocusInfo, &DMUI_HostAPI::queryOverlayFocus>(a_page);
 		}
 
 		[[nodiscard]] bool PostNotification(
@@ -1561,32 +1486,19 @@ namespace dmui
 			uint32_t a_durationMilliseconds = 0,
 			const char* a_title = nullptr) noexcept
 		{
-			if (!IsConnected())
-				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 			const DMUI_NotificationDescriptor descriptor{
 				a_severity,
 				a_message,
 				a_durationMilliseconds,
 				a_title
 			};
-			lastResult_ = api_->postNotification(clientHandle_, &descriptor);
-			return lastResult_ == DMUI_RESULT_OK;
+			return Call<&DMUI_HostAPI::postNotification>(&descriptor);
 		}
 
 		[[nodiscard]] std::optional<DMUI_DialogHandle> RequestDialog(
 			const DMUI_DialogDescriptor& a_descriptor) noexcept
 		{
-			if (!IsConnected())
-			{
-				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-				return std::nullopt;
-			}
-			DMUI_DialogHandle dialog{};
-			lastResult_ = api_->requestDialog(
-				clientHandle_, &a_descriptor, &dialog);
-			if (lastResult_ != DMUI_RESULT_OK)
-				return std::nullopt;
-			return dialog;
+			return Query<DMUI_DialogHandle, &DMUI_HostAPI::requestDialog>(&a_descriptor);
 		}
 
 		[[nodiscard]] std::optional<DMUI_DialogEvent> PollDialogEvent(
@@ -1642,49 +1554,33 @@ namespace dmui
 			bool a_accepted,
 			const char* a_error = nullptr) noexcept
 		{
-			if (!IsConnected())
-				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			lastResult_ = api_->resolveDialogSubmission(
-				clientHandle_,
+			return Call<&DMUI_HostAPI::resolveDialogSubmission>(
 				a_dialog,
 				a_submissionId,
 				a_accepted ? 1u : 0u,
 				a_error);
-			return lastResult_ == DMUI_RESULT_OK;
 		}
 
 		[[nodiscard]] bool CancelDialog(
 			DMUI_DialogHandle a_dialog) noexcept
 		{
-			if (!IsConnected())
-				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-			lastResult_ = api_->cancelDialog(clientHandle_, a_dialog);
-			return lastResult_ == DMUI_RESULT_OK;
+			return Call<&DMUI_HostAPI::cancelDialog>(a_dialog);
 		}
 
 		bool SetStatus(DMUI_StatusSeverity a_severity, const char* a_message) noexcept
 		{
-			if (!IsConnected())
-				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-
-			lastResult_ = api_->setStatus(clientHandle_, a_severity, a_message);
-			return lastResult_ == DMUI_RESULT_OK;
+			return Call<&DMUI_HostAPI::setStatus>(a_severity, a_message);
 		}
 
 		bool ReportDiagnostic(const Diagnostic& a_diagnostic) noexcept
 		{
-			if (!IsConnected())
-				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-
 			const DMUI_DiagnosticDescriptor descriptor{
 				a_diagnostic.severity,
 				a_diagnostic.scope,
 				a_diagnostic.summary,
 				a_diagnostic.detail
 			};
-			lastResult_ =
-				api_->reportDiagnostic(clientHandle_, &descriptor);
-			return lastResult_ == DMUI_RESULT_OK;
+			return Call<&DMUI_HostAPI::reportDiagnostic>(&descriptor);
 		}
 
 		[[nodiscard]] std::optional<DMUI_ThemeColors> GetThemeColors() noexcept
@@ -1718,32 +1614,17 @@ namespace dmui
 
 		[[nodiscard]] bool PushFont(DMUI_FontRole a_role) noexcept
 		{
-			if (!IsConnected())
-				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-
-			lastResult_ = api_->pushFont(clientHandle_, a_role);
-			return lastResult_ == DMUI_RESULT_OK;
+			return Call<&DMUI_HostAPI::pushFont>(a_role);
 		}
 
 		[[nodiscard]] bool PopFont() noexcept
 		{
-			if (!IsConnected())
-				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-
-			lastResult_ = api_->popFont(clientHandle_);
-			return lastResult_ == DMUI_RESULT_OK;
+			return Call<&DMUI_HostAPI::popFont>();
 		}
 
 		[[nodiscard]] bool DrawSectionHeader(const char* a_text, char32_t a_glyph = 0) noexcept
 		{
-			if (!IsConnected())
-				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-
-			lastResult_ = api_->drawSectionHeader(
-				clientHandle_,
-				a_text,
-				static_cast<uint32_t>(a_glyph));
-			return lastResult_ == DMUI_RESULT_OK;
+			return Call<&DMUI_HostAPI::drawSectionHeader>(a_text, static_cast<uint32_t>(a_glyph));
 		}
 
 		[[nodiscard]] std::optional<char32_t> ResolveIconGlyph(
@@ -1771,11 +1652,7 @@ namespace dmui
 
 		[[nodiscard]] bool DrawBulletText(const char* a_text) noexcept
 		{
-			if (!IsConnected())
-				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-
-			lastResult_ = api_->drawBulletText(clientHandle_, a_text);
-			return lastResult_ == DMUI_RESULT_OK;
+			return Call<&DMUI_HostAPI::drawBulletText>(a_text);
 		}
 
 		[[nodiscard]] std::optional<bool> DrawSearchInput(
@@ -1854,18 +1731,13 @@ namespace dmui
 			bool& a_expanded,
 			size_t a_count) noexcept
 		{
-			if (!IsConnected())
-				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-
 			uint32_t expanded = a_expanded ? 1u : 0u;
-			lastResult_ = api_->drawCollapsingSectionHeader(
-				clientHandle_,
-				a_key,
-				a_text,
-				static_cast<uint32_t>(a_glyph),
-				&expanded,
-				a_count);
-			if (lastResult_ != DMUI_RESULT_OK)
+			if (!Call<&DMUI_HostAPI::drawCollapsingSectionHeader>(
+					a_key,
+					a_text,
+					static_cast<uint32_t>(a_glyph),
+					&expanded,
+					a_count))
 				return false;
 			a_expanded = expanded != 0;
 			return true;
@@ -1969,26 +1841,14 @@ namespace dmui
 			const char* a_tooltip,
 			bool a_enabled) noexcept
 		{
-			if (!IsConnected())
-			{
-				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-				return std::nullopt;
-			}
-
-			uint32_t pressed{};
-			lastResult_ = api_->drawSettingsActionButton(
-				clientHandle_,
+			return QueryFlag<&DMUI_HostAPI::drawSettingsActionButton>(
 				a_id,
-				{ a_origin.x, a_origin.y },
-				{ a_size.x, a_size.y },
+				DMUI_Vec2{ a_origin.x, a_origin.y },
+				DMUI_Vec2{ a_size.x, a_size.y },
 				a_action,
 				a_fallbackLabel,
 				a_tooltip,
-				a_enabled ? 1u : 0u,
-				&pressed);
-			if (lastResult_ != DMUI_RESULT_OK)
-				return std::nullopt;
-			return pressed != 0;
+				a_enabled ? 1u : 0u);
 		}
 
 		[[nodiscard]] std::optional<float> SettingsActionButtonWidth(
@@ -1996,52 +1856,17 @@ namespace dmui
 			const char* a_fallbackLabel,
 			float a_buttonExtent) noexcept
 		{
-			if (!IsConnected())
-			{
-				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-				return std::nullopt;
-			}
-
-			float width{};
-			lastResult_ = api_->settingsActionButtonWidth(
-				clientHandle_,
-				a_action,
-				a_fallbackLabel,
-				a_buttonExtent,
-				&width);
-			if (lastResult_ != DMUI_RESULT_OK)
-				return std::nullopt;
-			return width;
+			return Query<float, &DMUI_HostAPI::settingsActionButtonWidth>(a_action, a_fallbackLabel, a_buttonExtent);
 		}
 
 		[[nodiscard]] std::optional<float> SettingsActionButtonExtent() noexcept
 		{
-			if (!IsConnected())
-			{
-				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-				return std::nullopt;
-			}
-
-			float extent{};
-			lastResult_ = api_->settingsActionButtonExtent(clientHandle_, &extent);
-			if (lastResult_ != DMUI_RESULT_OK)
-				return std::nullopt;
-			return extent;
+			return Query<float, &DMUI_HostAPI::settingsActionButtonExtent>();
 		}
 
 		[[nodiscard]] std::optional<bool> BeginSettingsTable(const char* a_id) noexcept
 		{
-			if (!IsConnected())
-			{
-				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-				return std::nullopt;
-			}
-
-			uint32_t visible{};
-			lastResult_ = api_->beginSettingsTable(clientHandle_, a_id, &visible);
-			if (lastResult_ != DMUI_RESULT_OK)
-				return std::nullopt;
-			return visible != 0;
+			return QueryFlag<&DMUI_HostAPI::beginSettingsTable>(a_id);
 		}
 
 		[[nodiscard]] std::optional<bool> BeginSettingsRow(
@@ -2051,47 +1876,24 @@ namespace dmui
 			RowPresentation::Layout a_layout =
 				RowPresentation::Layout::kLabelValue) noexcept
 		{
-			if (!IsConnected())
-			{
-				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-				return std::nullopt;
-			}
-
-			uint32_t visible{};
 			const DMUI_SettingsRowBeginOptions options{
 				a_layout == RowPresentation::Layout::kFullSpan ?
 					DMUI_SETTINGS_ROW_LAYOUT_FULL_SPAN :
 					DMUI_SETTINGS_ROW_LAYOUT_LABEL_VALUE
 			};
-			lastResult_ = api_->beginSettingsRowEx(
-				clientHandle_, a_id, a_label, a_description, &options, &visible);
-			if (lastResult_ != DMUI_RESULT_OK)
-				return std::nullopt;
-			return visible != 0;
+			return QueryFlag<&DMUI_HostAPI::beginSettingsRowEx>(
+				a_id, a_label, a_description, &options);
 		}
 
 		[[nodiscard]] std::optional<bool> EndSettingsRow(
 			bool a_resetVisible,
 			bool a_resetEnabled) noexcept
 		{
-			if (!IsConnected())
-			{
-				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-				return std::nullopt;
-			}
-
 			const DMUI_SettingsRowOptions options{
 				a_resetVisible ? 1u : 0u,
 				a_resetEnabled ? 1u : 0u
 			};
-			uint32_t resetPressed{};
-			lastResult_ = api_->endSettingsRow(
-				clientHandle_,
-				&options,
-				&resetPressed);
-			if (lastResult_ != DMUI_RESULT_OK)
-				return std::nullopt;
-			return resetPressed != 0;
+			return QueryFlag<&DMUI_HostAPI::endSettingsRow>(&options);
 		}
 
 		[[nodiscard]] std::optional<bool> BeginField(
@@ -2101,43 +1903,24 @@ namespace dmui
 			RowPresentation::Layout a_layout =
 				RowPresentation::Layout::kLabelValue) noexcept
 		{
-			if (!IsConnected())
-			{
-				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-				return std::nullopt;
-			}
 			const DMUI_FieldBeginOptions options{
 				a_layout == RowPresentation::Layout::kFullSpan ?
 					DMUI_FIELD_LAYOUT_FULL_SPAN :
 					DMUI_FIELD_LAYOUT_LABEL_VALUE
 			};
-			uint32_t visible{};
-			lastResult_ = api_->beginField(
-				clientHandle_,
-				a_id,
-				a_label,
-				a_description,
-				&options,
-				&visible);
-			if (lastResult_ != DMUI_RESULT_OK)
-				return std::nullopt;
-			return visible != 0;
+			return QueryFlag<&DMUI_HostAPI::beginField>(
+				a_id, a_label, a_description, &options);
 		}
 
 		[[nodiscard]] bool SetFieldFeedback(
 			FieldFeedbackSeverity a_severity,
 			const char* a_message) noexcept
 		{
-			if (!IsConnected())
-				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
 			const DMUI_FieldFeedback feedback{
 				static_cast<DMUI_FieldFeedbackSeverity>(a_severity),
 				a_message
 			};
-			lastResult_ = api_->setFieldFeedback(
-				clientHandle_,
-				&feedback);
-			return lastResult_ == DMUI_RESULT_OK;
+			return Call<&DMUI_HostAPI::setFieldFeedback>(&feedback);
 		}
 
 		[[nodiscard]] bool ClearFieldFeedback() noexcept
@@ -2151,41 +1934,21 @@ namespace dmui
 			bool a_resetVisible = false,
 			bool a_resetEnabled = false) noexcept
 		{
-			if (!IsConnected())
-			{
-				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-				return std::nullopt;
-			}
 			const DMUI_FieldEndOptions options{
 				a_resetVisible ? 1u : 0u,
 				a_resetEnabled ? 1u : 0u
 			};
-			uint32_t resetPressed{};
-			lastResult_ = api_->endField(
-				clientHandle_,
-				&options,
-				&resetPressed);
-			if (lastResult_ != DMUI_RESULT_OK)
-				return std::nullopt;
-			return resetPressed != 0;
+			return QueryFlag<&DMUI_HostAPI::endField>(&options);
 		}
 
 		[[nodiscard]] bool EndSettingsTable() noexcept
 		{
-			if (!IsConnected())
-				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-
-			lastResult_ = api_->endSettingsTable(clientHandle_);
-			return lastResult_ == DMUI_RESULT_OK;
+			return Call<&DMUI_HostAPI::endSettingsTable>();
 		}
 
 		[[nodiscard]] bool SelectPage(DMUI_PageHandle a_page) noexcept
 		{
-			if (!IsConnected())
-				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-
-			lastResult_ = api_->selectPage(clientHandle_, a_page);
-			return lastResult_ == DMUI_RESULT_OK;
+			return Call<&DMUI_HostAPI::selectPage>(a_page);
 		}
 
 		[[nodiscard]] std::optional<bool> IsMenuVisible() noexcept
@@ -2348,6 +2111,33 @@ namespace dmui
 		{
 			lastResult_ = a_result;
 			return false;
+		}
+
+		template <auto Slot, class... Args>
+		[[nodiscard]] bool Call(Args&&... a_args) noexcept
+		{
+			if (!IsConnected())
+				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			lastResult_ = (api_->*Slot)(clientHandle_, std::forward<Args>(a_args)...);
+			return lastResult_ == DMUI_RESULT_OK;
+		}
+
+		template <class Value, auto Slot, class... Args>
+		[[nodiscard]] std::optional<Value> Query(Args&&... a_args) noexcept
+		{
+			Value value{};
+			if (!Call<Slot>(std::forward<Args>(a_args)..., &value))
+				return std::nullopt;
+			return value;
+		}
+
+		template <auto Slot, class... Args>
+		[[nodiscard]] std::optional<bool> QueryFlag(Args&&... a_args) noexcept
+		{
+			const auto flag = Query<uint32_t, Slot>(std::forward<Args>(a_args)...);
+			if (!flag)
+				return std::nullopt;
+			return *flag != 0;
 		}
 
 		void ReportUIFailure(DMUI_Result a_result) noexcept

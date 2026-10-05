@@ -302,6 +302,16 @@ typedef uint32_t DMUI_OverlayAnchor;
 #define DMUI_OVERLAY_ANCHOR_BOTTOM_RIGHT 3u
 #define DMUI_OVERLAY_ANCHOR_FREE 4u
 
+typedef uint32_t DMUI_OverlayFocusEndReason;
+
+#define DMUI_OVERLAY_FOCUS_END_NONE 0u
+#define DMUI_OVERLAY_FOCUS_END_RELEASED 1u
+#define DMUI_OVERLAY_FOCUS_END_CANCELED 2u
+#define DMUI_OVERLAY_FOCUS_END_SHELL_OPENED 3u
+#define DMUI_OVERLAY_FOCUS_END_INTERRUPTED 4u
+#define DMUI_OVERLAY_FOCUS_END_HOST_UNAVAILABLE 5u
+#define DMUI_OVERLAY_FOCUS_END_CALLBACK_FAILED 6u
+
 typedef uint32_t DMUI_DialogKind;
 
 #define DMUI_DIALOG_KIND_CONFIRM 0u
@@ -713,6 +723,13 @@ typedef struct DMUI_ManagedOverlayPlacement
 	uint32_t visible;
 } DMUI_ManagedOverlayPlacement;
 
+typedef struct DMUI_OverlayFocusInfo
+{
+	uint32_t focused;
+	DMUI_OverlayFocusEndReason endReason;
+	uint64_t generation;
+} DMUI_OverlayFocusInfo;
+
 typedef struct DMUI_NotificationDescriptor
 {
 	DMUI_StatusSeverity severity;
@@ -984,6 +1001,16 @@ typedef DMUI_Result (DMUI_CALL *DMUI_QueryOverlayFn)(
 typedef DMUI_Result (DMUI_CALL *DMUI_ResetOverlayFn)(
 	DMUI_ClientHandle client,
 	DMUI_PageHandle page) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_RequestOverlayFocusFn)(
+	DMUI_ClientHandle client,
+	DMUI_PageHandle page) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_ReleaseOverlayFocusFn)(
+	DMUI_ClientHandle client,
+	DMUI_PageHandle page) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_QueryOverlayFocusFn)(
+	DMUI_ClientHandle client,
+	DMUI_PageHandle page,
+	DMUI_OverlayFocusInfo* info) DMUI_NOEXCEPT;
 typedef DMUI_Result (DMUI_CALL *DMUI_PostNotificationFn)(
 	DMUI_ClientHandle client,
 	const DMUI_NotificationDescriptor* descriptor) DMUI_NOEXCEPT;
@@ -1118,6 +1145,9 @@ typedef struct DMUI_HostAPI
 	DMUI_DrawTextViewFn drawTextView;
 	DMUI_DrawSearchInputBufferFn drawSearchInputBuffer;
 	DMUI_LoadImageFileFn loadImageFile;
+	DMUI_RequestOverlayFocusFn requestOverlayFocus;
+	DMUI_ReleaseOverlayFocusFn releaseOverlayFocus;
+	DMUI_QueryOverlayFocusFn queryOverlayFocus;
 } DMUI_HostAPI;
 
 #if defined(_MSC_VER)

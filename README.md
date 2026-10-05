@@ -268,6 +268,12 @@ the arrangement. `[[nodiscard]] bool Client::ResetOverlay(DMUI_PageHandle) noexc
 discards the saved arrangement and reapplies defaults once. Clients do not persist
 placement. Rebuild ABI 2 clients for the added host-table slot.
 
+`Client::RequestOverlayFocus(page)` makes a demanded managed overlay interactive
+while the shell stays closed: the host blocks game input and routes keyboard and
+mouse input to it until `ReleaseOverlayFocus`, Escape, the shell opening, or a game
+interruption. Poll `QueryOverlayFocus(page)` each frame to learn that focus ended and why.
+See the [focused overlay contract](docs/specification.md#focused-overlays-abi-21) (ABI 2.1).
+
 ## Verification
 
 Build the test suites and example plugin:

@@ -61,6 +61,12 @@ jobs:
     - name: Build example plugin
       run: xmake build --yes example-plugin
 
+    # Clients build Debug too, where the MSVC STL rejects constexpr heap-backed headers.
+    - name: Build Debug header checks
+      run: |
+        xmake config --yes -m debug
+        xmake build --yes api-header-checks
+
   sync-commonlibf4:
     needs: build
     if: >-

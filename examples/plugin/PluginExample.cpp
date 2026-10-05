@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace
@@ -339,7 +340,7 @@ namespace
 
 namespace
 {
-	// Page 5: Console-style input with history, Tab completion, and a caret-anchored popup.
+	// Page 5: A focused overlay console with history, Tab completion, and a caret-anchored popup.
 	constexpr std::array<const char*, 5> kCommands{
 		"player.additem", "player.setav", "player.placeatme", "tgm", "tcl"
 	};
@@ -354,9 +355,34 @@ namespace
 		bool popupOpen{};
 		dmui::ui::TextEditFlags reload{};
 		size_t reloadCursor{};
+		DMUI_PageHandle page{ DMUI_INVALID_PAGE_HANDLE };
+		bool open{};
+		bool activate{};
 	};
 
 	ConsoleState g_console;
+
+	void OpenConsole()
+	{
+		if (g_console.open || !g_client.RequestFrame(g_console.page))
+			return;
+		if (!g_client.RequestOverlayFocus(g_console.page))
+		{
+			(void)g_client.ReleaseFrame(g_console.page);
+			return;
+		}
+		g_console.open = g_console.activate = true;
+	}
+
+	void CloseConsole()
+	{
+		if (!g_console.open)
+			return;
+		// Releasing the last frame demand also ends focus.
+		(void)g_client.ReleaseFrame(g_console.page);
+		g_console.open = false;
+		g_console.popupOpen = false;
+	}
 
 	void ReplaceInput(std::string_view a_text)
 	{
@@ -384,12 +410,21 @@ namespace
 		using Flags = dmui::ui::TextEditFlags;
 		using Events = dmui::ui::TextEditEvents;
 
-		(void)a_client.DrawSectionHeader("Console");
+		// Escape, the shell, a load, or the host can end focus; any loss closes the console.
+		const auto focus = a_client.QueryOverlayFocus(g_console.page);
+		if (!focus || !focus->focused)
+		{
+			CloseConsole();
+			return;
+		}
+		const auto activate = std::exchange(g_console.activate, false) ? Flags::kRequestFocus : Flags::kNone;
+
 		for (const auto& line : g_console.history)
 			dmui::ui::TextUnformatted(line);
 
 		auto flags = Flags::kHistoryKeys | Flags::kCompletionKey |
-			Flags::kKeepFocusOnSubmit | g_console.reload;
+			Flags::kKeepFocusOnSubmit | activate | g_console.reload;
+		// Escape closes the popup here; otherwise the host leaves the field, then ends focus.
 		if (g_console.popupOpen)
 			flags |= Flags::kCaptureCancel;
 		dmui::ui::TextEditState state{};
@@ -513,18 +548,40 @@ void InitializeDearModdingUI()
 			DrawDiagnosticsPage(g_client);
 		});
 
-	(void)g_client.AddPage(
-		{
-			.id = "console",
-			.displayName = "Console",
-			.categoryId = kToolsCategory.id,
-			.summary = "Command input with history and completion.",
-			.sortKey = 1,
-			.iconName = "terminal-window"
-		},
-		[] {
-			DrawConsolePage(g_client);
+	// The console is a standalone overlay that takes input only while focused.
+	if (const auto console = g_client.AddPage(
+			{
+				.id = "console",
+				.displayName = "Console",
+				.summary = "Command input with history and completion.",
+				.kind = DMUI_PAGE_KIND_OVERLAY,
+				.iconName = "terminal-window"
+			},
+			[] {
+				DrawConsolePage(g_client);
+			}))
+	{
+		g_console.page = *console;
+		(void)g_client.ConfigureOverlay(g_console.page, {
+			.anchor = DMUI_OVERLAY_ANCHOR_FREE,
+			.offset = { 32.0f, 32.0f },
+			.size = { 720.0f, 320.0f },
+			.minimumSize = { 360.0f, 160.0f },
+			.opacity = 0.94f,
+			.contentScale = 1.0f,
+			.backgroundVisible = 1,
+			.borderVisible = 1,
+			.allowArrangement = 1
 		});
+		(void)g_client.AddHotkeyAction(
+			"toggle_console",
+			"Toggle console",
+			"Grave",
+			[](bool a_pressed) {
+				if (a_pressed)
+					g_console.open ? CloseConsole() : OpenConsole();
+			});
+	}
 
 	// Register a quick action in the host command palette or action list.
 	(void)g_client.AddAction(

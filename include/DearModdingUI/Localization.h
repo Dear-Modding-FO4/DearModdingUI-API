@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <vector>
 #include <iostream>
 #include <sstream>
@@ -23,7 +24,8 @@ namespace dmui
 
 			_W32_IMPORT(int32_t, WideCharToMultiByte, uint32_t, uint32_t, const wchar_t*, int32_t, char*, int32_t, const char*, int32_t*);
 
-			constexpr static std::string WHITESPACEA = " \n\r\t\f\v";
+			// Debug STL strings heap-allocate a proxy, so a constexpr std::string fails to compile.
+			inline constexpr std::string_view WHITESPACEA = " \n\r\t\f\v";
 
 			// Trim from the start (left trim)
 			static void LeftTrim(std::string& s) noexcept

@@ -21,4 +21,7 @@ static_assert(offsetof(DMUI_HostAPI, resetOverlay) ==
 	offsetof(DMUI_HostAPI, queryOverlay) + sizeof(void*));
 static_assert(offsetof(DMUI_HostAPI, drawSearchInputBuffer) == 448);
 static_assert(offsetof(DMUI_HostAPI, loadImageFile) == 456);
+static_assert(offsetof(DMUI_HostAPI, requestOverlayFocus) == 464);
+static_assert(offsetof(DMUI_HostAPI, queryOverlayFocus) == 480);
+static_assert(sizeof(DMUI_OverlayFocusInfo) == 16);
 #endif

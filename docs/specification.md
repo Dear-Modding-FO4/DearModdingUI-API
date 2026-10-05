@@ -312,6 +312,29 @@ that page's saved arrangement and reapplies its current defaults once. It uses
 the same client/page ownership and thread contract as configure/query, including
 stale and foreign page rejection. Clients must rebuild for the revised ABI 2 table.
 
+### Focused overlays (ABI 2.1)
+
+A focused overlay is an interactive standalone surface, such as a console, quick palette, or inspector, while the shell stays closed. At most one page holds focus.
+
+`requestOverlayFocus(client, page)` grants focus to a configured managed overlay page that has frame demand. It returns `PAGE_NOT_FOUND` for an unowned or unconfigured page, `INVALID_PAGE_KIND`, `NO_FRAME_DEMAND`, `CALLBACK_FAILED` for a disabled page, and the host state result unless the host is ready. It returns `BUSY` while the shell is visible or another page holds focus, including another page of the same client. Requesting the focused page again succeeds without a new grant. Each grant increments the page's generation.
+
+While an overlay is focused:
+- The host pushes its cursor carrier menu, which blocks game input and pauses the game unless Fall Souls mode is enabled.
+- The overlay accepts keyboard and mouse input, including the mouse wheel for its content and `drawTextView` regions. The host brings it to the front and gives it window focus on each grant and whenever window focus would otherwise land on no window.
+- `allowArrangement` permits moving and resizing, and completed arrangements persist as in the shell. Otherwise the overlay is fixed.
+- Escape and controller B never reach the game. Each press first leaves an active widget, then closes the top client popup, then ends focus with `CANCELED`. An `inputTextEditor` with `CaptureCancel` claims the press instead and reports `Canceled`. There is no other controller navigation.
+- The menu toggle and `ALWAYS` hotkey actions remain active. `HOST_INPUT_INACTIVE` and `GAMEPLAY_UNOBSTRUCTED` actions are suppressed.
+
+Focus ends with one `DMUI_OverlayFocusEndReason`:
+- `RELEASED`: `releaseOverlayFocus`, or releasing the page's last frame demand. Releasing an unfocused page succeeds without effect.
+- `CANCELED`: Escape or controller B that no widget or popup claimed.
+- `SHELL_OPENED`: the shell opened, for example from the menu toggle.
+- `INTERRUPTED`: a game load or new game, a renderer change, or a carrier menu that the game closed or never showed, detected when the cursor is absent for two seconds.
+- `HOST_UNAVAILABLE`: the host became unavailable or shut down.
+- `CALLBACK_FAILED`: the overlay's callback failed and was disabled.
+
+Deactivating the game window suspends input but keeps focus. `queryOverlayFocus(client, page, info)` reports `focused`, the latest grant's `generation`, and `endReason`, which is `NONE` while focused or before the first grant. A client polls it from its overlay callback or a frame observer; a change from focused to unfocused is the focus-lost signal, and `endReason` says why. Ownership validation matches `queryOverlay`. All three entries may be called from any thread, and their effect on input and drawing applies from the next frame.
+
 ### Dialog sessions
 
 `dmui::DialogSession` owns a single handle, callback, and text buffer. `Open` and
