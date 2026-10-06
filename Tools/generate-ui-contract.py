@@ -15,7 +15,7 @@ def load_schema(path: Path) -> dict:
         schema = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
         raise GenerationError(f"cannot read {path}: {error}") from error
-    required = {"contract", "enums", "signatures", "operations"}
+    required = {"contract", "enums", "signatures", "operations", "operationMinors"}
     if not isinstance(schema, dict) or set(schema) != required:
         raise GenerationError(f"schema must contain exactly {sorted(required)}")
     operations = schema["operations"]
@@ -26,7 +26,26 @@ def load_schema(path: Path) -> dict:
     names = [operation[1] for operation in operations]
     if len(names) != len(set(names)) or set(names) != set(schema["signatures"]):
         raise GenerationError("operation names and signatures must match exactly")
+    boundaries = schema["operationMinors"]
+    if (
+        not isinstance(boundaries, dict)
+        or any(minor not in {str(value) for value in range(1, schema["contract"]["abiMinor"] + 1)}
+               for minor in boundaries)
+        or any(not isinstance(first, int) or not 1 <= first <= len(operations)
+               for first in boundaries.values())
+        or [boundaries[minor] for minor in sorted(boundaries, key=int)] !=
+        sorted(set(boundaries.values()))
+    ):
+        raise GenerationError("operation minors must name ordered first slots within the ABI minor")
     return schema
+
+
+def operation_minor(schema: dict, operation_id: int) -> int:
+    return max(
+        (int(minor) for minor, first in schema["operationMinors"].items()
+         if operation_id >= first),
+        default=0,
+    )
 
 
 def atomic_write(path: Path, text: str) -> None:
@@ -131,6 +150,19 @@ def render_checked_header(schema: dict) -> str:
         "// Generated from schema/ui-contract.json; do not edit.",
         "// Included by DearModdingUI/UI.h after its context implementation.",
         "",
+        "namespace dmui::detail",
+        "{",
+    ]
+    for operation_id, _, field, _ in schema["operations"]:
+        minor = operation_minor(schema, operation_id)
+        if minor:
+            lines.extend([
+                "\ttemplate <>",
+                f"\tinline constexpr uint32_t SlotAbiMinor<&DMUI_UIAPI::{field}>{{ {minor}u }};",
+            ])
+    lines.extend([
+        "}",
+        "",
         "namespace dmui::ui",
         "{",
         "\tusing Vec2 = DMUI_Vec2;",
@@ -138,7 +170,7 @@ def render_checked_header(schema: dict) -> str:
         "\tusing Color32 = uint32_t;",
         "\tusing ID = uint32_t;",
         "",
-    ]
+    ])
     for enum in schema["enums"]:
         name = enum["name"]
         c_name = enum["cName"]
@@ -202,14 +234,13 @@ def render_checked_header(schema: dict) -> str:
             for type_name, argument_name in parameters
         )
         arguments = ", ".join(argument_name for _, argument_name in parameters)
-        comma = ", " if arguments else ""
         lines.extend(
             [
                 f"\t\t[[nodiscard]] inline DMUI_Result {name}(",
                 f"\t\t\t{rendered}) noexcept" if rendered else "\t\t\tvoid) noexcept",
                 "\t\t{",
-                f"\t\t\treturn detail::Invoke(",
-                f"\t\t\t\t&DMUI_UIAPI::{field}{comma}{arguments});",
+                f"\t\t\treturn detail::Invoke<&DMUI_UIAPI::{field}>(",
+                f"\t\t\t\t{arguments});",
                 "\t\t}",
                 "",
             ]
@@ -433,6 +464,7 @@ def build_manifest(schema: dict, api_text: str) -> dict:
                 "name": name,
                 "field": field,
                 "kind": kind,
+                "sinceMinor": operation_minor(schema, operation_id),
                 "signature": schema["signatures"][name],
             }
             for operation_id, name, field, kind in schema["operations"]
@@ -489,6 +521,11 @@ def validate_compatibility(current: dict, baseline: dict) -> None:
         raise GenerationError(f"changing contract metadata {breaking}")
     if not is_prefix(baseline["operations"], current["operations"]):
         raise GenerationError(f"changing or removing UI operations {breaking}")
+    if any(
+        not baseline_version[1] < operation["sinceMinor"] <= current_version[1]
+        for operation in current["operations"][len(baseline["operations"]):]
+    ):
+        raise GenerationError("new UI operations must name their introducing ABI minor")
     current_enums = {enum["name"]: enum for enum in current["enums"]}
     for enum in baseline["enums"]:
         candidate = current_enums.get(enum["name"])

@@ -1154,6 +1154,7 @@ typedef struct DMUI_HostAPI
 #pragma pack(pop)
 #endif
 
-// Pass DMUI_ABI_VERSION; null for another major or a newer minor than the host's.
+// Request the header minor, then lower same-major minors until a table is returned.
+// Read or call only slots introduced at or before the negotiated minor.
 DMUI_EXPORT const DMUI_HostAPI* DMUI_CALL DMUI_GetAPI(
 	uint32_t requestedAbiVersion) DMUI_NOEXCEPT;

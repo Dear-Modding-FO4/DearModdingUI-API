@@ -4,7 +4,7 @@ This document details the low-level contracts, binary layout requirements, threa
 
 ## ABI Versioning
 
-The ABI version is `DMUI_ABI_MAJOR.DMUI_ABI_MINOR` and covers every public table and struct. Clients pass `DMUI_ABI_VERSION` to `DMUI_GetAPI`. It packs the minor into the high 16 bits, so ABI 2.0 is the value `2` requested by released ABI 2 clients. The host returns its single current table when the major matches and the requested minor is at most its own. Otherwise it logs both versions and returns null, and `Client::Connect` reports `UNSUPPORTED_ABI`. `DMUI_HostAPI::abiMajor` and `DMUI_HostReadyInfo::abiMajor` carry the major only.
+The ABI version is `DMUI_ABI_MAJOR.DMUI_ABI_MINOR` and covers every public table and struct. Clients request their header version with `DMUI_ABI_VERSION`, then retry lower minors of the same major until `DMUI_GetAPI` returns a table. It packs the minor into the high 16 bits, so ABI 2.0 is the value `2` requested by released ABI 2 clients. The host returns its single current table when the major matches and the requested minor is at most its own. Otherwise it logs both versions and returns null. `DMUI_HostAPI::abiMajor` and `DMUI_HostReadyInfo::abiMajor` carry the major only.
 
 A minor version only appends:
 - Slots at the end of `DMUI_HostAPI` or `DMUI_UIAPI`.
@@ -16,9 +16,11 @@ A major version is the only point where removals and changes happen. It batches 
 
 From DearModdingUI 1.0, a host serves its current major N and the previous major N-1, and no older. The N-1 table is frozen and adapts onto the current implementation; it is removed when major N+1 ships, so at most one compatibility layer exists. Majors should be rare, because minors absorb additions and deprecations.
 
-A newer client meeting an older host fails to connect, and the user updates DearModdingUI. Hosts accept every older minor of their major, so a host update never breaks a client. There is no per-feature negotiation. To run on older hosts, a mod builds against the API revision of the oldest host it supports. The minor bump in this repository therefore lands together with the host release that implements it, because `main` is synchronized into CommonLibF4.
+Clients must only read or call slots introduced at or before the negotiated minor; later slots may not exist in the returned table. The C++ client negotiates automatically and exposes the selected minor through `Client::AbiMinor()`. Operations newer than that minor return `DMUI_RESULT_UNSUPPORTED_ABI` without reading the slot. Host wrappers record it in `Client::LastResult()`, and UI wrappers expose it through their explicit result or `ui::LastResult()`.
 
-There are no `structSize` fields, table-prefix constants, per-slot revisions, service bits, or minimum-version options. The single version word is the only negotiation. Resource byte counts and buffer capacities remain runtime validation inputs. Runtime unavailability is reported through operation results and lifecycle callbacks.
+`UNSUPPORTED_ABI` is a soft, non-sticky drawing failure so clients can probe a feature and fall back.
+
+The version word is the only negotiation; there are no service bits or minimum-version options. Resource byte counts and buffer capacities remain runtime validation inputs. Runtime unavailability is reported through operation results and lifecycle callbacks.
 
 ### Contract Guard
 
@@ -33,7 +35,7 @@ There are no `structSize` fields, table-prefix constants, per-slot revisions, se
 - `UIChecked.generated.h`: Explicit result-returning C++ wrappers.
 - `UIBindings.generated.h`: Host declarations and symbolic translations.
 
-`UI.h` is the handwritten boolean/void C++ facade (`dmui::ui`).
+`UI.h` is the handwritten boolean/void C++ facade (`dmui::ui`). The schema's `operationMinors` maps each nonzero minor to its first UI operation ID; generated member metadata gates table access.
 
 The host translates every stable enum and flag symbolically. Values do not necessarily match native Dear ImGui enum numeric values. Unknown flag bits return `DMUI_RESULT_INVALID_ARGUMENT`.
 

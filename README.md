@@ -31,6 +31,8 @@ draw custom interfaces, and interact with the shared DearModdingUI host menu.
 
 ## Integration
 
+The C++ client negotiates automatically; operations newer than the host return `UNSUPPORTED_ABI`.
+
 ### File images
 
 `Client::LoadImageFile(utf8Path)` returns an owned image in `LOADING` immediately.

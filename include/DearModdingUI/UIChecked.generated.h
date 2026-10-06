@@ -3,6 +3,14 @@
 // Generated from schema/ui-contract.json; do not edit.
 // Included by DearModdingUI/UI.h after its context implementation.
 
+namespace dmui::detail
+{
+	template <>
+	inline constexpr uint32_t SlotAbiMinor<&DMUI_UIAPI::inputTextEditor>{ 1u };
+	template <>
+	inline constexpr uint32_t SlotAbiMinor<&DMUI_UIAPI::beginTooltipAt>{ 1u };
+}
+
 namespace dmui::ui
 {
 	using Vec2 = DMUI_Vec2;
@@ -682,8 +690,8 @@ namespace dmui::ui
 		[[nodiscard]] inline DMUI_Result GetStyleMetrics(
 			DMUI_StyleMetrics* metrics) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::getStyleMetrics, metrics);
+			return detail::Invoke<&DMUI_UIAPI::getStyleMetrics>(
+				metrics);
 		}
 
 		[[nodiscard]] inline DMUI_Result BeginCombo(
@@ -692,29 +700,29 @@ namespace dmui::ui
 		DMUI_UIComboFlags flags,
 		uint32_t* visible) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::beginCombo, label, previewValue, flags, visible);
+			return detail::Invoke<&DMUI_UIAPI::beginCombo>(
+				label, previewValue, flags, visible);
 		}
 
 		[[nodiscard]] inline DMUI_Result EndCombo(
 			void) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::endCombo);
+			return detail::Invoke<&DMUI_UIAPI::endCombo>(
+				);
 		}
 
 		[[nodiscard]] inline DMUI_Result BeginDisabled(
 			uint32_t disabled) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::beginDisabled, disabled);
+			return detail::Invoke<&DMUI_UIAPI::beginDisabled>(
+				disabled);
 		}
 
 		[[nodiscard]] inline DMUI_Result EndDisabled(
 			void) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::endDisabled);
+			return detail::Invoke<&DMUI_UIAPI::endDisabled>(
+				);
 		}
 
 		[[nodiscard]] inline DMUI_Result BeginTable(
@@ -725,29 +733,29 @@ namespace dmui::ui
 		float innerWidth,
 		uint32_t* visible) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::beginTable, id, columns, flags, outerSize, innerWidth, visible);
+			return detail::Invoke<&DMUI_UIAPI::beginTable>(
+				id, columns, flags, outerSize, innerWidth, visible);
 		}
 
 		[[nodiscard]] inline DMUI_Result EndTable(
 			void) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::endTable);
+			return detail::Invoke<&DMUI_UIAPI::endTable>(
+				);
 		}
 
 		[[nodiscard]] inline DMUI_Result BeginTooltip(
 			uint32_t* visible) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::beginTooltip, visible);
+			return detail::Invoke<&DMUI_UIAPI::beginTooltip>(
+				visible);
 		}
 
 		[[nodiscard]] inline DMUI_Result EndTooltip(
 			void) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::endTooltip);
+			return detail::Invoke<&DMUI_UIAPI::endTooltip>(
+				);
 		}
 
 		[[nodiscard]] inline DMUI_Result Button(
@@ -755,8 +763,8 @@ namespace dmui::ui
 		DMUI_Vec2 size,
 		uint32_t* pressed) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::button, label, size, pressed);
+			return detail::Invoke<&DMUI_UIAPI::button>(
+				label, size, pressed);
 		}
 
 		[[nodiscard]] inline DMUI_Result CalcTextSize(
@@ -766,8 +774,8 @@ namespace dmui::ui
 		float wrapWidth,
 		DMUI_Vec2* size) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::calcTextSize, text, textLength, hideTextAfterDoubleHash, wrapWidth, size);
+			return detail::Invoke<&DMUI_UIAPI::calcTextSize>(
+				text, textLength, hideTextAfterDoubleHash, wrapWidth, size);
 		}
 
 		[[nodiscard]] inline DMUI_Result Checkbox(
@@ -775,8 +783,8 @@ namespace dmui::ui
 		uint32_t* value,
 		uint32_t* changed) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::checkbox, label, value, changed);
+			return detail::Invoke<&DMUI_UIAPI::checkbox>(
+				label, value, changed);
 		}
 
 		[[nodiscard]] inline DMUI_Result CollapsingHeader(
@@ -784,8 +792,8 @@ namespace dmui::ui
 		DMUI_UITreeNodeFlags flags,
 		uint32_t* open) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::collapsingHeader, label, flags, open);
+			return detail::Invoke<&DMUI_UIAPI::collapsingHeader>(
+				label, flags, open);
 		}
 
 		[[nodiscard]] inline DMUI_Result CollapsingHeaderVisible(
@@ -794,8 +802,8 @@ namespace dmui::ui
 		DMUI_UITreeNodeFlags flags,
 		uint32_t* open) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::collapsingHeaderVisible, label, visible, flags, open);
+			return detail::Invoke<&DMUI_UIAPI::collapsingHeaderVisible>(
+				label, visible, flags, open);
 		}
 
 		[[nodiscard]] inline DMUI_Result DragScalar(
@@ -812,65 +820,65 @@ namespace dmui::ui
 		DMUI_UISliderFlags flags,
 		uint32_t* changed) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::dragScalar, label, dataType, data, dataSize, speed, minimum, minimumSize, maximum, maximumSize, format, flags, changed);
+			return detail::Invoke<&DMUI_UIAPI::dragScalar>(
+				label, dataType, data, dataSize, speed, minimum, minimumSize, maximum, maximumSize, format, flags, changed);
 		}
 
 		[[nodiscard]] inline DMUI_Result Dummy(
 			DMUI_Vec2 size) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::dummy, size);
+			return detail::Invoke<&DMUI_UIAPI::dummy>(
+				size);
 		}
 
 		[[nodiscard]] inline DMUI_Result GetContentRegionAvail(
 			DMUI_Vec2* size) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::getContentRegionAvail, size);
+			return detail::Invoke<&DMUI_UIAPI::getContentRegionAvail>(
+				size);
 		}
 
 		[[nodiscard]] inline DMUI_Result GetCursorScreenPos(
 			DMUI_Vec2* position) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::getCursorScreenPos, position);
+			return detail::Invoke<&DMUI_UIAPI::getCursorScreenPos>(
+				position);
 		}
 
 		[[nodiscard]] inline DMUI_Result GetFontSize(
 			float* size) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::getFontSize, size);
+			return detail::Invoke<&DMUI_UIAPI::getFontSize>(
+				size);
 		}
 
 		[[nodiscard]] inline DMUI_Result GetFrameHeight(
 			float* height) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::getFrameHeight, height);
+			return detail::Invoke<&DMUI_UIAPI::getFrameHeight>(
+				height);
 		}
 
 		[[nodiscard]] inline DMUI_Result GetStyleColor(
 			DMUI_UIColor color,
 		DMUI_Vec4* value) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::getStyleColor, color, value);
+			return detail::Invoke<&DMUI_UIAPI::getStyleColor>(
+				color, value);
 		}
 
 		[[nodiscard]] inline DMUI_Result GetTextLineHeightWithSpacing(
 			float* height) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::getTextLineHeightWithSpacing, height);
+			return detail::Invoke<&DMUI_UIAPI::getTextLineHeightWithSpacing>(
+				height);
 		}
 
 		[[nodiscard]] inline DMUI_Result Indent(
 			float width) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::indent, width);
+			return detail::Invoke<&DMUI_UIAPI::indent>(
+				width);
 		}
 
 		[[nodiscard]] inline DMUI_Result InputScalar(
@@ -886,8 +894,8 @@ namespace dmui::ui
 		DMUI_UIInputTextFlags flags,
 		uint32_t* changed) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::inputScalar, label, dataType, data, dataSize, step, stepSize, fastStep, fastStepSize, format, flags, changed);
+			return detail::Invoke<&DMUI_UIAPI::inputScalar>(
+				label, dataType, data, dataSize, step, stepSize, fastStep, fastStepSize, format, flags, changed);
 		}
 
 		[[nodiscard]] inline DMUI_Result InputText(
@@ -897,8 +905,8 @@ namespace dmui::ui
 		DMUI_UIInputTextFlags flags,
 		uint32_t* changed) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::inputText, label, buffer, capacity, flags, changed);
+			return detail::Invoke<&DMUI_UIAPI::inputText>(
+				label, buffer, capacity, flags, changed);
 		}
 
 		[[nodiscard]] inline DMUI_Result InputTextMultiline(
@@ -909,8 +917,8 @@ namespace dmui::ui
 		DMUI_UIInputTextFlags flags,
 		uint32_t* changed) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::inputTextMultiline, label, buffer, capacity, size, flags, changed);
+			return detail::Invoke<&DMUI_UIAPI::inputTextMultiline>(
+				label, buffer, capacity, size, flags, changed);
 		}
 
 		[[nodiscard]] inline DMUI_Result InputTextWithHint(
@@ -921,44 +929,44 @@ namespace dmui::ui
 		DMUI_UIInputTextFlags flags,
 		uint32_t* changed) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::inputTextWithHint, label, hint, buffer, capacity, flags, changed);
+			return detail::Invoke<&DMUI_UIAPI::inputTextWithHint>(
+				label, hint, buffer, capacity, flags, changed);
 		}
 
 		[[nodiscard]] inline DMUI_Result IsItemDeactivatedAfterEdit(
 			uint32_t* deactivated) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::isItemDeactivatedAfterEdit, deactivated);
+			return detail::Invoke<&DMUI_UIAPI::isItemDeactivatedAfterEdit>(
+				deactivated);
 		}
 
 		[[nodiscard]] inline DMUI_Result IsItemHovered(
 			DMUI_UIHoveredFlags flags,
 		uint32_t* hovered) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::isItemHovered, flags, hovered);
+			return detail::Invoke<&DMUI_UIAPI::isItemHovered>(
+				flags, hovered);
 		}
 
 		[[nodiscard]] inline DMUI_Result PopID(
 			void) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::popID);
+			return detail::Invoke<&DMUI_UIAPI::popID>(
+				);
 		}
 
 		[[nodiscard]] inline DMUI_Result PopStyleColor(
 			int32_t count) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::popStyleColor, count);
+			return detail::Invoke<&DMUI_UIAPI::popStyleColor>(
+				count);
 		}
 
 		[[nodiscard]] inline DMUI_Result PopTextWrapPos(
 			void) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::popTextWrapPos);
+			return detail::Invoke<&DMUI_UIAPI::popTextWrapPos>(
+				);
 		}
 
 		[[nodiscard]] inline DMUI_Result ProgressBar(
@@ -967,61 +975,61 @@ namespace dmui::ui
 		const char* overlay,
 		size_t overlayLength) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::progressBar, fraction, size, overlay, overlayLength);
+			return detail::Invoke<&DMUI_UIAPI::progressBar>(
+				fraction, size, overlay, overlayLength);
 		}
 
 		[[nodiscard]] inline DMUI_Result PushIDString(
 			const char* id) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::pushIDString, id);
+			return detail::Invoke<&DMUI_UIAPI::pushIDString>(
+				id);
 		}
 
 		[[nodiscard]] inline DMUI_Result PushIDRange(
 			const char* id,
 		size_t length) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::pushIDRange, id, length);
+			return detail::Invoke<&DMUI_UIAPI::pushIDRange>(
+				id, length);
 		}
 
 		[[nodiscard]] inline DMUI_Result PushIDValue(
 			uint64_t id) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::pushIDValue, id);
+			return detail::Invoke<&DMUI_UIAPI::pushIDValue>(
+				id);
 		}
 
 		[[nodiscard]] inline DMUI_Result PushStyleColorU32(
 			DMUI_UIColor color,
 		uint32_t rgba) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::pushStyleColorU32, color, rgba);
+			return detail::Invoke<&DMUI_UIAPI::pushStyleColorU32>(
+				color, rgba);
 		}
 
 		[[nodiscard]] inline DMUI_Result PushStyleColor(
 			DMUI_UIColor color,
 		DMUI_Vec4 value) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::pushStyleColor, color, value);
+			return detail::Invoke<&DMUI_UIAPI::pushStyleColor>(
+				color, value);
 		}
 
 		[[nodiscard]] inline DMUI_Result PushTextWrapPos(
 			float localX) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::pushTextWrapPos, localX);
+			return detail::Invoke<&DMUI_UIAPI::pushTextWrapPos>(
+				localX);
 		}
 
 		[[nodiscard]] inline DMUI_Result SameLine(
 			float offsetFromStartX,
 		float spacing) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::sameLine, offsetFromStartX, spacing);
+			return detail::Invoke<&DMUI_UIAPI::sameLine>(
+				offsetFromStartX, spacing);
 		}
 
 		[[nodiscard]] inline DMUI_Result Selectable(
@@ -1031,8 +1039,8 @@ namespace dmui::ui
 		DMUI_Vec2 size,
 		uint32_t* pressed) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::selectable, label, selected, flags, size, pressed);
+			return detail::Invoke<&DMUI_UIAPI::selectable>(
+				label, selected, flags, size, pressed);
 		}
 
 		[[nodiscard]] inline DMUI_Result SelectableToggle(
@@ -1042,52 +1050,52 @@ namespace dmui::ui
 		DMUI_Vec2 size,
 		uint32_t* pressed) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::selectableToggle, label, selected, flags, size, pressed);
+			return detail::Invoke<&DMUI_UIAPI::selectableToggle>(
+				label, selected, flags, size, pressed);
 		}
 
 		[[nodiscard]] inline DMUI_Result Separator(
 			void) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::separator);
+			return detail::Invoke<&DMUI_UIAPI::separator>(
+				);
 		}
 
 		[[nodiscard]] inline DMUI_Result SetClipboardText(
 			const char* text,
 		size_t textLength) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::setClipboardText, text, textLength);
+			return detail::Invoke<&DMUI_UIAPI::setClipboardText>(
+				text, textLength);
 		}
 
 		[[nodiscard]] inline DMUI_Result SetCursorScreenPos(
 			DMUI_Vec2 position) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::setCursorScreenPos, position);
+			return detail::Invoke<&DMUI_UIAPI::setCursorScreenPos>(
+				position);
 		}
 
 		[[nodiscard]] inline DMUI_Result SetItemDefaultFocus(
 			void) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::setItemDefaultFocus);
+			return detail::Invoke<&DMUI_UIAPI::setItemDefaultFocus>(
+				);
 		}
 
 		[[nodiscard]] inline DMUI_Result SetNextItemWidth(
 			float width) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::setNextItemWidth, width);
+			return detail::Invoke<&DMUI_UIAPI::setNextItemWidth>(
+				width);
 		}
 
 		[[nodiscard]] inline DMUI_Result SetTooltipText(
 			const char* text,
 		size_t textLength) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::setTooltipText, text, textLength);
+			return detail::Invoke<&DMUI_UIAPI::setTooltipText>(
+				text, textLength);
 		}
 
 		[[nodiscard]] inline DMUI_Result SliderScalar(
@@ -1103,45 +1111,45 @@ namespace dmui::ui
 		DMUI_UISliderFlags flags,
 		uint32_t* changed) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::sliderScalar, label, dataType, data, dataSize, minimum, minimumSize, maximum, maximumSize, format, flags, changed);
+			return detail::Invoke<&DMUI_UIAPI::sliderScalar>(
+				label, dataType, data, dataSize, minimum, minimumSize, maximum, maximumSize, format, flags, changed);
 		}
 
 		[[nodiscard]] inline DMUI_Result Spacing(
 			void) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::spacing);
+			return detail::Invoke<&DMUI_UIAPI::spacing>(
+				);
 		}
 
 		[[nodiscard]] inline DMUI_Result TableHeadersRow(
 			void) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::tableHeadersRow);
+			return detail::Invoke<&DMUI_UIAPI::tableHeadersRow>(
+				);
 		}
 
 		[[nodiscard]] inline DMUI_Result TableNextColumn(
 			uint32_t* visible) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::tableNextColumn, visible);
+			return detail::Invoke<&DMUI_UIAPI::tableNextColumn>(
+				visible);
 		}
 
 		[[nodiscard]] inline DMUI_Result TableNextRow(
 			DMUI_UITableRowFlags flags,
 		float minimumHeight) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::tableNextRow, flags, minimumHeight);
+			return detail::Invoke<&DMUI_UIAPI::tableNextRow>(
+				flags, minimumHeight);
 		}
 
 		[[nodiscard]] inline DMUI_Result TableSetColumnIndex(
 			int32_t column,
 		uint32_t* visible) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::tableSetColumnIndex, column, visible);
+			return detail::Invoke<&DMUI_UIAPI::tableSetColumnIndex>(
+				column, visible);
 		}
 
 		[[nodiscard]] inline DMUI_Result TableSetupColumn(
@@ -1150,24 +1158,24 @@ namespace dmui::ui
 		float initialWidthOrWeight,
 		uint32_t userId) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::tableSetupColumn, label, flags, initialWidthOrWeight, userId);
+			return detail::Invoke<&DMUI_UIAPI::tableSetupColumn>(
+				label, flags, initialWidthOrWeight, userId);
 		}
 
 		[[nodiscard]] inline DMUI_Result TableSetupScrollFreeze(
 			int32_t columns,
 		int32_t rows) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::tableSetupScrollFreeze, columns, rows);
+			return detail::Invoke<&DMUI_UIAPI::tableSetupScrollFreeze>(
+				columns, rows);
 		}
 
 		[[nodiscard]] inline DMUI_Result Text(
 			const char* text,
 		size_t textLength) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::text, text, textLength);
+			return detail::Invoke<&DMUI_UIAPI::text>(
+				text, textLength);
 		}
 
 		[[nodiscard]] inline DMUI_Result TextColored(
@@ -1175,38 +1183,38 @@ namespace dmui::ui
 		const char* text,
 		size_t textLength) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::textColored, color, text, textLength);
+			return detail::Invoke<&DMUI_UIAPI::textColored>(
+				color, text, textLength);
 		}
 
 		[[nodiscard]] inline DMUI_Result TextDisabled(
 			const char* text,
 		size_t textLength) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::textDisabled, text, textLength);
+			return detail::Invoke<&DMUI_UIAPI::textDisabled>(
+				text, textLength);
 		}
 
 		[[nodiscard]] inline DMUI_Result TextWrapped(
 			const char* text,
 		size_t textLength) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::textWrapped, text, textLength);
+			return detail::Invoke<&DMUI_UIAPI::textWrapped>(
+				text, textLength);
 		}
 
 		[[nodiscard]] inline DMUI_Result Unindent(
 			float width) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::unindent, width);
+			return detail::Invoke<&DMUI_UIAPI::unindent>(
+				width);
 		}
 
 		[[nodiscard]] inline DMUI_Result NewLine(
 			void) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::newLine);
+			return detail::Invoke<&DMUI_UIAPI::newLine>(
+				);
 		}
 
 		[[nodiscard]] inline DMUI_Result PlotLines(
@@ -1221,31 +1229,31 @@ namespace dmui::ui
 		DMUI_Vec2 size,
 		uint32_t strideBytes) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::plotLines, label, values, valueCount, valueOffset, overlay, overlayLength, scaleMinimum, scaleMaximum, size, strideBytes);
+			return detail::Invoke<&DMUI_UIAPI::plotLines>(
+				label, values, valueCount, valueOffset, overlay, overlayLength, scaleMinimum, scaleMaximum, size, strideBytes);
 		}
 
 		[[nodiscard]] inline DMUI_Result PushStyleVarFloat(
 			DMUI_UIStyleVar styleVar,
 		float value) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::pushStyleVarFloat, styleVar, value);
+			return detail::Invoke<&DMUI_UIAPI::pushStyleVarFloat>(
+				styleVar, value);
 		}
 
 		[[nodiscard]] inline DMUI_Result PushStyleVarVec2(
 			DMUI_UIStyleVar styleVar,
 		DMUI_Vec2 value) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::pushStyleVarVec2, styleVar, value);
+			return detail::Invoke<&DMUI_UIAPI::pushStyleVarVec2>(
+				styleVar, value);
 		}
 
 		[[nodiscard]] inline DMUI_Result PopStyleVar(
 			int32_t count) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::popStyleVar, count);
+			return detail::Invoke<&DMUI_UIAPI::popStyleVar>(
+				count);
 		}
 
 		[[nodiscard]] inline DMUI_Result ListClipperBegin(
@@ -1253,8 +1261,8 @@ namespace dmui::ui
 		float itemsHeight,
 		uint64_t* clipper) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::listClipperBegin, itemsCount, itemsHeight, clipper);
+			return detail::Invoke<&DMUI_UIAPI::listClipperBegin>(
+				itemsCount, itemsHeight, clipper);
 		}
 
 		[[nodiscard]] inline DMUI_Result ListClipperStep(
@@ -1263,15 +1271,15 @@ namespace dmui::ui
 		int32_t* displayStart,
 		int32_t* displayEnd) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::listClipperStep, clipper, stepping, displayStart, displayEnd);
+			return detail::Invoke<&DMUI_UIAPI::listClipperStep>(
+				clipper, stepping, displayStart, displayEnd);
 		}
 
 		[[nodiscard]] inline DMUI_Result ListClipperEnd(
 			uint64_t clipper) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::listClipperEnd, clipper);
+			return detail::Invoke<&DMUI_UIAPI::listClipperEnd>(
+				clipper);
 		}
 
 		[[nodiscard]] inline DMUI_Result Image(
@@ -1279,30 +1287,30 @@ namespace dmui::ui
 		const DMUI_ImageDrawOptions* options,
 		uint32_t* drawn) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::image, image, options, drawn);
+			return detail::Invoke<&DMUI_UIAPI::image>(
+				image, options, drawn);
 		}
 
 		[[nodiscard]] inline DMUI_Result PlotAnnotated(
 			const char* id,
 		const DMUI_AnnotatedPlotDescriptor* descriptor) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::plotAnnotated, id, descriptor);
+			return detail::Invoke<&DMUI_UIAPI::plotAnnotated>(
+				id, descriptor);
 		}
 
 		[[nodiscard]] inline DMUI_Result GetCursorPos(
 			DMUI_Vec2* position) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::getCursorPos, position);
+			return detail::Invoke<&DMUI_UIAPI::getCursorPos>(
+				position);
 		}
 
 		[[nodiscard]] inline DMUI_Result SetCursorPos(
 			DMUI_Vec2 position) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::setCursorPos, position);
+			return detail::Invoke<&DMUI_UIAPI::setCursorPos>(
+				position);
 		}
 
 		[[nodiscard]] inline DMUI_Result TextAligned(
@@ -1311,15 +1319,15 @@ namespace dmui::ui
 		const char* text,
 		size_t length) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::textAligned, alignX, width, text, length);
+			return detail::Invoke<&DMUI_UIAPI::textAligned>(
+				alignX, width, text, length);
 		}
 
 		[[nodiscard]] inline DMUI_Result OpenPopup(
 			const char* id) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::openPopup, id);
+			return detail::Invoke<&DMUI_UIAPI::openPopup>(
+				id);
 		}
 
 		[[nodiscard]] inline DMUI_Result BeginPopup(
@@ -1327,8 +1335,8 @@ namespace dmui::ui
 		DMUI_UIWindowFlags flags,
 		uint32_t* visible) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::beginPopup, id, flags, visible);
+			return detail::Invoke<&DMUI_UIAPI::beginPopup>(
+				id, flags, visible);
 		}
 
 		[[nodiscard]] inline DMUI_Result BeginPopupModal(
@@ -1338,30 +1346,30 @@ namespace dmui::ui
 		DMUI_UIWindowFlags flags,
 		uint32_t* visible) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::beginPopupModal, id, hasCloseButton, open, flags, visible);
+			return detail::Invoke<&DMUI_UIAPI::beginPopupModal>(
+				id, hasCloseButton, open, flags, visible);
 		}
 
 		[[nodiscard]] inline DMUI_Result EndPopup(
 			void) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::endPopup);
+			return detail::Invoke<&DMUI_UIAPI::endPopup>(
+				);
 		}
 
 		[[nodiscard]] inline DMUI_Result CloseCurrentPopup(
 			void) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::closeCurrentPopup);
+			return detail::Invoke<&DMUI_UIAPI::closeCurrentPopup>(
+				);
 		}
 
 		[[nodiscard]] inline DMUI_Result IsPopupOpen(
 			const char* id,
 		uint32_t* open) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::isPopupOpen, id, open);
+			return detail::Invoke<&DMUI_UIAPI::isPopupOpen>(
+				id, open);
 		}
 
 		[[nodiscard]] inline DMUI_Result DrawListAddLine(
@@ -1371,8 +1379,8 @@ namespace dmui::ui
 		uint32_t color,
 		float thickness) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::drawListAddLine, target, p1, p2, color, thickness);
+			return detail::Invoke<&DMUI_UIAPI::drawListAddLine>(
+				target, p1, p2, color, thickness);
 		}
 
 		[[nodiscard]] inline DMUI_Result DrawListAddRect(
@@ -1383,8 +1391,8 @@ namespace dmui::ui
 		float rounding,
 		float thickness) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::drawListAddRect, target, min, max, color, rounding, thickness);
+			return detail::Invoke<&DMUI_UIAPI::drawListAddRect>(
+				target, min, max, color, rounding, thickness);
 		}
 
 		[[nodiscard]] inline DMUI_Result DrawListAddRectFilled(
@@ -1394,8 +1402,8 @@ namespace dmui::ui
 		uint32_t color,
 		float rounding) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::drawListAddRectFilled, target, min, max, color, rounding);
+			return detail::Invoke<&DMUI_UIAPI::drawListAddRectFilled>(
+				target, min, max, color, rounding);
 		}
 
 		[[nodiscard]] inline DMUI_Result DrawListAddCircle(
@@ -1406,8 +1414,8 @@ namespace dmui::ui
 		uint32_t segments,
 		float thickness) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::drawListAddCircle, target, center, radius, color, segments, thickness);
+			return detail::Invoke<&DMUI_UIAPI::drawListAddCircle>(
+				target, center, radius, color, segments, thickness);
 		}
 
 		[[nodiscard]] inline DMUI_Result DrawListAddCircleFilled(
@@ -1417,8 +1425,8 @@ namespace dmui::ui
 		uint32_t color,
 		uint32_t segments) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::drawListAddCircleFilled, target, center, radius, color, segments);
+			return detail::Invoke<&DMUI_UIAPI::drawListAddCircleFilled>(
+				target, center, radius, color, segments);
 		}
 
 		[[nodiscard]] inline DMUI_Result DrawListAddTriangle(
@@ -1429,8 +1437,8 @@ namespace dmui::ui
 		uint32_t color,
 		float thickness) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::drawListAddTriangle, target, p1, p2, p3, color, thickness);
+			return detail::Invoke<&DMUI_UIAPI::drawListAddTriangle>(
+				target, p1, p2, p3, color, thickness);
 		}
 
 		[[nodiscard]] inline DMUI_Result DrawListAddTriangleFilled(
@@ -1440,8 +1448,8 @@ namespace dmui::ui
 		DMUI_Vec2 p3,
 		uint32_t color) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::drawListAddTriangleFilled, target, p1, p2, p3, color);
+			return detail::Invoke<&DMUI_UIAPI::drawListAddTriangleFilled>(
+				target, p1, p2, p3, color);
 		}
 
 		[[nodiscard]] inline DMUI_Result DrawListAddBezierCubic(
@@ -1454,8 +1462,8 @@ namespace dmui::ui
 		float thickness,
 		uint32_t segments) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::drawListAddBezierCubic, target, p1, p2, p3, p4, color, thickness, segments);
+			return detail::Invoke<&DMUI_UIAPI::drawListAddBezierCubic>(
+				target, p1, p2, p3, p4, color, thickness, segments);
 		}
 
 		[[nodiscard]] inline DMUI_Result DrawListAddPolyline(
@@ -1466,8 +1474,8 @@ namespace dmui::ui
 		uint32_t closed,
 		float thickness) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::drawListAddPolyline, target, points, count, color, closed, thickness);
+			return detail::Invoke<&DMUI_UIAPI::drawListAddPolyline>(
+				target, points, count, color, closed, thickness);
 		}
 
 		[[nodiscard]] inline DMUI_Result DrawListAddPolygonFilled(
@@ -1476,8 +1484,8 @@ namespace dmui::ui
 		uint32_t count,
 		uint32_t color) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::drawListAddPolygonFilled, target, points, count, color);
+			return detail::Invoke<&DMUI_UIAPI::drawListAddPolygonFilled>(
+				target, points, count, color);
 		}
 
 		[[nodiscard]] inline DMUI_Result DrawListAddText(
@@ -1488,8 +1496,8 @@ namespace dmui::ui
 		size_t length,
 		float fontSize) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::drawListAddText, target, pos, color, text, length, fontSize);
+			return detail::Invoke<&DMUI_UIAPI::drawListAddText>(
+				target, pos, color, text, length, fontSize);
 		}
 
 		[[nodiscard]] inline DMUI_Result DrawListAddImage(
@@ -1501,8 +1509,8 @@ namespace dmui::ui
 		DMUI_Vec2 uv1,
 		uint32_t tint) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::drawListAddImage, target, image, min, max, uv0, uv1, tint);
+			return detail::Invoke<&DMUI_UIAPI::drawListAddImage>(
+				target, image, min, max, uv0, uv1, tint);
 		}
 
 		[[nodiscard]] inline DMUI_Result DrawListPushClipRect(
@@ -1511,22 +1519,22 @@ namespace dmui::ui
 		DMUI_Vec2 max,
 		uint32_t intersectWithCurrent) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::drawListPushClipRect, target, min, max, intersectWithCurrent);
+			return detail::Invoke<&DMUI_UIAPI::drawListPushClipRect>(
+				target, min, max, intersectWithCurrent);
 		}
 
 		[[nodiscard]] inline DMUI_Result DrawListPopClipRect(
 			DMUI_DrawTarget target) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::drawListPopClipRect, target);
+			return detail::Invoke<&DMUI_UIAPI::drawListPopClipRect>(
+				target);
 		}
 
 		[[nodiscard]] inline DMUI_Result GetThemeColors(
 			DMUI_ThemeColors* colors) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::getThemeColors, colors);
+			return detail::Invoke<&DMUI_UIAPI::getThemeColors>(
+				colors);
 		}
 
 		[[nodiscard]] inline DMUI_Result BeginPanel(
@@ -1535,15 +1543,15 @@ namespace dmui::ui
 		DMUI_UIPanelFlags flags,
 		uint32_t* visible) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::beginPanel, id, size, flags, visible);
+			return detail::Invoke<&DMUI_UIAPI::beginPanel>(
+				id, size, flags, visible);
 		}
 
 		[[nodiscard]] inline DMUI_Result EndPanel(
 			void) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::endPanel);
+			return detail::Invoke<&DMUI_UIAPI::endPanel>(
+				);
 		}
 
 		[[nodiscard]] inline DMUI_Result InputTextEditor(
@@ -1555,8 +1563,8 @@ namespace dmui::ui
 		size_t cursor,
 		DMUI_TextEditState* state) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::inputTextEditor, label, hint, buffer, flags, editFlags, cursor, state);
+			return detail::Invoke<&DMUI_UIAPI::inputTextEditor>(
+				label, hint, buffer, flags, editFlags, cursor, state);
 		}
 
 		[[nodiscard]] inline DMUI_Result BeginTooltipAt(
@@ -1564,8 +1572,8 @@ namespace dmui::ui
 		DMUI_Vec2 pivot,
 		uint32_t* visible) noexcept
 		{
-			return detail::Invoke(
-				&DMUI_UIAPI::beginTooltipAt, position, pivot, visible);
+			return detail::Invoke<&DMUI_UIAPI::beginTooltipAt>(
+				position, pivot, visible);
 		}
 	}
 }

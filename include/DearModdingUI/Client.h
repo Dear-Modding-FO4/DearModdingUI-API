@@ -964,7 +964,7 @@ namespace dmui
 				return false;
 			}
 
-			api_ = getAPI(DMUI_ABI_VERSION);
+			api_ = detail::NegotiateAPI(getAPI, abiMinor_);
 			if (!api_ || api_->abiMajor != DMUI_ABI_MAJOR)
 			{
 				api_ = nullptr;
@@ -995,6 +995,11 @@ namespace dmui
 
 			clientHandle_ = handle;
 			return true;
+		}
+
+		[[nodiscard]] uint32_t AbiMinor() const noexcept
+		{
+			return abiMinor_;
 		}
 
 		template <class Callable>
@@ -2118,6 +2123,8 @@ namespace dmui
 		{
 			if (!IsConnected())
 				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			if (abiMinor_ < detail::SlotAbiMinor<Slot>)
+				return Fail(DMUI_RESULT_UNSUPPORTED_ABI);
 			lastResult_ = (api_->*Slot)(clientHandle_, std::forward<Args>(a_args)...);
 			return lastResult_ == DMUI_RESULT_OK;
 		}
@@ -2187,7 +2194,8 @@ namespace dmui
 			owner.lastResult_ = DMUI_RESULT_OK;
 			ui::detail::ScopedContext uiContext{
 				owner.uiAPI_,
-				owner.clientHandle_
+				owner.clientHandle_,
+				owner.abiMinor_
 			};
 			try
 			{
@@ -2199,8 +2207,10 @@ namespace dmui
 				return DMUI_RESULT_CALLBACK_FAILED;
 			}
 			const auto uiResult = uiContext.Result();
-			// Service contention is retryable; UI-table failures still fail the callback.
-			const auto hostResult = owner.LastResult() == DMUI_RESULT_BUSY ?
+			// Contention and unsupported features allow drawing callbacks to fall back.
+			const auto hostResult =
+				owner.LastResult() == DMUI_RESULT_BUSY ||
+				owner.LastResult() == DMUI_RESULT_UNSUPPORTED_ABI ?
 				DMUI_RESULT_OK : owner.LastResult();
 			const auto result = uiResult != DMUI_RESULT_OK ?
 				uiResult :
@@ -2279,6 +2289,7 @@ namespace dmui
 		ClientOptions options_;
 		const DMUI_HostAPI* api_{};
 		const DMUI_UIAPI* uiAPI_{};
+		uint32_t abiMinor_{};
 		DMUI_ClientHandle clientHandle_{ DMUI_INVALID_CLIENT_HANDLE };
 		std::atomic<DMUI_Result> lastResult_{ DMUI_RESULT_OK };
 		std::atomic<DMUI_UnavailableReason> unavailableReason_{ DMUI_UNAVAILABLE_NONE };

@@ -6,6 +6,9 @@
     "namespace": "dmui::ui",
     "packedColor": "RRGGBBAA"
   },
+  "operationMinors": {
+    "1": 98
+  },
   "enums": [
     {
       "name": "DrawTarget",

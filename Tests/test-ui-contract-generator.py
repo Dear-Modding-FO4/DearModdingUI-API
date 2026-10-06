@@ -56,6 +56,12 @@ class ABIContractTests(unittest.TestCase):
             with self.subTest(change=name):
                 with self.assertRaisesRegex(generator.GenerationError, "DMUI_ABI_MINOR"):
                     generator.validate_compatibility(manifest, self.baseline)
+                if name == "append_operation":
+                    with self.assertRaisesRegex(generator.GenerationError, "introducing ABI minor"):
+                        generator.validate_compatibility(
+                            self.bump(copy.deepcopy(manifest), minor=1), self.baseline
+                        )
+                    manifest["operations"][-1]["sinceMinor"] = self.baseline["contract"]["abiMinor"] + 1
                 generator.validate_compatibility(self.bump(manifest, minor=1), self.baseline)
 
     def test_breaking_changes_require_major_change(self):
@@ -63,7 +69,12 @@ class ABIContractTests(unittest.TestCase):
             operations = schema["operations"]
             operations[0][1:], operations[1][1:] = operations[1][1:], operations[0][1:]
 
-        breaking = {"reorder_operations": self.changed(reorder_operations)}
+        breaking = {
+            "reorder_operations": self.changed(reorder_operations),
+            "change_slot_minor": self.changed(
+                lambda schema: schema["operationMinors"].update({"1": 97})
+            ),
+        }
         for name, old, new in (
             (
                 "grow_struct",

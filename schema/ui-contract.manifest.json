@@ -1294,6 +1294,7 @@
       "name": "GetStyleMetrics",
       "field": "getStyleMetrics",
       "kind": "style_metrics",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1310,6 +1311,7 @@
       "name": "BeginCombo",
       "field": "beginCombo",
       "kind": "bool",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1338,6 +1340,7 @@
       "name": "EndCombo",
       "field": "endCombo",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1350,6 +1353,7 @@
       "name": "BeginDisabled",
       "field": "beginDisabled",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1366,6 +1370,7 @@
       "name": "EndDisabled",
       "field": "endDisabled",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1378,6 +1383,7 @@
       "name": "BeginTable",
       "field": "beginTable",
       "kind": "bool",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1414,6 +1420,7 @@
       "name": "EndTable",
       "field": "endTable",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1426,6 +1433,7 @@
       "name": "BeginTooltip",
       "field": "beginTooltip",
       "kind": "bool",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1442,6 +1450,7 @@
       "name": "EndTooltip",
       "field": "endTooltip",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1454,6 +1463,7 @@
       "name": "Button",
       "field": "button",
       "kind": "bool",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1478,6 +1488,7 @@
       "name": "CalcTextSize",
       "field": "calcTextSize",
       "kind": "vec2",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1510,6 +1521,7 @@
       "name": "Checkbox",
       "field": "checkbox",
       "kind": "bool_inout",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1534,6 +1546,7 @@
       "name": "CollapsingHeader",
       "field": "collapsingHeader",
       "kind": "bool",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1558,6 +1571,7 @@
       "name": "CollapsingHeaderVisible",
       "field": "collapsingHeaderVisible",
       "kind": "bool_inout_result",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1586,6 +1600,7 @@
       "name": "DragScalar",
       "field": "dragScalar",
       "kind": "scalar",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1646,6 +1661,7 @@
       "name": "Dummy",
       "field": "dummy",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1662,6 +1678,7 @@
       "name": "GetContentRegionAvail",
       "field": "getContentRegionAvail",
       "kind": "vec2",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1678,6 +1695,7 @@
       "name": "GetCursorScreenPos",
       "field": "getCursorScreenPos",
       "kind": "vec2",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1694,6 +1712,7 @@
       "name": "GetFontSize",
       "field": "getFontSize",
       "kind": "float",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1710,6 +1729,7 @@
       "name": "GetFrameHeight",
       "field": "getFrameHeight",
       "kind": "float",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1726,6 +1746,7 @@
       "name": "GetStyleColor",
       "field": "getStyleColor",
       "kind": "vec4",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1746,6 +1767,7 @@
       "name": "GetTextLineHeightWithSpacing",
       "field": "getTextLineHeightWithSpacing",
       "kind": "float",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1762,6 +1784,7 @@
       "name": "Indent",
       "field": "indent",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1778,6 +1801,7 @@
       "name": "InputScalar",
       "field": "inputScalar",
       "kind": "scalar",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1834,6 +1858,7 @@
       "name": "InputText",
       "field": "inputText",
       "kind": "input_text",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1866,6 +1891,7 @@
       "name": "InputTextMultiline",
       "field": "inputTextMultiline",
       "kind": "input_text",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1902,6 +1928,7 @@
       "name": "InputTextWithHint",
       "field": "inputTextWithHint",
       "kind": "input_text",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1938,6 +1965,7 @@
       "name": "IsItemDeactivatedAfterEdit",
       "field": "isItemDeactivatedAfterEdit",
       "kind": "bool",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1954,6 +1982,7 @@
       "name": "IsItemHovered",
       "field": "isItemHovered",
       "kind": "bool",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1974,6 +2003,7 @@
       "name": "PopID",
       "field": "popID",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -1986,6 +2016,7 @@
       "name": "PopStyleColor",
       "field": "popStyleColor",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2002,6 +2033,7 @@
       "name": "PopTextWrapPos",
       "field": "popTextWrapPos",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2014,6 +2046,7 @@
       "name": "ProgressBar",
       "field": "progressBar",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2042,6 +2075,7 @@
       "name": "PushIDString",
       "field": "pushIDString",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2058,6 +2092,7 @@
       "name": "PushIDRange",
       "field": "pushIDRange",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2078,6 +2113,7 @@
       "name": "PushIDValue",
       "field": "pushIDValue",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2094,6 +2130,7 @@
       "name": "PushStyleColorU32",
       "field": "pushStyleColorU32",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2114,6 +2151,7 @@
       "name": "PushStyleColor",
       "field": "pushStyleColor",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2134,6 +2172,7 @@
       "name": "PushTextWrapPos",
       "field": "pushTextWrapPos",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2150,6 +2189,7 @@
       "name": "SameLine",
       "field": "sameLine",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2170,6 +2210,7 @@
       "name": "Selectable",
       "field": "selectable",
       "kind": "bool",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2202,6 +2243,7 @@
       "name": "SelectableToggle",
       "field": "selectableToggle",
       "kind": "bool_inout_result",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2234,6 +2276,7 @@
       "name": "Separator",
       "field": "separator",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2246,6 +2289,7 @@
       "name": "SetClipboardText",
       "field": "setClipboardText",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2266,6 +2310,7 @@
       "name": "SetCursorScreenPos",
       "field": "setCursorScreenPos",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2282,6 +2327,7 @@
       "name": "SetItemDefaultFocus",
       "field": "setItemDefaultFocus",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2294,6 +2340,7 @@
       "name": "SetNextItemWidth",
       "field": "setNextItemWidth",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2310,6 +2357,7 @@
       "name": "SetTooltipText",
       "field": "setTooltipText",
       "kind": "text",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2330,6 +2378,7 @@
       "name": "SliderScalar",
       "field": "sliderScalar",
       "kind": "scalar",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2386,6 +2435,7 @@
       "name": "Spacing",
       "field": "spacing",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2398,6 +2448,7 @@
       "name": "TableHeadersRow",
       "field": "tableHeadersRow",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2410,6 +2461,7 @@
       "name": "TableNextColumn",
       "field": "tableNextColumn",
       "kind": "bool",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2426,6 +2478,7 @@
       "name": "TableNextRow",
       "field": "tableNextRow",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2446,6 +2499,7 @@
       "name": "TableSetColumnIndex",
       "field": "tableSetColumnIndex",
       "kind": "bool",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2466,6 +2520,7 @@
       "name": "TableSetupColumn",
       "field": "tableSetupColumn",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2494,6 +2549,7 @@
       "name": "TableSetupScrollFreeze",
       "field": "tableSetupScrollFreeze",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2514,6 +2570,7 @@
       "name": "Text",
       "field": "text",
       "kind": "text",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2534,6 +2591,7 @@
       "name": "TextColored",
       "field": "textColored",
       "kind": "text",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2558,6 +2616,7 @@
       "name": "TextDisabled",
       "field": "textDisabled",
       "kind": "text",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2578,6 +2637,7 @@
       "name": "TextWrapped",
       "field": "textWrapped",
       "kind": "text",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2598,6 +2658,7 @@
       "name": "Unindent",
       "field": "unindent",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2614,6 +2675,7 @@
       "name": "NewLine",
       "field": "newLine",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2626,6 +2688,7 @@
       "name": "PlotLines",
       "field": "plotLines",
       "kind": "plot",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2678,6 +2741,7 @@
       "name": "PushStyleVarFloat",
       "field": "pushStyleVarFloat",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2698,6 +2762,7 @@
       "name": "PushStyleVarVec2",
       "field": "pushStyleVarVec2",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2718,6 +2783,7 @@
       "name": "PopStyleVar",
       "field": "popStyleVar",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2734,6 +2800,7 @@
       "name": "ListClipperBegin",
       "field": "listClipperBegin",
       "kind": "handle",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2758,6 +2825,7 @@
       "name": "ListClipperStep",
       "field": "listClipperStep",
       "kind": "list_clipper_step",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2786,6 +2854,7 @@
       "name": "ListClipperEnd",
       "field": "listClipperEnd",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2802,6 +2871,7 @@
       "name": "Image",
       "field": "image",
       "kind": "custom",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2826,6 +2896,7 @@
       "name": "PlotAnnotated",
       "field": "plotAnnotated",
       "kind": "custom",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2846,6 +2917,7 @@
       "name": "GetCursorPos",
       "field": "getCursorPos",
       "kind": "custom",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2862,6 +2934,7 @@
       "name": "SetCursorPos",
       "field": "setCursorPos",
       "kind": "custom",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2878,6 +2951,7 @@
       "name": "TextAligned",
       "field": "textAligned",
       "kind": "custom",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2906,6 +2980,7 @@
       "name": "OpenPopup",
       "field": "openPopup",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2922,6 +2997,7 @@
       "name": "BeginPopup",
       "field": "beginPopup",
       "kind": "bool",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2946,6 +3022,7 @@
       "name": "BeginPopupModal",
       "field": "beginPopupModal",
       "kind": "custom",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2978,6 +3055,7 @@
       "name": "EndPopup",
       "field": "endPopup",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -2990,6 +3068,7 @@
       "name": "CloseCurrentPopup",
       "field": "closeCurrentPopup",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -3002,6 +3081,7 @@
       "name": "IsPopupOpen",
       "field": "isPopupOpen",
       "kind": "bool",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -3022,6 +3102,7 @@
       "name": "DrawListAddLine",
       "field": "drawListAddLine",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -3054,6 +3135,7 @@
       "name": "DrawListAddRect",
       "field": "drawListAddRect",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -3090,6 +3172,7 @@
       "name": "DrawListAddRectFilled",
       "field": "drawListAddRectFilled",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -3122,6 +3205,7 @@
       "name": "DrawListAddCircle",
       "field": "drawListAddCircle",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -3158,6 +3242,7 @@
       "name": "DrawListAddCircleFilled",
       "field": "drawListAddCircleFilled",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -3190,6 +3275,7 @@
       "name": "DrawListAddTriangle",
       "field": "drawListAddTriangle",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -3226,6 +3312,7 @@
       "name": "DrawListAddTriangleFilled",
       "field": "drawListAddTriangleFilled",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -3258,6 +3345,7 @@
       "name": "DrawListAddBezierCubic",
       "field": "drawListAddBezierCubic",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -3302,6 +3390,7 @@
       "name": "DrawListAddPolyline",
       "field": "drawListAddPolyline",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -3338,6 +3427,7 @@
       "name": "DrawListAddPolygonFilled",
       "field": "drawListAddPolygonFilled",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -3366,6 +3456,7 @@
       "name": "DrawListAddText",
       "field": "drawListAddText",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -3402,6 +3493,7 @@
       "name": "DrawListAddImage",
       "field": "drawListAddImage",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -3442,6 +3534,7 @@
       "name": "DrawListPushClipRect",
       "field": "drawListPushClipRect",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -3470,6 +3563,7 @@
       "name": "DrawListPopClipRect",
       "field": "drawListPopClipRect",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -3486,6 +3580,7 @@
       "name": "GetThemeColors",
       "field": "getThemeColors",
       "kind": "custom",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -3502,6 +3597,7 @@
       "name": "BeginPanel",
       "field": "beginPanel",
       "kind": "bool",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -3530,6 +3626,7 @@
       "name": "EndPanel",
       "field": "endPanel",
       "kind": "void",
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -3542,6 +3639,7 @@
       "name": "InputTextEditor",
       "field": "inputTextEditor",
       "kind": "input_text",
+      "sinceMinor": 1,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -3582,6 +3680,7 @@
       "name": "BeginTooltipAt",
       "field": "beginTooltipAt",
       "kind": "bool",
+      "sinceMinor": 1,
       "signature": [
         [
           "DMUI_ClientHandle",

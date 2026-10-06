@@ -1,6 +1,7 @@
 #pragma once
 
 #include <DearModdingUI/CUIAPI.h>
+#include <DearModdingUI/Abi.h>
 #include <DearModdingUI/TextInput.h>
 
 #include <cfloat>
@@ -36,6 +37,8 @@ namespace dmui::ui::detail
 		const DMUI_UIAPI* api{};
 		DMUI_ClientHandle client{ DMUI_INVALID_CLIENT_HANDLE };
 		DMUI_Result result{ DMUI_RESULT_OK };
+		uint32_t abiMinor{ DMUI_ABI_MINOR };
+		DMUI_Result lastResult{ DMUI_RESULT_OK };
 	};
 
 	inline thread_local Context* currentContext{};
@@ -45,9 +48,10 @@ namespace dmui::ui::detail
 	public:
 		ScopedContext(
 			const DMUI_UIAPI* a_api,
-			DMUI_ClientHandle a_client) noexcept :
+			DMUI_ClientHandle a_client,
+			uint32_t a_abiMinor = DMUI_ABI_MINOR) noexcept :
 			m_previous(currentContext),
-			m_context{ a_api, a_client, DMUI_RESULT_OK }
+			m_context{ a_api, a_client, DMUI_RESULT_OK, a_abiMinor }
 		{
 			currentContext = &m_context;
 		}
@@ -74,6 +78,11 @@ namespace dmui::ui::detail
 
 	inline void Record(DMUI_Result a_result) noexcept
 	{
+		if (currentContext && a_result != DMUI_RESULT_OK)
+			currentContext->lastResult = a_result;
+		// Unsupported features are soft failures so callers can probe and fall back.
+		if (a_result == DMUI_RESULT_UNSUPPORTED_ABI)
+			return;
 		if (a_result != DMUI_RESULT_OK &&
 			currentContext &&
 			currentContext->result == DMUI_RESULT_OK)
@@ -83,27 +92,33 @@ namespace dmui::ui::detail
 	[[nodiscard]] inline DMUI_Result LastResult() noexcept
 	{
 		return currentContext ?
-			currentContext->result :
+			(currentContext->result != DMUI_RESULT_OK ?
+				currentContext->result : currentContext->lastResult) :
 			DMUI_RESULT_HOST_NOT_READY;
 	}
 
 	inline void ClearError() noexcept
 	{
 		if (currentContext)
+		{
 			currentContext->result = DMUI_RESULT_OK;
+			currentContext->lastResult = DMUI_RESULT_OK;
+		}
 	}
 
-	template <class Function, class... Arguments>
+	template <auto Slot, class... Arguments>
 	[[nodiscard]] DMUI_Result Invoke(
-		Function DMUI_UIAPI::*a_member,
 		Arguments... a_arguments) noexcept
 	{
-		const auto* context = currentContext;
+		auto* context = currentContext;
 		if (!context ||
 			!context->api ||
 			context->client == DMUI_INVALID_CLIENT_HANDLE)
 			return DMUI_RESULT_HOST_NOT_READY;
-		const auto function = context->api->*a_member;
+		context->lastResult = DMUI_RESULT_OK;
+		if (context->abiMinor < dmui::detail::SlotAbiMinor<Slot>)
+			return DMUI_RESULT_UNSUPPORTED_ABI;
+		const auto function = context->api->*Slot;
 		return function(context->client, a_arguments...);
 	}
 
