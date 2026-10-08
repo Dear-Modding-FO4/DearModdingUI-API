@@ -206,8 +206,8 @@ font family.
 `beginField` / `endField` work in settings-page and overlay-page drawing callbacks,
 inside a settings table or standalone. Dialog services expose no custom drawing
 callback. Only a successful begin with `visible != 0` requires an end.
-`DMUI_FieldBeginOptions` selects label/value (non-empty label required) or full-span
-geometry (label optional). Without a label column, under-label feedback uses the
+`DMUI_FieldBeginOptions` selects label/value or full-span geometry. Label and
+description are optional; an empty label keeps a blank label column. Without a label column, under-label feedback uses the
 control region. `DMUI_FieldEndOptions` configures Reset; the client changes the value.
 
 `setFieldFeedback` accepts `DMUI_FieldFeedback`: Info, Warning, or Error plus a

@@ -3311,9 +3311,8 @@ namespace dmui
 		}
 
 		[[nodiscard]] inline std::optional<bool> EndSettingRow(
-			Client& a_client,
 			const SettingDescriptor& a_setting,
-			SettingsRowScope& a_row,
+			FieldScope& a_row,
 			bool a_resetVisible = false,
 			bool a_resetEnabled = false)
 		{
@@ -3321,7 +3320,7 @@ namespace dmui
 			{
 				auto feedback = a_setting.resolveFeedback();
 				if (feedback && !feedback->message.empty() &&
-					!a_client.SetFieldFeedback(
+					!a_row.SetFeedback(
 						feedback->severity,
 						feedback->message.c_str()))
 					return std::nullopt;
@@ -3330,15 +3329,14 @@ namespace dmui
 		}
 
 		[[nodiscard]] inline bool EndFallbackRow(
-			Client& a_client,
 			const SettingDescriptor& a_setting,
-			SettingsRowScope& a_row)
+			FieldScope& a_row)
 		{
 			{
 				const DisabledScope disabled;
 				ui::TextUnformatted("Unsupported setting control.");
 			}
-			return EndSettingRow(a_client, a_setting, a_row).has_value();
+			return EndSettingRow(a_setting, a_row).has_value();
 		}
 
 		[[nodiscard]] inline bool DrawSettingRow(
@@ -3347,7 +3345,7 @@ namespace dmui
 		{
 			const auto& setting = *a_evaluated.setting;
 			const auto description = ResolveSettingDescription(setting);
-			SettingsRowScope row{
+			FieldScope row{
 				a_client,
 				setting.id.c_str(),
 				a_evaluated.label.c_str(),
@@ -3362,7 +3360,7 @@ namespace dmui
 			const auto presentation =
 				ResolveSettingControlPresentation(setting.control);
 			if (!presentation.supported)
-				return EndFallbackRow(a_client, setting, row);
+				return EndFallbackRow(setting, row);
 
 			const auto enabled =
 				!setting.isEnabled || setting.isEnabled();
@@ -3371,12 +3369,12 @@ namespace dmui
 				const auto& control =
 					std::get<ReadOnlySettingControl>(setting.control);
 				if (!control.draw)
-					return EndFallbackRow(a_client, setting, row);
+					return EndFallbackRow(setting, row);
 				{
 					const DisabledScope disabled{ !enabled };
 					control.draw();
 				}
-				return EndSettingRow(a_client, setting, row).has_value();
+				return EndSettingRow(setting, row).has_value();
 			}
 
 			if (!setting.binding.get ||
@@ -3384,7 +3382,7 @@ namespace dmui
 				!SettingValueMatchesControl(
 					setting.control,
 					setting.defaultValue))
-				return EndFallbackRow(a_client, setting, row);
+				return EndFallbackRow(setting, row);
 
 			auto value = setting.binding.get();
 			if (!SettingValueMatchesControl(setting.control, value))
@@ -3404,7 +3402,6 @@ namespace dmui
 			const auto resetEnabled =
 				resetVisible && enabled && modified;
 			const auto reset = EndSettingRow(
-				a_client,
 				setting,
 				row,
 				resetVisible,
@@ -3421,7 +3418,7 @@ namespace dmui
 			const EvaluatedAction& a_evaluated)
 		{
 			const auto& action = *a_evaluated.action;
-			SettingsRowScope row{
+			FieldScope row{
 				a_client,
 				action.id.c_str(),
 				a_evaluated.label.c_str(),
@@ -3450,6 +3447,21 @@ namespace dmui
 				}
 			}
 			return row.End(false, false).has_value();
+		}
+
+		// Mirrors the host section rhythm rather than plain item spacing.
+		[[nodiscard]] inline bool SectionSpacing(Client& a_client) noexcept
+		{
+			const auto style = a_client.GetStyleMetrics();
+			if (!style)
+				return false;
+			const auto cursor = ui::GetCursorScreenPos();
+			ui::SetCursorScreenPos({
+				cursor.x,
+				cursor.y + style->sectionGap - 2.0f * style->itemSpacing.y
+			});
+			ui::Dummy({});
+			return true;
 		}
 
 		[[nodiscard]] inline bool DrawSettingGroup(
@@ -3520,8 +3532,7 @@ namespace dmui
 			}
 			if (!table.End())
 				return false;
-			ui::Spacing();
-			return true;
+			return SectionSpacing(a_client);
 		}
 
 		[[nodiscard]] inline bool DrawPageHeader(
@@ -3626,21 +3637,13 @@ namespace dmui
 				widthSum,
 				actionCount,
 				spacing);
-			const auto rowHeight = (std::max)(frameHeight, buttonExtent);
+			auto rowHeight = (std::max)(frameHeight, buttonExtent);
 			const auto filterWidth =
 				(std::max)(layout.titleMaxX - start.x, 0.0f);
 
 			auto modifiedInline = true;
 			if (a_page.filterOptions.showSearch)
 			{
-				std::array<char, 256> search{};
-				const auto length = (std::min)(
-					a_page.filter.search.size(),
-					search.size() - 1);
-				std::copy_n(
-					a_page.filter.search.data(),
-					length,
-					search.data());
 				const auto modifiedWidth =
 					a_page.filterOptions.showModifiedOnly ?
 					frameHeight +
@@ -3654,12 +3657,15 @@ namespace dmui
 						ui::GetFontSize() * 24.0f,
 						filterWidth - modifiedWidth - spacing));
 				ui::SetNextItemWidth((std::min)(searchWidth, filterWidth));
-				if (ui::InputTextWithHint(
+				if (!a_client.DrawSearchInput(
 						"##dmui.settings.search",
 						a_page.filterOptions.searchHint.c_str(),
-						search.data(),
-						search.size()))
-					a_page.filter.search = search.data();
+						a_page.filter.search))
+					return false;
+				// The host search frame can be taller than a plain frame.
+				rowHeight = (std::max)(
+					rowHeight,
+					ui::GetCursorScreenPos().y - start.y - itemSpacingY);
 				if (a_page.filterOptions.showModifiedOnly)
 				{
 					modifiedInline =
@@ -3717,7 +3723,8 @@ namespace dmui
 				consumedHeight += itemSpacingY + frameHeight;
 			ui::SetCursorScreenPos(start);
 			ui::Dummy({ available, consumedHeight });
-			ui::Spacing();
+			if (!SectionSpacing(a_client))
+				return false;
 
 			if (!pressed)
 				return true;
@@ -3756,9 +3763,7 @@ namespace dmui
 						}))
 					return false;
 			}
-			if (!a_page.notes.empty())
-				ui::Spacing();
-			return true;
+			return a_page.notes.empty() || SectionSpacing(a_client);
 		}
 	}
 
