@@ -7,7 +7,6 @@
 #include <DearModdingUI/TextView.h>
 #include <DearModdingUI/UI.h>
 #include <DearModdingUI/Win32Discovery.h>
-#include <DearModdingUI/Localization.h>
 
 #include <algorithm>
 #include <array>
@@ -1000,6 +999,62 @@ namespace dmui
 		[[nodiscard]] uint32_t AbiMinor() const noexcept
 		{
 			return abiMinor_;
+		}
+
+		// a_owner names its <owner>_<language>.txt file, usually the client ID.
+		[[nodiscard]] static std::optional<std::string> ResolveText(
+			std::string_view a_owner,
+			std::string_view a_key,
+			DMUI_Result* a_result = nullptr) noexcept
+		{
+			auto result = DMUI_RESULT_HOST_NOT_INITIALIZED;
+			std::optional<std::string> text;
+			try
+			{
+				uint32_t minor{ 0 };
+				const auto getAPI = FindAPI();
+				const auto* api = getAPI ? detail::NegotiateAPI(getAPI, minor) : nullptr;
+				if (getAPI &&
+					(!api || api->abiMajor != DMUI_ABI_MAJOR ||
+						minor < detail::SlotAbiMinor<&DMUI_HostAPI::resolveText>))
+					result = DMUI_RESULT_UNSUPPORTED_ABI;
+				else if (api)
+				{
+					const std::string owner{ a_owner };
+					const std::string key{ a_key };
+					std::string buffer(64, '\0');
+					uint32_t required{ 0 };
+					result = api->resolveText(owner.c_str(), key.c_str(), buffer.data(),
+						static_cast<uint32_t>(buffer.size()), &required);
+					if (result == DMUI_RESULT_BUFFER_TOO_SMALL)
+					{
+						buffer.resize(required);
+						result = api->resolveText(
+							owner.c_str(), key.c_str(), buffer.data(), required, &required);
+					}
+					if (result == DMUI_RESULT_OK)
+					{
+						buffer.resize(required - 1);
+						text = std::move(buffer);
+					}
+				}
+			}
+			catch (...)
+			{
+				result = DMUI_RESULT_RESOURCE_EXHAUSTED;
+			}
+			if (a_result)
+				*a_result = result;
+			return text;
+		}
+
+		[[nodiscard]] static std::string Localize(
+			std::string_view a_owner,
+			std::string_view a_key,
+			std::string_view a_fallback)
+		{
+			auto text = ResolveText(a_owner, a_key);
+			return text ? std::move(*text) : std::string{ a_fallback };
 		}
 
 		template <class Callable>

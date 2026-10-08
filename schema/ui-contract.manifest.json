@@ -2,7 +2,7 @@
   "contract": {
     "name": "DearModdingUI stable UI",
     "abiMajor": 2,
-    "abiMinor": 1,
+    "abiMinor": 2,
     "namespace": "dmui::ui",
     "packedColor": "RRGGBBAA"
   },
@@ -3746,6 +3746,7 @@
       "DMUI_RESULT_IMAGE_TOO_LARGE": "44u",
       "DMUI_RESULT_IMAGE_DECODE_FAILED": "45u",
       "DMUI_RESULT_IMAGE_DEVICE_FAILED": "46u",
+      "DMUI_RESULT_TEXT_NOT_FOUND": "47u",
       "DMUI_HOST_STATE_NOT_INITIALIZED": "0u",
       "DMUI_HOST_STATE_WAITING_FOR_PRESENT": "1u",
       "DMUI_HOST_STATE_INITIALIZING": "2u",
@@ -3924,6 +3925,7 @@
       "DMUI_RequestOverlayFocusFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_PageHandle page) DMUI_NOEXCEPT",
       "DMUI_ReleaseOverlayFocusFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_PageHandle page) DMUI_NOEXCEPT",
       "DMUI_QueryOverlayFocusFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_PageHandle page, DMUI_OverlayFocusInfo* info) DMUI_NOEXCEPT",
+      "DMUI_ResolveTextFn": "DMUI_Result (const char* owner, const char* key, char* buffer, uint32_t capacity, uint32_t* requiredCapacity) DMUI_NOEXCEPT",
       "DMUI_PostNotificationFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_NotificationDescriptor* descriptor) DMUI_NOEXCEPT",
       "DMUI_RequestDialogFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_DialogDescriptor* descriptor, DMUI_DialogHandle* dialog) DMUI_NOEXCEPT",
       "DMUI_PollDialogEventFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_DialogHandle dialog, DMUI_DialogEvent* event, char* textBuffer, uint32_t textCapacity) DMUI_NOEXCEPT",
@@ -4294,7 +4296,8 @@
         "DMUI_LoadImageFileFn loadImageFile",
         "DMUI_RequestOverlayFocusFn requestOverlayFocus",
         "DMUI_ReleaseOverlayFocusFn releaseOverlayFocus",
-        "DMUI_QueryOverlayFocusFn queryOverlayFocus"
+        "DMUI_QueryOverlayFocusFn queryOverlayFocus",
+        "DMUI_ResolveTextFn resolveText"
       ]
     }
   }

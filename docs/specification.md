@@ -285,6 +285,15 @@ resolver remains useful for offline decisions, but
 `ResolveAutomaticIconGlyph` should not be used for host-authoritative drawing
 because its vocabulary remains compiled into the mod.
 
+## Localization (ABI 2.2)
+
+The host reads translations itself from `Data\Interface\Translations\<owner>_<language>.txt`, the MCM file format, where `<language>` is the game's `sLanguage`. A key missing from that file falls back to `<owner>_en.txt`. A translation key is a whole string that starts with `$` and contains no whitespace or control characters, such as `$MyMod_General`. Text that merely contains `$` is literal.
+
+- Registration text: when registration closes, the host replaces every client, category, page, and action display name, page summary, action tooltip, and bridge source label that is a key found in the client's files, whose owner is the client ID. Ordering, search, and the sidebar use the translated text. A key found in neither file is shown as written. Stable IDs, icon names, and page ImGui IDs never change. Automatic icons are guessed only from names that are not keys, so set `iconName` on translated entries.
+- Drawn text: labels, tooltips, notifications, dialogs, and other per-frame strings are drawn exactly as passed. Translate them with `resolveText` before drawing, ideally once in `onHostReady`.
+
+`resolveText(owner, key, buffer, capacity, requiredCapacity)` writes the NUL-terminated translation of `key` from `owner`'s files and needs no client handle. It returns `TEXT_NOT_FOUND` when neither file has the key, `HOST_NOT_READY` until the game language is known, and `BUFFER_TOO_SMALL` when `capacity` is less than `requiredCapacity`, the byte count including the terminator. It may be called from any thread. `Client::ResolveText(owner, key)` returns the translation or `std::nullopt`, and `Client::Localize(owner, key, fallback)` returns the fallback when there is none. `<DearModdingUI/Localization.h>` keeps `localize::LocalizeString` values that `LocalizationManager::Load(owner)` refreshes through the same lookup.
+
 ## External Open and Virtual Files
 
 `Client::OpenExternal` dispatches targets via the host process:

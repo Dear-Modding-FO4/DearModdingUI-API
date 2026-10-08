@@ -2,7 +2,7 @@
   "contract": {
     "name": "DearModdingUI stable UI",
     "abiMajor": 2,
-    "abiMinor": 1,
+    "abiMinor": 2,
     "namespace": "dmui::ui",
     "packedColor": "RRGGBBAA"
   },

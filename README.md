@@ -204,6 +204,7 @@ update its `LastResult()`.
 | `<DearModdingUI/Presentation/Layout.h>` | Reusable, renderer-independent geometry for icons, rows, and trailing actions. Also remains available through the legacy `<DearModdingUI/VisualDecisions.h>` include. |
 | `<DearModdingUI/API.h>` | Pure C ABI declarations for host interaction. |
 | `<DearModdingUI/CUIAPI.h>` | Low-level C function table for drawing primitives. |
+| `<DearModdingUI/Localization.h>` | `LocalizeString` values refreshed from the owner's translation files through the host. |
 | `<DearModdingUI/IconGlyphs.h>` | Phosphor glyph constants and offline catalog snapshot utilities. Prefer the host query for automatic client drawing. |
 
 ---
@@ -275,6 +276,14 @@ while the shell stays closed: the host blocks game input and routes keyboard and
 mouse input to it until `ReleaseOverlayFocus`, Escape, the shell opening, or a game
 interruption. Poll `QueryOverlayFocus(page)` each frame to learn that focus ended and why.
 See the [focused overlay contract](docs/specification.md#focused-overlays-abi-21) (ABI 2.1).
+
+## Localization
+
+Pass translation keys such as `"$MyMod_General"` as registration display names, summaries,
+and action labels, and ship `Interface\Translations\<client id>_<language>.txt`, with
+`<client id>_en.txt` as the fallback; the host translates them when registration closes.
+Translate drawn text with `Client::Localize(clientId, key, fallback)`, ideally once in
+`onHostReady`. See the [localization contract](docs/specification.md#localization-abi-22) (ABI 2.2).
 
 ## Verification
 

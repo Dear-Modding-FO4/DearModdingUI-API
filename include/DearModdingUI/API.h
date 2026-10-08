@@ -28,7 +28,7 @@
 #define DMUI_VERSION_MINOR(version) ((uint32_t)(version) & 0xFFFFu)
 
 #define DMUI_ABI_MAJOR 2u
-#define DMUI_ABI_MINOR 1u
+#define DMUI_ABI_MINOR 2u
 // Minor occupies the high half so ABI 2.0 equals the original exact-match request 2.
 #define DMUI_MAKE_ABI_VERSION(major, minor) ((((uint32_t)(major)) & 0xFFFFu) | (((uint32_t)(minor)) << 16u))
 #define DMUI_ABI_VERSION_MAJOR(version) ((uint32_t)(version) & 0xFFFFu)
@@ -79,6 +79,7 @@ typedef uint32_t DMUI_Result;
 #define DMUI_RESULT_IMAGE_TOO_LARGE 44u
 #define DMUI_RESULT_IMAGE_DECODE_FAILED 45u
 #define DMUI_RESULT_IMAGE_DEVICE_FAILED 46u
+#define DMUI_RESULT_TEXT_NOT_FOUND 47u
 
 static inline const char* DMUI_ResultToString(DMUI_Result result) DMUI_NOEXCEPT
 {
@@ -86,6 +87,8 @@ static inline const char* DMUI_ResultToString(DMUI_Result result) DMUI_NOEXCEPT
 	{
 	case DMUI_RESULT_FILE_NOT_FOUND:
 		return "FILE_NOT_FOUND";
+	case DMUI_RESULT_TEXT_NOT_FOUND:
+		return "TEXT_NOT_FOUND";
 	case DMUI_RESULT_ACCESS_DENIED:
 		return "ACCESS_DENIED";
 	case DMUI_RESULT_IMAGE_TOO_LARGE:
@@ -1011,6 +1014,14 @@ typedef DMUI_Result (DMUI_CALL *DMUI_QueryOverlayFocusFn)(
 	DMUI_ClientHandle client,
 	DMUI_PageHandle page,
 	DMUI_OverlayFocusInfo* info) DMUI_NOEXCEPT;
+// Reads Interface\Translations\<owner>_<language>.txt, then <owner>_en.txt.
+// requiredCapacity counts the terminator.
+typedef DMUI_Result (DMUI_CALL *DMUI_ResolveTextFn)(
+	const char* owner,
+	const char* key,
+	char* buffer,
+	uint32_t capacity,
+	uint32_t* requiredCapacity) DMUI_NOEXCEPT;
 typedef DMUI_Result (DMUI_CALL *DMUI_PostNotificationFn)(
 	DMUI_ClientHandle client,
 	const DMUI_NotificationDescriptor* descriptor) DMUI_NOEXCEPT;
@@ -1148,6 +1159,7 @@ typedef struct DMUI_HostAPI
 	DMUI_RequestOverlayFocusFn requestOverlayFocus;
 	DMUI_ReleaseOverlayFocusFn releaseOverlayFocus;
 	DMUI_QueryOverlayFocusFn queryOverlayFocus;
+	DMUI_ResolveTextFn resolveText;
 } DMUI_HostAPI;
 
 #if defined(_MSC_VER)
