@@ -353,7 +353,7 @@ The UI operation `getPointerState(client, state)` returns the pointer input that
 `active` is set only while the drawing page owns the pointer, which is the page holding overlay focus while the cursor carrier is shown. Otherwise every field is zero.
 
 - `position` and `viewport` are screen-space pixels with a top-left origin. To pick, call `NiCamera::WindowPointToRay(camera, round(x), round(y), origin, direction, viewport.x, viewport.y)`.
-- `down`, `pressed`, and `released` are `DMUI_POINTER_BUTTON_*` masks (`LEFT`, `RIGHT`, `MIDDLE`, `X1`, `X2`). They hold only presses that landed on no DMUI window while no popup was open and no DMUI drag was active, plus the release of such a press. ImGui never sees them, so window focus and active widgets, such as an input text, are kept. Mouse buttons the host claims for hotkeys are excluded.
+- `down`, `pressed`, and `released` are `DMUI_POINTER_BUTTON_*` masks (`LEFT`, `RIGHT`, `MIDDLE`, `X1`, `X2`). They hold only presses that landed on no DMUI window while no popup was open and no DMUI drag was active, plus the release of such a press. ImGui never sees them, so window focus and active widgets, such as an input text, are kept. Mouse buttons that a host hotkey would act on, with the held modifiers, are excluded.
 - `wheel` reports notches (positive y is away from the user, positive x is right) of wheel input DMUI did not capture; `captured` says whether a DMUI window or popup captures hover and wheel.
 - Edges are per frame and not queued, unlike hotkey edges. `pressed` and `released` may both be set in one frame.
 - Mouse movement always reaches DMUI windows.
