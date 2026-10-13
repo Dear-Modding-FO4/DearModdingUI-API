@@ -741,9 +741,7 @@ typedef struct DMUI_OverlayFocusInfo
 	uint64_t generation;
 } DMUI_OverlayFocusInfo;
 
-// Button masks use DMUI_POINTER_BUTTON_* bits. down, pressed, and released hold only
-// presses DMUI did not take; wheel is zero while captured. All fields are zero
-// unless the drawing page owns the pointer.
+// Zero unless the drawing page owns the pointer; see the spec's Pointer state.
 typedef struct DMUI_PointerState
 {
 	uint32_t active;
