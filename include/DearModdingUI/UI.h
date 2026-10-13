@@ -427,6 +427,14 @@ namespace dmui::ui
 		detail::Record(checked::EndTooltip());
 	}
 
+	// Zeroed unless the calling page holds overlay focus (ABI 2.2).
+	[[nodiscard]] inline DMUI_PointerState GetPointerState() noexcept
+	{
+		DMUI_PointerState state{};
+		detail::Record(checked::GetPointerState(&state));
+		return state;
+	}
+
 	inline void OpenPopup(const char* a_id) noexcept
 	{
 		detail::Record(checked::OpenPopup(a_id));

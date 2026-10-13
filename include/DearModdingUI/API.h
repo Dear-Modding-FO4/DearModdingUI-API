@@ -315,6 +315,14 @@ typedef uint32_t DMUI_OverlayFocusEndReason;
 #define DMUI_OVERLAY_FOCUS_END_HOST_UNAVAILABLE 5u
 #define DMUI_OVERLAY_FOCUS_END_CALLBACK_FAILED 6u
 
+typedef uint32_t DMUI_PointerButtons;
+
+#define DMUI_POINTER_BUTTON_LEFT 0x00000001u
+#define DMUI_POINTER_BUTTON_RIGHT 0x00000002u
+#define DMUI_POINTER_BUTTON_MIDDLE 0x00000004u
+#define DMUI_POINTER_BUTTON_X1 0x00000008u
+#define DMUI_POINTER_BUTTON_X2 0x00000010u
+
 typedef uint32_t DMUI_DialogKind;
 
 #define DMUI_DIALOG_KIND_CONFIRM 0u
@@ -732,6 +740,22 @@ typedef struct DMUI_OverlayFocusInfo
 	DMUI_OverlayFocusEndReason endReason;
 	uint64_t generation;
 } DMUI_OverlayFocusInfo;
+
+// Button masks use DMUI_POINTER_BUTTON_* bits. down, pressed, and released hold only
+// presses DMUI did not take; wheel is zero while captured. All fields are zero
+// unless the drawing page owns the pointer.
+typedef struct DMUI_PointerState
+{
+	uint32_t active;
+	uint32_t captured;
+	// Screen space.
+	DMUI_Vec2 position;
+	DMUI_Vec2 viewport;
+	DMUI_Vec2 wheel;
+	uint32_t down;
+	uint32_t pressed;
+	uint32_t released;
+} DMUI_PointerState;
 
 typedef struct DMUI_NotificationDescriptor
 {

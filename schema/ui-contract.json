@@ -7,7 +7,8 @@
     "packedColor": "RRGGBBAA"
   },
   "operationMinors": {
-    "1": 98
+    "1": 98,
+    "2": 100
   },
   "enums": [
     {
@@ -523,7 +524,8 @@
     "DrawListPushClipRect": [["DMUI_ClientHandle", "client"], ["DMUI_DrawTarget", "target"], ["DMUI_Vec2", "min"], ["DMUI_Vec2", "max"], ["uint32_t", "intersectWithCurrent"]],
     "DrawListPopClipRect": [["DMUI_ClientHandle", "client"], ["DMUI_DrawTarget", "target"]],
     "InputTextEditor": [["DMUI_ClientHandle", "client"], ["const char*", "label"], ["const char*", "hint"], ["DMUI_TextBuffer*", "buffer"], ["DMUI_UIInputTextFlags", "flags"], ["DMUI_UITextEditFlags", "editFlags"], ["size_t", "cursor"], ["DMUI_TextEditState*", "state"]],
-    "BeginTooltipAt": [["DMUI_ClientHandle", "client"], ["DMUI_Vec2", "position"], ["DMUI_Vec2", "pivot"], ["uint32_t*", "visible"]]
+    "BeginTooltipAt": [["DMUI_ClientHandle", "client"], ["DMUI_Vec2", "position"], ["DMUI_Vec2", "pivot"], ["uint32_t*", "visible"]],
+    "GetPointerState": [["DMUI_ClientHandle", "client"], ["DMUI_PointerState*", "state"]]
   },
   "operations": [
     [1, "GetStyleMetrics", "getStyleMetrics", "style_metrics"],
@@ -624,6 +626,7 @@
     [96, "BeginPanel", "beginPanel", "bool"],
     [97, "EndPanel", "endPanel", "void"],
     [98, "InputTextEditor", "inputTextEditor", "input_text"],
-    [99, "BeginTooltipAt", "beginTooltipAt", "bool"]
+    [99, "BeginTooltipAt", "beginTooltipAt", "bool"],
+    [100, "GetPointerState", "getPointerState", "custom"]
   ]
 }

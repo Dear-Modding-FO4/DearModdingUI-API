@@ -276,6 +276,8 @@ while the shell stays closed: the host blocks game input and routes keyboard and
 mouse input to it until `ReleaseOverlayFocus`, Escape, the shell opening, or a game
 interruption. Poll `QueryOverlayFocus(page)` each frame to learn that focus ended and why.
 See the [focused overlay contract](docs/specification.md#focused-overlays-abi-21) (ABI 2.1).
+`ui::GetPointerState()` reports world clicks and wheel input that no DMUI window took, for picking
+(see [pointer state](docs/specification.md#pointer-state-abi-22), ABI 2.2).
 
 ## Localization
 

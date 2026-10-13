@@ -816,6 +816,9 @@ typedef DMUI_Result (DMUI_CALL *DMUI_UIBeginTooltipAtFn)(
 	DMUI_Vec2 position,
 	DMUI_Vec2 pivot,
 	uint32_t* visible) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UIGetPointerStateFn)(
+	DMUI_ClientHandle client,
+	DMUI_PointerState* state) DMUI_NOEXCEPT;
 
 typedef struct DMUI_UIAPI
 {
@@ -918,4 +921,5 @@ typedef struct DMUI_UIAPI
 	DMUI_UIEndPanelFn endPanel;
 	DMUI_UIInputTextEditorFn inputTextEditor;
 	DMUI_UIBeginTooltipAtFn beginTooltipAt;
+	DMUI_UIGetPointerStateFn getPointerState;
 } DMUI_UIAPI;

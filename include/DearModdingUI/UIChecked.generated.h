@@ -9,6 +9,8 @@ namespace dmui::detail
 	inline constexpr uint32_t SlotAbiMinor<&DMUI_UIAPI::inputTextEditor>{ 1u };
 	template <>
 	inline constexpr uint32_t SlotAbiMinor<&DMUI_UIAPI::beginTooltipAt>{ 1u };
+	template <>
+	inline constexpr uint32_t SlotAbiMinor<&DMUI_UIAPI::getPointerState>{ 2u };
 }
 
 namespace dmui::ui
@@ -1574,6 +1576,13 @@ namespace dmui::ui
 		{
 			return detail::Invoke<&DMUI_UIAPI::beginTooltipAt>(
 				position, pivot, visible);
+		}
+
+		[[nodiscard]] inline DMUI_Result GetPointerState(
+			DMUI_PointerState* state) noexcept
+		{
+			return detail::Invoke<&DMUI_UIAPI::getPointerState>(
+				state);
 		}
 	}
 }

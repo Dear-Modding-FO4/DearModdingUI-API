@@ -3699,6 +3699,23 @@
           "visible"
         ]
       ]
+    },
+    {
+      "id": 100,
+      "name": "GetPointerState",
+      "field": "getPointerState",
+      "kind": "custom",
+      "sinceMinor": 2,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_PointerState*",
+          "state"
+        ]
+      ]
     }
   ],
   "host": {
@@ -3821,6 +3838,11 @@
       "DMUI_OVERLAY_FOCUS_END_INTERRUPTED": "4u",
       "DMUI_OVERLAY_FOCUS_END_HOST_UNAVAILABLE": "5u",
       "DMUI_OVERLAY_FOCUS_END_CALLBACK_FAILED": "6u",
+      "DMUI_POINTER_BUTTON_LEFT": "0x00000001u",
+      "DMUI_POINTER_BUTTON_RIGHT": "0x00000002u",
+      "DMUI_POINTER_BUTTON_MIDDLE": "0x00000004u",
+      "DMUI_POINTER_BUTTON_X1": "0x00000008u",
+      "DMUI_POINTER_BUTTON_X2": "0x00000010u",
       "DMUI_DIALOG_KIND_CONFIRM": "0u",
       "DMUI_DIALOG_KIND_TEXT_ENTRY": "1u",
       "DMUI_DIALOG_EVENT_PENDING": "0u",
@@ -3865,6 +3887,7 @@
       "DMUI_PixelFormat": "uint32_t",
       "DMUI_OverlayAnchor": "uint32_t",
       "DMUI_OverlayFocusEndReason": "uint32_t",
+      "DMUI_PointerButtons": "uint32_t",
       "DMUI_DialogKind": "uint32_t",
       "DMUI_DialogEventKind": "uint32_t",
       "DMUI_ExternalTargetKind": "uint32_t",
@@ -4193,6 +4216,16 @@
         "uint32_t focused",
         "DMUI_OverlayFocusEndReason endReason",
         "uint64_t generation"
+      ],
+      "DMUI_PointerState": [
+        "uint32_t active",
+        "uint32_t captured",
+        "DMUI_Vec2 position",
+        "DMUI_Vec2 viewport",
+        "DMUI_Vec2 wheel",
+        "uint32_t down",
+        "uint32_t pressed",
+        "uint32_t released"
       ],
       "DMUI_NotificationDescriptor": [
         "DMUI_StatusSeverity severity",

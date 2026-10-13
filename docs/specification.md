@@ -346,6 +346,18 @@ Focus ends with one `DMUI_OverlayFocusEndReason`:
 
 Deactivating the game window suspends input but keeps focus. `queryOverlayFocus(client, page, info)` reports `focused`, the latest grant's `generation`, and `endReason`, which is `NONE` while focused or before the first grant. A client polls it from its overlay callback or a frame observer; a change from focused to unfocused is the focus-lost signal, and `endReason` says why. Ownership validation matches `queryOverlay`. All three entries may be called from any thread, and their effect on input and drawing applies from the next frame.
 
+### Pointer state (ABI 2.2)
+
+The UI operation `getPointerState(client, state)` returns the pointer input that DMUI did not take, so a focused overlay can pick in the world, such as a console replacement selecting a reference. It returns `OK` for a valid call, and `INVALID_ARGUMENT` for a null `state`. Call it from the page's draw callback.
+
+`active` is set only while the drawing page owns the pointer, which is the page holding overlay focus while the cursor carrier is shown. Otherwise every field is zero.
+
+- `position` and `viewport` are screen-space pixels with a top-left origin. To pick, call `NiCamera::WindowPointToRay(camera, round(x), round(y), origin, direction, viewport.x, viewport.y)`.
+- `down`, `pressed`, and `released` are `DMUI_POINTER_BUTTON_*` masks (`LEFT`, `RIGHT`, `MIDDLE`, `X1`, `X2`). They hold only presses that landed on no DMUI window while no popup was open and no DMUI drag was active, plus the release of such a press. ImGui never sees them, so window focus and active widgets, such as an input text, are kept. Mouse buttons the host claims for hotkeys are excluded.
+- `wheel` reports notches (positive y is away from the user, positive x is right) of wheel input DMUI did not capture; `captured` says whether a DMUI window or popup captures hover and wheel.
+- Edges are per frame and not queued, unlike hotkey edges. `pressed` and `released` may both be set in one frame.
+- Mouse movement always reaches DMUI windows.
+
 ### Dialog sessions
 
 `dmui::DialogSession` owns a single handle, callback, and text buffer. `Open` and
