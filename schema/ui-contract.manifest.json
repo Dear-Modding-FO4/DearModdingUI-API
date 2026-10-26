@@ -3831,6 +3831,7 @@
       "DMUI_OVERLAY_ANCHOR_BOTTOM_LEFT": "2u",
       "DMUI_OVERLAY_ANCHOR_BOTTOM_RIGHT": "3u",
       "DMUI_OVERLAY_ANCHOR_FREE": "4u",
+      "DMUI_OVERLAY_ANCHOR_NORMALIZED": "5u",
       "DMUI_OVERLAY_FOCUS_END_NONE": "0u",
       "DMUI_OVERLAY_FOCUS_END_RELEASED": "1u",
       "DMUI_OVERLAY_FOCUS_END_CANCELED": "2u",
@@ -3943,6 +3944,7 @@
       "DMUI_ReleaseImageFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_ImageHandle image) DMUI_NOEXCEPT",
       "DMUI_QueryImageFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_ImageHandle image, DMUI_ImageInfo* info) DMUI_NOEXCEPT",
       "DMUI_ConfigureOverlayFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_PageHandle page, const DMUI_ManagedOverlayOptions* options) DMUI_NOEXCEPT",
+      "DMUI_ConfigureOverlayNormalizedFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_PageHandle page, const DMUI_ManagedOverlayNormalizedOptions* options) DMUI_NOEXCEPT",
       "DMUI_QueryOverlayFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_PageHandle page, DMUI_ManagedOverlayPlacement* placement) DMUI_NOEXCEPT",
       "DMUI_ResetOverlayFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_PageHandle page) DMUI_NOEXCEPT",
       "DMUI_RequestOverlayFocusFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_PageHandle page) DMUI_NOEXCEPT",
@@ -4203,6 +4205,11 @@
         "uint32_t borderVisible",
         "uint32_t allowArrangement"
       ],
+      "DMUI_ManagedOverlayNormalizedOptions": [
+        "DMUI_ManagedOverlayOptions options",
+        "DMUI_Vec2 position",
+        "DMUI_Vec2 pivot"
+      ],
       "DMUI_ManagedOverlayPlacement": [
         "DMUI_OverlayAnchor anchor",
         "DMUI_Vec2 offset",
@@ -4330,7 +4337,8 @@
         "DMUI_RequestOverlayFocusFn requestOverlayFocus",
         "DMUI_ReleaseOverlayFocusFn releaseOverlayFocus",
         "DMUI_QueryOverlayFocusFn queryOverlayFocus",
-        "DMUI_ResolveTextFn resolveText"
+        "DMUI_ResolveTextFn resolveText",
+        "DMUI_ConfigureOverlayNormalizedFn configureOverlayNormalized"
       ]
     }
   }

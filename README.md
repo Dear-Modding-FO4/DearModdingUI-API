@@ -259,6 +259,10 @@ and the `Client` must outlive the session.
 
 ## Managed overlays
 
+Pass `DMUI_ManagedOverlayNormalizedOptions` with the `NORMALIZED` anchor to place
+an overlay at a fraction of the viewport, such as top center, exact at any UI
+scale or window size (ABI 2.2; older hosts need a corner or `FREE` fallback). See the
+[placement contract](docs/specification.md#managed-overlay-placement).
 `Client::ConfigureOverlay` treats `offset` and `size` as author defaults. The host
 restores the user's completed arrangement from its `imgui.ini`, keyed by stable
 client ID and page ID, even if that mod is absent in a later session. Only free

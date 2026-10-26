@@ -15,6 +15,8 @@ namespace dmui::detail
 	inline constexpr uint32_t SlotAbiMinor<&DMUI_HostAPI::queryOverlayFocus>{ 1u };
 	template <>
 	inline constexpr uint32_t SlotAbiMinor<&DMUI_HostAPI::resolveText>{ 2u };
+	template <>
+	inline constexpr uint32_t SlotAbiMinor<&DMUI_HostAPI::configureOverlayNormalized>{ 2u };
 
 	template <class GetAPI>
 	[[nodiscard]] constexpr const DMUI_HostAPI* NegotiateAPI(
