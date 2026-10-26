@@ -304,8 +304,8 @@ typedef uint32_t DMUI_OverlayAnchor;
 #define DMUI_OVERLAY_ANCHOR_BOTTOM_LEFT 2u
 #define DMUI_OVERLAY_ANCHOR_BOTTOM_RIGHT 3u
 #define DMUI_OVERLAY_ANCHOR_FREE 4u
-// ABI 2.2: configureOverlayNormalized only.
-#define DMUI_OVERLAY_ANCHOR_NORMALIZED 5u
+// ABI 2.2: offset is the window's top-left in unscaled screen pixels.
+#define DMUI_OVERLAY_ANCHOR_SCREEN_POSITION 5u
 
 typedef uint32_t DMUI_OverlayFocusEndReason;
 
@@ -725,16 +725,6 @@ typedef struct DMUI_ManagedOverlayOptions
 	uint32_t allowArrangement;
 } DMUI_ManagedOverlayOptions;
 
-// ABI 2.2. With options.anchor NORMALIZED, the window's pivot (0..1 of its
-// size) sits at position (0..1 of the viewport), moved by options.offset times
-// the host UI scale. Other anchors ignore position and pivot.
-typedef struct DMUI_ManagedOverlayNormalizedOptions
-{
-	DMUI_ManagedOverlayOptions options;
-	DMUI_Vec2 position;
-	DMUI_Vec2 pivot;
-} DMUI_ManagedOverlayNormalizedOptions;
-
 typedef struct DMUI_ManagedOverlayPlacement
 {
 	DMUI_OverlayAnchor anchor;
@@ -1031,10 +1021,6 @@ typedef DMUI_Result (DMUI_CALL *DMUI_ConfigureOverlayFn)(
 	DMUI_ClientHandle client,
 	DMUI_PageHandle page,
 	const DMUI_ManagedOverlayOptions* options) DMUI_NOEXCEPT;
-typedef DMUI_Result (DMUI_CALL *DMUI_ConfigureOverlayNormalizedFn)(
-	DMUI_ClientHandle client,
-	DMUI_PageHandle page,
-	const DMUI_ManagedOverlayNormalizedOptions* options) DMUI_NOEXCEPT;
 typedef DMUI_Result (DMUI_CALL *DMUI_QueryOverlayFn)(
 	DMUI_ClientHandle client,
 	DMUI_PageHandle page,
@@ -1198,7 +1184,6 @@ typedef struct DMUI_HostAPI
 	DMUI_ReleaseOverlayFocusFn releaseOverlayFocus;
 	DMUI_QueryOverlayFocusFn queryOverlayFocus;
 	DMUI_ResolveTextFn resolveText;
-	DMUI_ConfigureOverlayNormalizedFn configureOverlayNormalized;
 } DMUI_HostAPI;
 
 #if defined(_MSC_VER)

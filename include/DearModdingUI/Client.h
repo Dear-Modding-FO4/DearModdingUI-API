@@ -1513,14 +1513,6 @@ namespace dmui
 			return Call<&DMUI_HostAPI::configureOverlay>(a_page, &a_options);
 		}
 
-		// ABI 2.2; older hosts report UNSUPPORTED_ABI through LastResult().
-		[[nodiscard]] bool ConfigureOverlay(
-			DMUI_PageHandle a_page,
-			const DMUI_ManagedOverlayNormalizedOptions& a_options) noexcept
-		{
-			return Call<&DMUI_HostAPI::configureOverlayNormalized>(a_page, &a_options);
-		}
-
 		[[nodiscard]] std::optional<DMUI_ManagedOverlayPlacement>
 			QueryOverlay(DMUI_PageHandle a_page) noexcept
 		{

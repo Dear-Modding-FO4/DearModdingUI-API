@@ -306,30 +306,15 @@ The host reads translations itself from `Data\Interface\Translations\<owner>_<la
 
 ### Managed overlay placement
 
-`offset` is in host-unscaled units: the host multiplies it by its UI scale.
-Corner anchors inset the window from the edges they touch. `FREE` places the
-window's top-left at `offset`, and arrangement moves it.
-
-`configureOverlayNormalized` (ABI 2.2) takes `DMUI_ManagedOverlayNormalizedOptions`,
-the same options plus `position` and `pivot`. With `options.anchor` set to
-`NORMALIZED`, the window's top-left is
-
-    viewport * position - windowSize * pivot + offset * hostScale
-
-per axis, where `viewport` is the host's display size and `windowSize` is the
-window's current pixel size, so automatic and constrained sizes stay aligned.
-`position` and `pivot` are 0..1 per axis; `offset` moves the window right and
-down. The host resolves this every frame, so placement follows resolution and
-UI scale changes. A normalized overlay persists size only, like a corner.
-Examples: top center 20 units down is position `{0.5, 0}`, pivot `{0.5, 0}`,
-offset `{0, 20}`; `TOP_RIGHT` with zero offset is position and pivot `{1, 0}`.
-With any other anchor, the entry behaves as `configureOverlay` and ignores
-`position` and `pivot`. `configureOverlay` rejects `NORMALIZED`, and both entries
-reject non-finite values and a normalized `position` or `pivot` outside 0..1.
-
-A host older than ABI 2.2 lacks the entry: `Client::ConfigureOverlay` returns
-false with `UNSUPPORTED_ABI`, or a client checks `Client::AbiMinor() >= 2`, and
-then configures a corner or `FREE` anchor.
+Corner anchors inset the window from the edges they touch, and `FREE` places its
+top-left at `offset`; both multiply `offset` by the host UI scale.
+`SCREEN_POSITION` (ABI 2.2) places the window's top-left at `offset` in screen
+pixels, the units of `size` and `DMUI_ManagedOverlayPlacement::position`, with no
+host scaling. The client owns that position: arrangement cannot move it, and like
+a corner it persists size only. To center a window of width `w`, use
+`offset.x = (screenWidth - w) / 2`. A host older than ABI 2.2 rejects
+`SCREEN_POSITION` with `INVALID_ARGUMENT`; a client gates it on
+`Client::AbiMinor() >= 2` and otherwise configures `FREE`.
 
 `configureOverlay` supplies author defaults, not client-persisted placement.
 Completed arrangements are stored in the host's existing `imgui.ini` as
