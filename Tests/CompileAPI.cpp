@@ -19,8 +19,4 @@ namespace
 	}
 
 	static_assert(NegotiatesOlderMinor());
-	static_assert(dmui::detail::SlotAbiMinor<&DMUI_HostAPI::requestOverlayFocus> == 1u);
-	static_assert(dmui::detail::SlotAbiMinor<&DMUI_UIAPI::inputTextEditor> == 1u);
-	static_assert(dmui::detail::SlotAbiMinor<&DMUI_UIAPI::beginTooltipAt> == 1u);
-	static_assert(dmui::detail::SlotAbiMinor<&DMUI_UIAPI::text> == 0u);
 }

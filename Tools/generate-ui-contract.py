@@ -256,16 +256,12 @@ def native_type(enum_name: str) -> str:
         "WindowFlags": "ImGuiWindowFlags",
         "Color": "ImGuiCol",
         "StyleVar": "ImGuiStyleVar",
-        "DataType": "ImGuiDataType",
-        "ComboFlags": "ImGuiComboFlags",
         "HoveredFlags": "ImGuiHoveredFlags",
         "InputTextFlags": "ImGuiInputTextFlags",
         "SelectableFlags": "ImGuiSelectableFlags",
-        "SliderFlags": "ImGuiSliderFlags",
         "TableFlags": "ImGuiTableFlags",
         "TableColumnFlags": "ImGuiTableColumnFlags",
         "TableRowFlags": "ImGuiTableRowFlags",
-        "TreeNodeFlags": "ImGuiTreeNodeFlags",
     }[enum_name]
 
 
@@ -412,7 +408,7 @@ def build_host_manifest(api_text: str) -> dict:
         "types": {
             name: normalize(type_name)
             for type_name, name in re.findall(
-                r"^typedef (?!struct )([^;()]+?) (DMUI_\w+);$", text, re.M
+                r"^typedef (?!struct |union )([^;()]+?) (DMUI_\w+);$", text, re.M
             )
         },
         "functions": {
@@ -426,7 +422,7 @@ def build_host_manifest(api_text: str) -> dict:
         "structs": {
             name: [normalize(field) for field in body.split(";") if field.strip()]
             for name, body in re.findall(
-                r"typedef struct (DMUI_\w+)\s*\{(.*?)\}\s*\1;", text, re.S
+                r"typedef (?:struct|union) (DMUI_\w+)\s*\{(.*?)\}\s*\1;", text, re.S
             )
         },
     }

@@ -2,15 +2,27 @@
 
 #include <DearModdingUI/CUIAPI.h>
 #include <DearModdingUI/Abi.h>
+#include <DearModdingUI/Button.h>
+#include <DearModdingUI/Choice.h>
+#include <DearModdingUI/ColorEdit.h>
+#include <DearModdingUI/KeyCapture.h>
+#include <DearModdingUI/Numeric.h>
+#include <DearModdingUI/Section.h>
+#include <DearModdingUI/Spinner.h>
+#include <DearModdingUI/StyledText.h>
 #include <DearModdingUI/TextInput.h>
+#include <DearModdingUI/Toggle.h>
 
 #include <cfloat>
 #include <cstdarg>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <functional>
+#include <initializer_list>
 #include <limits>
 #include <new>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -256,6 +268,50 @@ namespace dmui::ui
 		TextAligned(a_alignX, a_width, detail::TextData(a_text), a_text.size());
 	}
 
+	namespace detail
+	{
+		template <class T>
+		concept TextLike = std::is_convertible_v<const T&, std::string_view>;
+	}
+
+	// Lays the text out inline as one item with styled ranges; the DMUI_TextSpan
+	// comment and the specification define the rules and limits.
+	// A template so a string literal beats the printf-style overload.
+	template <detail::TextLike T>
+	inline void Text(
+		const T& a_string,
+		std::span<const TextSpan> a_spans,
+		TextOptions a_options = {}) noexcept
+	{
+		const std::string_view a_text{ a_string };
+		if (a_spans.size() > (std::numeric_limits<uint32_t>::max)())
+		{
+			detail::Record(DMUI_RESULT_INVALID_ARGUMENT);
+			return;
+		}
+		const auto options = a_options.Abi();
+		detail::Record(checked::Text(
+			detail::TextData(a_text), a_text.size(),
+			a_spans.data(), static_cast<uint32_t>(a_spans.size()), &options));
+	}
+
+	// One style over the whole text.
+	template <detail::TextLike T>
+	inline void Text(
+		const T& a_string,
+		const TextStyle& a_style,
+		TextOptions a_options = {}) noexcept
+	{
+		const std::string_view a_text{ a_string };
+		const auto span = a_style.Span(0, a_text.size());
+		Text(a_text, std::span<const TextSpan>{ &span, 1 }, a_options);
+	}
+
+	inline void Text(const StyledText& a_text, TextOptions a_options = {}) noexcept
+	{
+		Text(a_text.Text(), a_text.Spans(), a_options);
+	}
+
 	class ListClipper
 	{
 	public:
@@ -353,23 +409,50 @@ namespace dmui::ui
 		bool m_visible{};
 	};
 
-	[[nodiscard]] inline bool BeginCombo(
-		const char* a_label,
-		const char* a_previewValue,
-		ComboFlags a_flags = ComboFlags::kNone) noexcept
+	// Draws the section header and, while it is expanded, opens its content;
+	// end a begin that returned true. The host writes options.expanded when the
+	// header is clicked.
+	[[nodiscard]] inline bool BeginSection(const SectionOptions& a_options) noexcept
 	{
+		uint32_t expanded = a_options.expanded && *a_options.expanded ? 1u : 0u;
+		const auto section = a_options.Abi(a_options.expanded ? &expanded : nullptr);
 		uint32_t visible{};
-		detail::Record(checked::BeginCombo(
-			a_label,
-			a_previewValue,
-			static_cast<DMUI_UIComboFlags>(a_flags),
-			&visible));
+		const auto result = checked::BeginSection(&section, &visible);
+		detail::Record(result);
+		if (result == DMUI_RESULT_OK && a_options.expanded)
+			*a_options.expanded = expanded != 0;
 		return visible != 0;
 	}
 
-	inline void EndCombo() noexcept
+	inline void EndSection() noexcept { detail::Record(checked::EndSection()); }
+
+	class SectionScope
 	{
-		detail::Record(checked::EndCombo());
+	public:
+		explicit SectionScope(const SectionOptions& a_options) noexcept :
+			m_visible(BeginSection(a_options)) {}
+		~SectionScope() noexcept { End(); }
+		SectionScope(const SectionScope&) = delete;
+		SectionScope& operator=(const SectionScope&) = delete;
+		[[nodiscard]] explicit operator bool() const noexcept { return m_visible; }
+		void End() noexcept
+		{
+			if (std::exchange(m_visible, false))
+				EndSection();
+		}
+
+	private:
+		bool m_visible{};
+	};
+
+	// The one dropdown; changed is set on the frame an option is chosen.
+	// No label is drawn.
+	[[nodiscard]] inline ChoiceResult Choice(const ChoiceOptions& a_options) noexcept
+	{
+		const auto choice = a_options.Abi();
+		DMUI_ChoiceResult result{ a_options.selected, 0u, 0u };
+		detail::Record(checked::Choice(&choice, &result));
+		return { result.selected, result.changed != 0, result.completed != 0 };
 	}
 
 	inline void BeginDisabled(bool a_disabled = true) noexcept
@@ -412,13 +495,13 @@ namespace dmui::ui
 		return visible != 0;
 	}
 
+	using Placement = DMUI_Placement;
+
 	// Places the tooltip at a screen position; pivot {0, 0} anchors its top-left.
-	[[nodiscard]] inline bool BeginTooltipAt(
-		Vec2 a_position,
-		Vec2 a_pivot = {}) noexcept
+	[[nodiscard]] inline bool BeginTooltipAt(Placement a_placement) noexcept
 	{
 		uint32_t visible{};
-		detail::Record(checked::BeginTooltipAt(a_position, a_pivot, &visible));
+		detail::Record(checked::BeginTooltipAt(a_placement, &visible));
 		return visible != 0;
 	}
 
@@ -427,7 +510,8 @@ namespace dmui::ui
 		detail::Record(checked::EndTooltip());
 	}
 
-	// Zeroed unless the calling page holds overlay focus (ABI 2.2).
+	// Position and viewport are set on any page; the rest is zero unless the
+	// calling page holds overlay focus.
 	[[nodiscard]] inline DMUI_PointerState GetPointerState() noexcept
 	{
 		DMUI_PointerState state{};
@@ -445,6 +529,17 @@ namespace dmui::ui
 	{
 		uint32_t visible{};
 		detail::Record(checked::BeginPopup(a_id, static_cast<DMUI_UIWindowFlags>(a_flags), &visible));
+		return visible != 0;
+	}
+
+	// Like BeginPopup; the placement applies on the frame the popup appears.
+	[[nodiscard]] inline bool BeginPopupAt(
+		const char* a_id, Placement a_placement,
+		WindowFlags a_flags = WindowFlags::kNone) noexcept
+	{
+		uint32_t visible{};
+		detail::Record(checked::BeginPopupAt(
+			a_id, a_placement, static_cast<DMUI_UIWindowFlags>(a_flags), &visible));
 		return visible != 0;
 	}
 
@@ -499,13 +594,22 @@ namespace dmui::ui
 			PopupScope(BeginPopupModal(a_id, a_open, a_hasCloseButton, a_flags)) {}
 	};
 
-	[[nodiscard]] inline bool Button(
-		const char* a_label,
-		Vec2 a_size = {}) noexcept
+	// The host button; true on the frame it is pressed.
+	[[nodiscard]] inline bool Button(const ButtonOptions& a_options) noexcept
 	{
+		const auto button = a_options.Abi();
 		uint32_t pressed{};
-		detail::Record(checked::Button(a_label, a_size, &pressed));
+		detail::Record(checked::Button(&button, &pressed));
 		return pressed != 0;
+	}
+
+	// The size Button would take with the same options at the current style.
+	[[nodiscard]] inline Vec2 MeasureButton(const ButtonOptions& a_options) noexcept
+	{
+		const auto button = a_options.Abi();
+		Vec2 size{};
+		detail::Record(checked::MeasureButton(&button, &size));
+		return size;
 	}
 
 	[[nodiscard]] inline Vec2 CalcTextSize(
@@ -546,121 +650,84 @@ namespace dmui::ui
 		return size;
 	}
 
-	[[nodiscard]] inline bool Checkbox(
-		const char* a_label,
-		bool* a_value) noexcept
+	// The one checkbox; changed is set on the frame it is toggled. No label is drawn.
+	[[nodiscard]] inline ToggleResult Toggle(const ToggleOptions& a_options) noexcept
 	{
-		if (!a_value)
+		const auto toggle = a_options.Abi();
+		DMUI_ToggleResult result{ toggle.value, 0u };
+		detail::Record(checked::Toggle(&toggle, &result));
+		return { result.value != 0, result.changed != 0 };
+	}
+
+	// The one busy indicator; redraw it each frame while work is pending.
+	inline void Spinner(const SpinnerOptions& a_options) noexcept
+	{
+		const auto spinner = a_options.Abi();
+		detail::Record(checked::Spinner(&spinner));
+	}
+
+	// Seconds of frame time: advances only on DMUI frames, not with game pause.
+	[[nodiscard]] inline double GetTime() noexcept
+	{
+		double seconds{};
+		detail::Record(checked::GetTime(&seconds));
+		return seconds;
+	}
+
+	// Seconds the previous frame took.
+	[[nodiscard]] inline float GetDeltaTime() noexcept
+	{
+		float seconds{};
+		detail::Record(checked::GetDeltaTime(&seconds));
+		return seconds;
+	}
+
+	// The one key binding editor; changed is set on the frame a chord was captured
+	// or cleared. No label is drawn.
+	[[nodiscard]] inline KeyCaptureResult KeyCapture(const KeyCaptureOptions& a_options) noexcept
+	{
+		const auto capture = a_options.Abi();
+		DMUI_KeyCaptureResult result{};
+		detail::Record(checked::KeyCapture(&capture, &result));
+		KeyCaptureResult captured;
+		if (result.changed == 0)
+			return captured;
+		try
 		{
-			detail::Record(DMUI_RESULT_INVALID_ARGUMENT);
-			return false;
+			result.chord[DMUI_KEY_CHORD_CAPACITY - 1u] = '\0';
+			captured.chord = result.chord;
+			captured.changed = true;
 		}
-		uint32_t value = *a_value ? 1u : 0u;
-		uint32_t changed{};
-		const auto result = checked::Checkbox(a_label, &value, &changed);
-		detail::Record(result);
-		if (result == DMUI_RESULT_OK)
-			*a_value = value != 0;
-		return changed != 0;
-	}
-
-	[[nodiscard]] inline bool CollapsingHeader(
-		const char* a_label,
-		TreeNodeFlags a_flags = TreeNodeFlags::kNone) noexcept
-	{
-		uint32_t open{};
-		detail::Record(checked::CollapsingHeader(
-			a_label,
-			static_cast<DMUI_UITreeNodeFlags>(a_flags),
-			&open));
-		return open != 0;
-	}
-
-	[[nodiscard]] inline bool CollapsingHeader(
-		const char* a_label,
-		bool* a_visible,
-		TreeNodeFlags a_flags = TreeNodeFlags::kNone) noexcept
-	{
-		if (!a_visible)
+		catch (const std::bad_alloc&)
 		{
-			detail::Record(DMUI_RESULT_INVALID_ARGUMENT);
-			return false;
+			detail::Record(DMUI_RESULT_RESOURCE_EXHAUSTED);
 		}
-		uint32_t visible = *a_visible ? 1u : 0u;
-		uint32_t open{};
-		const auto result = checked::CollapsingHeaderVisible(
-			a_label,
-			&visible,
-			static_cast<DMUI_UITreeNodeFlags>(a_flags),
-			&open);
-		detail::Record(result);
-		if (result == DMUI_RESULT_OK)
-			*a_visible = visible != 0;
-		return open != 0;
+		return captured;
 	}
 
-	namespace detail
+	// The one color edit with optional preset swatches; changed is set on the
+	// frame an edit changes the color. No label is drawn.
+	[[nodiscard]] inline ColorEditResult ColorEdit(const ColorEditOptions& a_options) noexcept
 	{
-		template <class T>
-		struct ScalarType;
-
-#define DMUI_UI_SCALAR(cpp_type, ui_type) \
-	template <>                            \
-	struct ScalarType<cpp_type>            \
-	{                                      \
-		static constexpr DataType value{ DataType::ui_type }; \
+		const auto color = a_options.Abi();
+		DMUI_ColorEditResult result{ color.rgba, 0u, 0u };
+		detail::Record(checked::ColorEdit(&color, &result));
+		return { result.rgba, result.changed != 0, result.completed != 0 };
 	}
 
-		DMUI_UI_SCALAR(int8_t, kS8);
-		DMUI_UI_SCALAR(uint8_t, kU8);
-		DMUI_UI_SCALAR(int16_t, kS16);
-		DMUI_UI_SCALAR(uint16_t, kU16);
-		DMUI_UI_SCALAR(int32_t, kS32);
-		DMUI_UI_SCALAR(uint32_t, kU32);
-		DMUI_UI_SCALAR(int64_t, kS64);
-		DMUI_UI_SCALAR(uint64_t, kU64);
-		DMUI_UI_SCALAR(float, kFloat);
-		DMUI_UI_SCALAR(double, kDouble);
-
-#undef DMUI_UI_SCALAR
-
-		template <class T>
-		concept Scalar =
-			requires { ScalarType<std::remove_cv_t<T>>::value; };
-
-		template <Scalar T>
-		[[nodiscard]] constexpr uint32_t ScalarSize() noexcept
-		{
-			return static_cast<uint32_t>(sizeof(T));
-		}
-	}
-
-	template <detail::Scalar T>
-	[[nodiscard]] inline bool DragScalar(
-		const char* a_label,
-		T* a_data,
-		float a_speed = 1.0f,
-		const T* a_minimum = nullptr,
-		const T* a_maximum = nullptr,
-		const char* a_format = nullptr,
-		SliderFlags a_flags = SliderFlags::kNone) noexcept
+	// The one numeric input; changed is set on the frame an edit changes the value.
+	// No label is drawn.
+	template <NumericScalar T>
+	[[nodiscard]] inline NumericResult<T> Numeric(const NumericOptions<T>& a_options) noexcept
 	{
-		uint32_t changed{};
-		detail::Record(checked::DragScalar(
-			a_label,
-			static_cast<DMUI_UIDataType>(
-				detail::ScalarType<std::remove_cv_t<T>>::value),
-			a_data,
-			detail::ScalarSize<T>(),
-			a_speed,
-			a_minimum,
-			a_minimum ? detail::ScalarSize<T>() : 0u,
-			a_maximum,
-			a_maximum ? detail::ScalarSize<T>() : 0u,
-			a_format,
-			static_cast<DMUI_UISliderFlags>(a_flags),
-			&changed));
-		return changed != 0;
+		const auto numeric = a_options.Abi();
+		DMUI_NumericResult result{ numeric.value, 0u, 0u };
+		detail::Record(checked::Numeric(&numeric, &result));
+		return {
+			FromNumericValue<T>(result.value),
+			result.changed != 0,
+			result.completed != 0
+		};
 	}
 
 	inline void Dummy(Vec2 a_size) noexcept
@@ -717,109 +784,74 @@ namespace dmui::ui
 		detail::Record(checked::Indent(a_width));
 	}
 
-	template <detail::Scalar T>
-	[[nodiscard]] inline bool InputScalar(
-		const char* a_label,
-		T* a_data,
-		const T* a_step = nullptr,
-		const T* a_fastStep = nullptr,
-		const char* a_format = nullptr,
-		InputTextFlags a_flags = InputTextFlags::kNone) noexcept
+	enum class TextFieldStyle : uint32_t
 	{
-		uint32_t changed{};
-		detail::Record(checked::InputScalar(
-			a_label,
-			static_cast<DMUI_UIDataType>(
-				detail::ScalarType<std::remove_cv_t<T>>::value),
-			a_data,
-			detail::ScalarSize<T>(),
-			a_step,
-			a_step ? detail::ScalarSize<T>() : 0u,
-			a_fastStep,
-			a_fastStep ? detail::ScalarSize<T>() : 0u,
-			a_format,
-			static_cast<DMUI_UIInputTextFlags>(a_flags),
-			&changed));
-		return changed != 0;
-	}
+		kPlain = DMUI_TEXT_FIELD_STYLE_PLAIN,
+		// The host search frame with a magnifier.
+		kSearch = DMUI_TEXT_FIELD_STYLE_SEARCH
+	};
+
+	// Called after each frame's edits with the field text. The spans it returns
+	// must outlive the InputText call; an exception fails the call.
+	using TextStyler = std::function<std::span<const TextSpan>(std::string_view)>;
 
 	namespace detail
 	{
-		[[nodiscard]] inline bool InputCapacity(
-			size_t a_capacity,
-			uint32_t& a_result) noexcept
+		inline DMUI_Result DMUI_CALL StyleTextField(
+			void* a_userData,
+			const char* a_text,
+			size_t a_length,
+			const DMUI_TextSpan** a_spans,
+			size_t* a_count) noexcept
 		{
-			if (a_capacity == 0 ||
-				a_capacity > (std::numeric_limits<uint32_t>::max)())
+			try
 			{
-				Record(DMUI_RESULT_INVALID_ARGUMENT);
-				return false;
+				const auto spans = (*static_cast<const TextStyler*>(a_userData))(
+					std::string_view{ a_text, a_length });
+				*a_spans = spans.data();
+				*a_count = spans.size();
+				return DMUI_RESULT_OK;
 			}
-			a_result = static_cast<uint32_t>(a_capacity);
-			return true;
+			catch (...)
+			{
+				return DMUI_RESULT_CALLBACK_FAILED;
+			}
 		}
 	}
 
-	[[nodiscard]] inline bool InputText(
-		const char* a_label,
-		char* a_buffer,
-		size_t a_capacity,
-		InputTextFlags a_flags = InputTextFlags::kNone) noexcept
+	// Non-owning; the DMUI_TextFieldOptions comment defines each field.
+	struct TextFieldOptions
 	{
-		uint32_t capacity{};
-		if (!detail::InputCapacity(a_capacity, capacity))
-			return false;
-		uint32_t changed{};
-		detail::Record(checked::InputText(
-			a_label,
-			a_buffer,
-			capacity,
-			static_cast<DMUI_UIInputTextFlags>(a_flags),
-			&changed));
-		return changed != 0;
-	}
+		const char* hint{};
+		TextFieldStyle style{ TextFieldStyle::kPlain };
+		InputTextFlags flags{};
+		TextEditFlags editFlags{};
+		// Zero is unlimited.
+		uint32_t maxBytes{};
+		// Zero with a zero size.y is a single line.
+		uint32_t lines{};
+		Vec2 size{};
+		size_t cursor{};
+		// Single line only; colors the text in the monospace role.
+		const TextStyler* styler{};
 
-	[[nodiscard]] inline bool InputTextMultiline(
-		const char* a_label,
-		char* a_buffer,
-		size_t a_capacity,
-		Vec2 a_size = {},
-		InputTextFlags a_flags = InputTextFlags::kNone) noexcept
-	{
-		uint32_t capacity{};
-		if (!detail::InputCapacity(a_capacity, capacity))
-			return false;
-		uint32_t changed{};
-		detail::Record(checked::InputTextMultiline(
-			a_label,
-			a_buffer,
-			capacity,
-			a_size,
-			static_cast<DMUI_UIInputTextFlags>(a_flags),
-			&changed));
-		return changed != 0;
-	}
-
-	[[nodiscard]] inline bool InputTextWithHint(
-		const char* a_label,
-		const char* a_hint,
-		char* a_buffer,
-		size_t a_capacity,
-		InputTextFlags a_flags = InputTextFlags::kNone) noexcept
-	{
-		uint32_t capacity{};
-		if (!detail::InputCapacity(a_capacity, capacity))
-			return false;
-		uint32_t changed{};
-		detail::Record(checked::InputTextWithHint(
-			a_label,
-			a_hint,
-			a_buffer,
-			capacity,
-			static_cast<DMUI_UIInputTextFlags>(a_flags),
-			&changed));
-		return changed != 0;
-	}
+		[[nodiscard]] constexpr DMUI_TextFieldOptions Abi() const noexcept
+		{
+			return {
+				hint,
+				cursor,
+				static_cast<DMUI_TextFieldStyle>(style),
+				static_cast<uint32_t>(flags),
+				static_cast<uint32_t>(editFlags),
+				maxBytes,
+				lines,
+				0u,
+				size,
+				styler ? &detail::StyleTextField : nullptr,
+				const_cast<TextStyler*>(styler)
+			};
+		}
+	};
 
 	using TextEditState = DMUI_TextEditState;
 
@@ -830,36 +862,25 @@ namespace dmui::ui
 		return (a_state.events & static_cast<uint32_t>(a_event)) != 0;
 	}
 
-	// Single-line input reporting per-frame edit events; returns whether the text was edited.
-	[[nodiscard]] inline bool InputTextEditor(
-		const char* a_label,
-		const char* a_hint,
+	// The one text field over a client buffer; returns whether the text was edited
+	// and reports the per-frame edit events in a_state.
+	[[nodiscard]] inline bool InputText(
+		const char* a_id,
 		DMUI_TextBuffer& a_buffer,
-		TextEditFlags a_editFlags,
-		size_t a_cursor,
-		TextEditState& a_state,
-		InputTextFlags a_flags = InputTextFlags::kNone) noexcept
+		const TextFieldOptions& a_options,
+		TextEditState& a_state) noexcept
 	{
 		a_state = {};
-		detail::Record(checked::InputTextEditor(
-			a_label,
-			a_hint,
-			&a_buffer,
-			static_cast<DMUI_UIInputTextFlags>(a_flags),
-			static_cast<DMUI_UITextEditFlags>(a_editFlags),
-			a_cursor,
-			&a_state));
+		const auto options = a_options.Abi();
+		detail::Record(checked::InputText(a_id, &a_buffer, &options, &a_state));
 		return HasTextEditEvent(a_state, TextEditEvents::kEdited);
 	}
 
-	[[nodiscard]] inline bool InputTextEditor(
-		const char* a_label,
-		const char* a_hint,
+	[[nodiscard]] inline bool InputText(
+		const char* a_id,
 		std::string& a_text,
-		TextEditFlags a_editFlags,
-		size_t a_cursor,
-		TextEditState& a_state,
-		InputTextFlags a_flags = InputTextFlags::kNone) noexcept
+		const TextFieldOptions& a_options,
+		TextEditState& a_state) noexcept
 	{
 		a_state = {};
 		TextInputBuffer buffer{ a_text };
@@ -869,10 +890,32 @@ namespace dmui::ui
 			detail::Record(buffer.Result());
 			return false;
 		}
-		const auto edited = InputTextEditor(
-			a_label, a_hint, *data, a_editFlags, a_cursor, a_state, a_flags);
+		const auto edited = InputText(a_id, *data, a_options, a_state);
 		detail::Record(buffer.CommitTo(a_text));
 		return edited;
+	}
+
+	// The convenient form: edits a string that grows as needed.
+	[[nodiscard]] inline bool InputText(
+		const char* a_id,
+		std::string& a_text,
+		const TextFieldOptions& a_options = {}) noexcept
+	{
+		TextEditState state;
+		return InputText(a_id, a_text, a_options, state);
+	}
+
+	// True on the frame the keyboard chord ("Ctrl+S", host hotkey grammar) is
+	// pressed, only for the page whose window has keyboard focus. An active text
+	// field keeps its own keys, and chords a host hotkey acts on never fire.
+	[[nodiscard]] inline bool Shortcut(
+		const char* a_chord,
+		ShortcutFlags a_flags = ShortcutFlags::kNone) noexcept
+	{
+		uint32_t pressed{};
+		detail::Record(checked::Shortcut(
+			a_chord, static_cast<DMUI_UIShortcutFlags>(a_flags), &pressed));
+		return pressed != 0;
 	}
 
 	[[nodiscard]] inline bool IsItemDeactivatedAfterEdit() noexcept
@@ -892,19 +935,18 @@ namespace dmui::ui
 		return hovered != 0;
 	}
 
+	// Opens the last item's tooltip under the host policy: after the theme hover
+	// delay or on navigation focus, even while the item is disabled.
 	[[nodiscard]] inline bool BeginItemTooltip() noexcept
 	{
-		return IsItemHovered(HoveredFlags::kForTooltip) && BeginTooltip();
+		uint32_t visible{};
+		detail::Record(checked::BeginItemTooltip(&visible));
+		return visible != 0;
 	}
 
 	inline void PopID() noexcept
 	{
 		detail::Record(checked::PopID());
-	}
-
-	inline void PopStyleColor(int32_t a_count = 1) noexcept
-	{
-		detail::Record(checked::PopStyleColor(a_count));
 	}
 
 	inline void PopTextWrapPos() noexcept
@@ -952,20 +994,6 @@ namespace dmui::ui
 	{
 		detail::Record(checked::PushIDValue(
 			static_cast<uint64_t>(static_cast<int64_t>(a_id))));
-	}
-
-	inline void PushStyleColor(Color a_color, Color32 a_rgba) noexcept
-	{
-		detail::Record(checked::PushStyleColorU32(
-			static_cast<DMUI_UIColor>(a_color),
-			a_rgba));
-	}
-
-	inline void PushStyleColor(Color a_color, Vec4 a_value) noexcept
-	{
-		detail::Record(checked::PushStyleColor(
-			static_cast<DMUI_UIColor>(a_color),
-			a_value));
 	}
 
 	inline void PushTextWrapPos(float a_localX = 0.0f) noexcept
@@ -1048,6 +1076,17 @@ namespace dmui::ui
 		detail::Record(checked::SetCursorScreenPos(a_position));
 	}
 
+	[[nodiscard]] inline float GetCursorScreenPosX() noexcept { return GetCursorScreenPos().x; }
+	[[nodiscard]] inline float GetCursorScreenPosY() noexcept { return GetCursorScreenPos().y; }
+	inline void SetCursorScreenPosX(float a_x) noexcept
+	{
+		SetCursorScreenPos({ a_x, GetCursorScreenPosY() });
+	}
+	inline void SetCursorScreenPosY(float a_y) noexcept
+	{
+		SetCursorScreenPos({ GetCursorScreenPosX(), a_y });
+	}
+
 	inline void SetItemDefaultFocus() noexcept
 	{
 		detail::Record(checked::SetItemDefaultFocus());
@@ -1060,50 +1099,21 @@ namespace dmui::ui
 
 	namespace detail
 	{
+		[[nodiscard]] inline DMUI_Result PlainText(
+			const char* a_text, size_t a_length) noexcept
+		{
+			return checked::Text(a_text, a_length, nullptr, 0u, nullptr);
+		}
+
 		inline void FormattedText(
-			DMUI_Result (*a_function)(const char*, size_t) noexcept,
 			const char* a_format,
 			std::va_list a_arguments) noexcept
 		{
 			std::vector<char> text;
 			if (!Format(a_format, a_arguments, text))
 				return;
-			Record(a_function(text.data(), text.size() - 1u));
+			Record(PlainText(text.data(), text.size() - 1u));
 		}
-	}
-
-	inline void SetTooltip(const char* a_format, ...) noexcept
-	{
-		std::va_list arguments;
-		va_start(arguments, a_format);
-		detail::FormattedText(&checked::SetTooltipText, a_format, arguments);
-		va_end(arguments);
-	}
-
-	template <detail::Scalar T>
-	[[nodiscard]] inline bool SliderScalar(
-		const char* a_label,
-		T* a_data,
-		const T* a_minimum,
-		const T* a_maximum,
-		const char* a_format = nullptr,
-		SliderFlags a_flags = SliderFlags::kNone) noexcept
-	{
-		uint32_t changed{};
-		detail::Record(checked::SliderScalar(
-			a_label,
-			static_cast<DMUI_UIDataType>(
-				detail::ScalarType<std::remove_cv_t<T>>::value),
-			a_data,
-			detail::ScalarSize<T>(),
-			a_minimum,
-			a_minimum ? detail::ScalarSize<T>() : 0u,
-			a_maximum,
-			a_maximum ? detail::ScalarSize<T>() : 0u,
-			a_format,
-			static_cast<DMUI_UISliderFlags>(a_flags),
-			&changed));
-		return changed != 0;
 	}
 
 	inline void Spacing() noexcept
@@ -1162,9 +1172,7 @@ namespace dmui::ui
 	inline void TextUnformatted(
 		std::string_view a_text) noexcept
 	{
-		detail::Record(checked::Text(
-			detail::TextData(a_text),
-			a_text.size()));
+		detail::Record(detail::PlainText(detail::TextData(a_text), a_text.size()));
 	}
 
 	inline void TextUnformatted(
@@ -1178,58 +1186,14 @@ namespace dmui::ui
 			detail::Record(DMUI_RESULT_INVALID_ARGUMENT);
 			return;
 		}
-		detail::Record(checked::Text(text, length));
-	}
-
-	namespace detail
-	{
-		inline void FormattedColoredText(
-			Vec4 a_color,
-			const char* a_format,
-			std::va_list a_arguments) noexcept
-		{
-			std::vector<char> text;
-			if (!Format(a_format, a_arguments, text))
-				return;
-			Record(checked::TextColored(
-				a_color,
-				text.data(),
-				text.size() - 1u));
-		}
+		detail::Record(detail::PlainText(text, length));
 	}
 
 	inline void Text(const char* a_format, ...) noexcept
 	{
 		std::va_list arguments;
 		va_start(arguments, a_format);
-		detail::FormattedText(&checked::Text, a_format, arguments);
-		va_end(arguments);
-	}
-
-	inline void TextColored(
-		Vec4 a_color,
-		const char* a_format,
-		...) noexcept
-	{
-		std::va_list arguments;
-		va_start(arguments, a_format);
-		detail::FormattedColoredText(a_color, a_format, arguments);
-		va_end(arguments);
-	}
-
-	inline void TextDisabled(const char* a_format, ...) noexcept
-	{
-		std::va_list arguments;
-		va_start(arguments, a_format);
-		detail::FormattedText(&checked::TextDisabled, a_format, arguments);
-		va_end(arguments);
-	}
-
-	inline void TextWrapped(const char* a_format, ...) noexcept
-	{
-		std::va_list arguments;
-		va_start(arguments, a_format);
-		detail::FormattedText(&checked::TextWrapped, a_format, arguments);
+		detail::FormattedText(a_format, arguments);
 		va_end(arguments);
 	}
 

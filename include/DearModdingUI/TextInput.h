@@ -7,7 +7,6 @@
 #include <cstdint>
 #include <limits>
 #include <new>
-#include <optional>
 #include <string>
 #include <string_view>
 
@@ -16,9 +15,8 @@ namespace dmui
 	class TextInputBuffer
 	{
 	public:
-		explicit TextInputBuffer(
-			std::string_view a_text,
-			std::optional<size_t> a_maximumBytes = std::nullopt) noexcept
+		// A growable buffer; limit the text with TextFieldOptions::maxBytes.
+		explicit TextInputBuffer(std::string_view a_text) noexcept
 		{
 			if (a_text.find('\0') != std::string_view::npos)
 			{
@@ -28,22 +26,17 @@ namespace dmui
 
 			constexpr auto maximumCapacity =
 				static_cast<size_t>((std::numeric_limits<int>::max)());
-			if ((a_maximumBytes &&
-					(*a_maximumBytes >= maximumCapacity ||
-						a_text.size() > *a_maximumBytes)) ||
-				(!a_maximumBytes && a_text.size() >= maximumCapacity))
+			if (a_text.size() >= maximumCapacity)
 			{
 				result_ = DMUI_RESULT_INVALID_ARGUMENT;
 				return;
 			}
 
-			const auto initialCapacity = a_maximumBytes ?
-				*a_maximumBytes + 1 :
-				(std::max)(a_text.size() + 1, kInitialCapacity);
 			try
 			{
 				storage_.assign(a_text);
-				storage_.resize(initialCapacity, '\0');
+				storage_.resize(
+					(std::max)(a_text.size() + 1, kInitialCapacity), '\0');
 			}
 			catch (const std::bad_alloc&)
 			{
@@ -59,8 +52,8 @@ namespace dmui
 			buffer_ = {
 				storage_.data(),
 				storage_.size(),
-				a_maximumBytes ? nullptr : &ResizeCallback,
-				a_maximumBytes ? nullptr : this
+				&ResizeCallback,
+				this
 			};
 		}
 

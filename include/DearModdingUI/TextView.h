@@ -9,6 +9,7 @@
 #include <functional>
 #include <limits>
 #include <span>
+#include <string>
 #include <string_view>
 #include <utility>
 
@@ -16,15 +17,34 @@ namespace dmui
 {
 	inline constexpr size_t kNoTextOffset{ DMUI_TEXT_VIEW_NO_OFFSET };
 
+	// Spans use byte offsets into text; the DMUI_TextViewDescriptor comment
+	// defines the scroll, tail, and selection behavior.
 	struct TextViewRequest
 	{
 		std::string_view text;
 		std::span<const size_t> lineOffsets;
 		std::span<const size_t> matchByteOffsets;
 		size_t matchByteLength{};
+		std::span<const TextSpan> spans;
 		uint64_t contentRevision{};
 		uint64_t matchRevision{};
+		uint64_t spanRevision{};
+		// Absolute index of line 0; raise it by the lines trimmed from the front.
+		uint64_t firstLineNumber{};
+		// Stay pinned to the end while scrolled to it.
+		bool followTail{};
+		// Pointer selection and Ctrl+C copy.
+		bool selectable{};
 		ui::Vec2 viewport{};
+	};
+
+	enum class TextViewScroll : uint32_t
+	{
+		kNone = DMUI_TEXT_VIEW_SCROLL_NONE,
+		kPageUp = DMUI_TEXT_VIEW_SCROLL_PAGE_UP,
+		kPageDown = DMUI_TEXT_VIEW_SCROLL_PAGE_DOWN,
+		kTop = DMUI_TEXT_VIEW_SCROLL_TOP,
+		kBottom = DMUI_TEXT_VIEW_SCROLL_BOTTOM
 	};
 
 	struct TextViewState
@@ -33,6 +53,15 @@ namespace dmui
 		uint64_t matchRevision{};
 		size_t activeMatch{ kNoTextOffset };
 		size_t revealByteOffset{ kNoTextOffset };
+		// One-shot; a draw resets it to kNone.
+		TextViewScroll scroll{ TextViewScroll::kNone };
+		// Rewritten by every draw.
+		bool atBottom{};
+		bool spanHovered{};
+		bool spanClicked{};
+		// The hovered or clicked span; kNoTextOffset without an event.
+		size_t spanIndex{ kNoTextOffset };
+		uint64_t spanUserId{};
 	};
 
 	constexpr void SynchronizeTextViewState(
@@ -175,10 +204,6 @@ namespace dmui
 		const auto availableWidth =
 			(std::max)(ui::GetContentRegionAvail().x, 0.0f);
 		const auto spacing = (std::max)(a_metrics.itemSpacing.x, 0.0f);
-		const auto horizontalPadding =
-			2.0f * (std::max)(a_metrics.framePadding.x, 0.0f);
-		const auto verticalPadding =
-			2.0f * (std::max)(a_metrics.framePadding.y, 0.0f);
 		float lineWidth{};
 		bool drewOnLine{};
 		bool selected{};
@@ -187,18 +212,18 @@ namespace dmui
 		{
 			auto [labelValue, byteOffset] =
 				std::invoke(a_projection, a_items[index]);
-			const std::string_view label{ labelValue };
-			const auto labelSize = ui::CalcTextSize(label);
-			const auto naturalWidth = labelSize.x + horizontalPadding;
-			const auto buttonHeight = labelSize.y + verticalPadding;
-			const auto buttonWidth =
-				(std::min)(naturalWidth, availableWidth);
-			const auto labelClipped = naturalWidth > buttonWidth;
-			const auto fittedLabel = labelClipped ?
-				text_view_detail::FitClippedNavigationLabel(
-					label,
-					(std::max)(buttonWidth - horizontalPadding, 0.0f)) :
-				label;
+			const std::string label{ std::string_view{ labelValue } };
+			const auto natural = ui::MeasureButton({ .label = label.c_str() });
+			const auto padding = natural.x - ui::CalcTextSize(label).x;
+			const auto buttonWidth = (std::min)(natural.x, availableWidth);
+			const auto labelClipped = natural.x > buttonWidth;
+			const std::string fittedLabel{
+				labelClipped ?
+					text_view_detail::FitClippedNavigationLabel(
+						label,
+						(std::max)(buttonWidth - padding, 0.0f)) :
+					std::string_view{ label }
+			};
 			if (drewOnLine &&
 				lineWidth + spacing + buttonWidth <= availableWidth)
 			{
@@ -213,23 +238,12 @@ namespace dmui
 
 			ui::PushID(a_id);
 			ui::PushID(static_cast<int32_t>(index));
-			const auto start = ui::GetCursorScreenPos();
-			const auto pressed = ui::Button(
-				"##TextViewNavigation",
-				{ buttonWidth, buttonHeight });
-			const auto hovered = ui::IsItemHovered();
-			ui::SetCursorScreenPos({
-				start.x + (std::max)(a_metrics.framePadding.x, 0.0f),
-				start.y + (std::max)(a_metrics.framePadding.y, 0.0f)
+			const auto pressed = ui::Button({
+				.id = "##TextViewNavigation",
+				.label = fittedLabel.c_str(),
+				.tooltip = labelClipped ? label.c_str() : nullptr,
+				.size = { buttonWidth, natural.y }
 			});
-			ui::TextUnformatted(fittedLabel);
-			ui::SetCursorScreenPos(start);
-			ui::Dummy({ buttonWidth, buttonHeight });
-			if (labelClipped && hovered && ui::BeginTooltip())
-			{
-				ui::TextUnformatted(label);
-				ui::EndTooltip();
-			}
 			if (pressed &&
 				RevealTextOffset(a_request, a_state, byteOffset))
 				selected = true;

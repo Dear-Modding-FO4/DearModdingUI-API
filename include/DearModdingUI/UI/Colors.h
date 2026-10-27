@@ -2,6 +2,8 @@
 
 #include <DearModdingUI/UI.h>
 
+#include <optional>
+
 namespace dmui::ui
 {
 	[[nodiscard]] constexpr Color32 ColorConvertFloat4ToU32(Vec4 a_color) noexcept
@@ -14,28 +16,15 @@ namespace dmui::ui
 			(byte(a_color.z) << 8u) | byte(a_color.w);
 	}
 
-	inline DMUI_Result GetThemeColors(DMUI_ThemeColors& a_colors) noexcept
+	// Empty on failure; the result is also recorded for ui::LastResult.
+	[[nodiscard]] inline std::optional<DMUI_ThemeTokens> GetThemeTokens() noexcept
 	{
-		const auto result = checked::GetThemeColors(&a_colors);
+		DMUI_ThemeTokens tokens{};
+		const auto result = checked::GetThemeTokens(&tokens);
 		detail::Record(result);
-		return result;
-	}
-
-	[[nodiscard]] inline DMUI_ThemeColors GetThemeColors() noexcept
-	{
-		DMUI_ThemeColors colors{};
-		(void)GetThemeColors(colors);
-		return colors;
-	}
-
-	[[nodiscard]] inline Vec4 GetThemeColor(Vec4 DMUI_ThemeColors::*a_role) noexcept
-	{
-		if (!a_role)
-		{
-			detail::Record(DMUI_RESULT_INVALID_ARGUMENT);
-			return {};
-		}
-		return GetThemeColors().*a_role;
+		if (result != DMUI_RESULT_OK)
+			return std::nullopt;
+		return tokens;
 	}
 
 	[[nodiscard]] inline Color32 GetColorU32(Vec4 a_color, float a_alphaMultiplier = 1.0f) noexcept
@@ -51,9 +40,18 @@ namespace dmui::ui
 		return GetColorU32(GetStyleColor(a_color), a_alphaMultiplier);
 	}
 
+	// Transparent when the tokens are unavailable; see ui::LastResult.
 	[[nodiscard]] inline Color32 GetColorU32(
-		Vec4 DMUI_ThemeColors::*a_role, float a_alphaMultiplier = 1.0f) noexcept
+		Vec4 DMUI_ThemeTokens::*a_token, float a_alphaMultiplier = 1.0f) noexcept
 	{
-		return GetColorU32(GetThemeColor(a_role), a_alphaMultiplier);
+		if (!a_token)
+		{
+			detail::Record(DMUI_RESULT_INVALID_ARGUMENT);
+			return {};
+		}
+		const auto tokens = GetThemeTokens();
+		return tokens ?
+			GetColorU32(tokens.value().*a_token, a_alphaMultiplier) :
+			Color32{};
 	}
 }

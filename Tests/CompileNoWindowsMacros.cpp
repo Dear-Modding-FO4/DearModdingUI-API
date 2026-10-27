@@ -11,11 +11,16 @@
 #include <Windows.h>
 
 static_assert(std::is_same_v<
-	decltype(dmui::DrawStyledText(
-		std::declval<dmui::Client&>(),
+	decltype(dmui::ui::Text(
 		std::string_view{},
-		dmui::TextStyle{})),
-	bool>);
+		std::span<const dmui::TextSpan>{},
+		dmui::TextOptions{})),
+	void>);
+
+// A literal must not collide with the printf-style overload.
+static_assert(std::is_same_v<
+	decltype(dmui::ui::Text("literal", dmui::TextStyle{})),
+	void>);
 
 void CompileNoWindowsMacros()
 {}

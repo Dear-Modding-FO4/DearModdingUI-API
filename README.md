@@ -42,6 +42,11 @@ Loading, query, and release are any-thread; GPU publication occurs only at a
 render-frame boundary. Releasing during loading cancels publication, and
 device changes automatically reload file images.
 
+`Client::LoadImageMemory(bytes)` loads the same formats from encoded bytes in
+memory, with the same status, failure, limit, and reload behavior. The host copies
+the bytes before returning. A PE resource is loaded client-side
+(`FindResource`/`LockResource`) and passed here.
+
 Relative paths are under the game's `Data` directory and cannot escape it.
 Absolute local paths are allowed; UNC/network and device paths are rejected.
 The host opens the virtual Win32 path so MO2 redirection still applies.
@@ -129,8 +134,26 @@ void InitializeUI()
     },
     [] {
         dmui::ui::TextUnformatted("Configure plugin options below:");
-        dmui::ui::Checkbox("Enable feature", &g_enabled);
-        dmui::ui::SliderScalar("Scale factor", &g_scale, 0.5f, 2.0f);
+        const auto toggle = dmui::ui::Toggle({ .id = "enabled", .value = g_enabled });
+        if (toggle.changed) {
+            g_enabled = toggle.value;
+        }
+        dmui::ui::SameLine();
+        dmui::ui::TextUnformatted("Enable feature");
+        const auto scale = dmui::ui::Numeric<float>({
+            .id = "scale",
+            .presentation = dmui::NumericPresentation::kSlider,
+            .value = g_scale,
+            .minimum = 0.5f,
+            .maximum = 2.0f,
+            .unit = "x",
+            .clamp = true
+        });
+        if (scale.changed) {
+            g_scale = scale.value;
+        }
+        dmui::ui::SameLine();
+        dmui::ui::TextUnformatted("Scale factor");
     });
 }
 ```
@@ -143,10 +166,12 @@ A fully featured, compilable sample plugin is provided in [`examples/plugin/`](e
 
 - **Multiple categories & icons**: Organizes pages under structured headings with custom Phosphor icon glyphs.
 - **Reusable fields**: `FieldScope` supports standalone controls and `SettingsTableScope` rows, with feedback and Reset.
-- **Growable search input**: `Client::DrawSearchInput` accepts large same-frame edits without a default text cap.
-- **Large text viewing**: `TextViewRequest` borrows pre-indexed UTF-8 text for clipped, scrollable rendering and exact byte-offset navigation.
-- **Dropdown choices**: Typed combo selectors using `DrawChoice`.
-- **Status & telemetry**: Status banners with `DrawStyledText`, live key-value readouts via `DrawLabeledValue`, and real-time graphs with `dmui::ui::PlotLines`.
+- **Text fields**: `ui::InputText` is the one text input (plain, search, multiline, `maxBytes`, an optional single-line styler) and accepts large same-frame edits without a default text cap.
+- **Keyboard shortcuts**: `ui::Shortcut("Ctrl+S")` reports a chord for the focused page only; active text fields and host hotkeys keep their keys.
+- **Sections**: `ui::SectionScope` draws a titled, optionally boxed and collapsible section with caller-owned state.
+- **Large text viewing**: `TextViewRequest` borrows pre-indexed UTF-8 text for clipped, scrollable rendering with styled and clickable spans, tail following, selection and copy, and exact byte-offset navigation.
+- **Dropdown choices**: Typed selectors using `ui::Choice`.
+- **Status & telemetry**: Status banners and key-value readouts from styled `dmui::ui::Text` spans (`StyledText`), and real-time graphs with `dmui::ui::PlotLines`.
 - **Global actions & notifications**: Registers palette commands and triggers toast notifications.
 
 Build the example directly:
@@ -167,16 +192,20 @@ bool DrawDisplayHeading(dmui::Client& client)
         "Display Settings", nullptr, "Graphics");
     if (!glyph)
         return false;
-    return client.DrawSectionHeader(
-        "Display Settings",
-        *glyph ? *glyph : DearModdingUI::PhosphorGlyph::kQuestion);
+    // A zero glyph in SectionOptions asks the host for the same inference.
+    const dmui::ui::SectionScope section{ {
+        .id = "display",
+        .title = "Display Settings",
+        .glyph = *glyph ? *glyph : dmui::PhosphorGlyph::kQuestion
+    } };
+    return true;
 }
 ```
 
 An engaged zero means the host found no match. A missing optional host entry or
 other failure returns `std::nullopt`; the wrapper never falls back to its local
-header vocabulary. `SettingGroup` performs this query automatically whenever
-its `glyph` is zero. Mods need one rebuild to adopt this path, then later host
+header vocabulary. `SettingGroup` and `SectionOptions` ask the host to infer
+an icon from the title whenever their `glyph` is zero; `PhosphorGlyph::kNone` draws none. Mods need one rebuild to adopt this path, then later host
 vocabulary updates apply without rebuilding the mod. Explicit nonzero glyphs
 and divider groups bypass automatic resolution. The underlying C query is
 thread-safe and performs no rendering. The C++ wrapper has no render-thread
@@ -197,15 +226,17 @@ update its `LastResult()`.
 | Header | Description |
 |---|---|
 | `<DearModdingUI/Client.h>` | High-level C++ client interface. Handles discovery, callbacks, and registration. |
-| `<DearModdingUI/TextInput.h>` | Frame-local owned text buffer with transactional fixed or growable storage. |
+| `<DearModdingUI/TextInput.h>` | Frame-local growable text buffer with transactional commit. |
+| `<DearModdingUI/Choice.h>` | Dropdown items and options for `ui::Choice`. |
+| `<DearModdingUI/Section.h>` | Section options for `ui::SectionScope`. |
 | `<DearModdingUI/TextView.h>` | Large-text request state, match navigation, and wrapped jump-button layout. |
 | `<DearModdingUI/UI.h>` | Safe C++ drawing facade (`dmui::ui::*`). |
 | `<DearModdingUI/Presentation.h>` | Presentation umbrella for layout geometry, UI scopes, choice controls, and styled text helpers. |
-| `<DearModdingUI/Presentation/Layout.h>` | Reusable, renderer-independent geometry for icons, rows, and trailing actions. Also remains available through the legacy `<DearModdingUI/VisualDecisions.h>` include. |
+| `<DearModdingUI/Presentation/Layout.h>` | Renderer-independent row-content offset and page action row geometry. |
 | `<DearModdingUI/API.h>` | Pure C ABI declarations for host interaction. |
 | `<DearModdingUI/CUIAPI.h>` | Low-level C function table for drawing primitives. |
 | `<DearModdingUI/Localization.h>` | `LocalizeString` values refreshed from the owner's translation files through the host. |
-| `<DearModdingUI/IconGlyphs.h>` | Phosphor glyph constants and offline catalog snapshot utilities. Prefer the host query for automatic client drawing. |
+| `<DearModdingUI/IconGlyphs.h>` | Phosphor glyph constants. Resolve icon names with `Client::ResolveIconGlyph`. |
 
 ---
 
@@ -213,7 +244,7 @@ update its `LastResult()`.
 
 The host owns default spacing and panel appearance. `ui::PanelScope` wraps
 `BeginPanel` / `EndPanel`; end only a begin that returned true. Panels clip their
-contents and use the `DMUI_ThemeColors::panel` surface, border, rounding, and padding.
+contents and use the host panel surface, border, rounding, and padding.
 Zero size fills available width or fits content height; positive components are
 fixed, and negative components fill minus that amount. Scrolling is opt-in with
 `PanelFlags::kScrollable`; `kNoBackground` gives a layout-only panel.
@@ -223,24 +254,23 @@ the section gap vertically and with default `SameLine()`. Override them through
 `PushStyleVar(StyleVar::kSectionGap, float)` or
 `PushStyleVar(StyleVar::kPanelPadding, Vec2)`, then `PopStyleVar`.
 Raw cursor positioning, explicit `SameLine` spacing, `Dummy`, and draw lists remain
-available. Rebuild ABI 2 clients for the added operations and metrics.
+available.
 
 ## Custom draw lists
 
 Use theme colors so custom drawing follows the user's accent:
-`ui::GetColorU32(&DMUI_ThemeColors::accent)` or `ui::GetColorU32(ui::Color::kText)`.
+`ui::GetColorU32(&DMUI_ThemeTokens::accent)` or `ui::GetColorU32(ui::Color::kText)`.
 Both accept an alpha multiplier and apply live style alpha. For raw `0xRRGGBBAA`
 packing without style alpha, use `ui::ColorConvertFloat4ToU32(Vec4)`.
-`ui::GetThemeColors()` returns the current theme; `ui::GetStyleMetrics` supplies
-spacing, padding, frame rounding, and border thickness. Rebuild ABI 2 clients
-for the expanded style metrics and UI table.
-Theme colors have one ABI path: `DMUI_UIAPI::getThemeColors`.
-`Client::GetThemeColors` delegates to it; the host-table slot is removed.
+`ui::GetThemeTokens()` returns the current tokens, or nothing on failure; `ui::GetStyleMetrics` supplies
+spacing, padding, frame rounding, and border thickness.
+Theme tokens have one ABI path: `DMUI_UIAPI::getThemeTokens`.
 
 ## Actions
 
 `AddAction` callbacks run inside the render-thread ImGui frame with the same scoped UI context and failure isolation as page callbacks; frame observers and hotkeys remain non-drawing.
-ABI 2 C action callbacks now return `DMUI_Result` (`OK` on success); rebuild clients.
+C action callbacks return `DMUI_Result` (`OK` on success).
+`AddAction` returns the action handle, like `AddHotkeyAction`. `SetActionEnabled` disables an action (greyed on its toolbar, hidden from the command palette), and `UnregisterAction` removes it and frees its callback; unregister runs on the render thread, and an action may unregister itself.
 
 ## Dialog sessions
 
@@ -269,15 +299,15 @@ as `QueryOverlay().size`, without content scaling.
 Changing a default applies that component once; unchanged configuration preserves
 the arrangement. `[[nodiscard]] bool Client::ResetOverlay(DMUI_PageHandle) noexcept`
 discards the saved arrangement and reapplies defaults once. Clients do not persist
-placement. Rebuild ABI 2 clients for the added host-table slot.
+placement.
 
 `Client::RequestOverlayFocus(page)` makes a demanded managed overlay interactive
 while the shell stays closed: the host blocks game input and routes keyboard and
 mouse input to it until `ReleaseOverlayFocus`, Escape, the shell opening, or a game
 interruption. Poll `QueryOverlayFocus(page)` each frame to learn that focus ended and why.
-See the [focused overlay contract](docs/specification.md#focused-overlays-abi-21) (ABI 2.1).
+See the [focused overlay contract](docs/specification.md#focused-overlays).
 `ui::GetPointerState()` reports world clicks and wheel input that no DMUI window took, for picking
-(see [pointer state](docs/specification.md#pointer-state-abi-22), ABI 2.2).
+(see [pointer state](docs/specification.md#pointer-state)).
 
 ## Localization
 
@@ -285,7 +315,7 @@ Pass translation keys such as `"$MyMod_General"` as registration display names, 
 and action labels, and ship `Interface\Translations\<client id>_<language>.txt`, with
 `<client id>_en.txt` as the fallback; the host translates them when registration closes.
 Translate drawn text with `Client::Localize(clientId, key, fallback)`, ideally once in
-`onHostReady`. See the [localization contract](docs/specification.md#localization-abi-22) (ABI 2.2).
+`onHostReady`. See the [localization contract](docs/specification.md#localization).
 
 ## Verification
 
@@ -295,13 +325,6 @@ Build the test suites and example plugin:
 xmake
 xmake build api-header-checks
 xmake build example-plugin
-```
-
-The checked-in Phosphor vocabulary is regenerated offline from pinned source
-snapshots:
-
-```powershell
-python Tools/GeneratePhosphorGlyphs.py --check
 ```
 
 ---

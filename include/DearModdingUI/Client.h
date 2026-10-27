@@ -1,8 +1,8 @@
 #pragma once
 
+#include <DearModdingUI/IconGlyphs.h>
 #include <DearModdingUI/Presentation/Layout.h>
 #include <DearModdingUI/Presentation.h>
-#include <DearModdingUI/SettingsActions.h>
 #include <DearModdingUI/TextInput.h>
 #include <DearModdingUI/TextView.h>
 #include <DearModdingUI/UI.h>
@@ -20,6 +20,7 @@
 #include <limits>
 #include <memory>
 #include <new>
+#include <numeric>
 #include <optional>
 #include <span>
 #include <string>
@@ -188,11 +189,21 @@ namespace dmui
 	{
 		const char* question{};
 		const char* answer{};
+		// Caller-owned state the host toggles; required.
+		bool* expanded{};
+	};
+
+	enum class Severity : uint32_t
+	{
+		kInfo = DMUI_SEVERITY_INFO,
+		kSuccess = DMUI_SEVERITY_SUCCESS,
+		kWarning = DMUI_SEVERITY_WARNING,
+		kError = DMUI_SEVERITY_ERROR
 	};
 
 	struct Diagnostic
 	{
-		DMUI_StatusSeverity severity{ DMUI_STATUS_SEVERITY_INFO };
+		Severity severity{ Severity::kInfo };
 		const char* scope{};
 		const char* summary{};
 		const char* detail{};
@@ -235,30 +246,10 @@ namespace dmui
 		std::same_as<std::remove_cvref_t<T>, uint64_t> ||
 		std::same_as<std::remove_cvref_t<T>, std::string>;
 
-	template <class T>
-	concept NumericSettingValue =
-		std::same_as<std::remove_cvref_t<T>, double> ||
-		std::same_as<std::remove_cvref_t<T>, int64_t> ||
-		std::same_as<std::remove_cvref_t<T>, uint64_t>;
-
 	enum class SettingApplyTiming : uint8_t
 	{
 		kImmediate,
 		kNextLaunch
-	};
-
-	template <NumericSettingValue T>
-	struct NumericSettingRange
-	{
-		std::optional<T> minimum;
-		std::optional<T> maximum;
-	};
-
-	template <NumericSettingValue T>
-	struct NumericQuantization
-	{
-		T interval;
-		T origin;
 	};
 
 	struct CheckboxSettingControl
@@ -267,6 +258,8 @@ namespace dmui
 	template <NumericSettingValue T>
 	struct NumericSettingControl
 	{
+		// A slider without two usable bounds is drawn as a drag.
+		NumericPresentation presentation{ NumericPresentation::kInput };
 		std::optional<NumericSettingRange<T>> range;
 		std::optional<NumericQuantization<T>> quantization;
 		std::string format;
@@ -279,7 +272,8 @@ namespace dmui
 
 	struct TextSettingControl
 	{
-		size_t bufferCapacity{ 512 };
+		// Zero is unlimited.
+		uint32_t maxBytes{};
 		bool multiline{};
 	};
 
@@ -294,7 +288,36 @@ namespace dmui
 	struct ChoiceSettingControl
 	{
 		std::vector<ChoiceSettingOption> options;
-		std::string unmatchedLabel{ "Unavailable" };
+		// Empty uses the localized built-in "Unavailable".
+		std::string unmatchedLabel;
+	};
+
+	struct ColorSettingPreset
+	{
+		std::string name;
+		std::string description;
+		// Packed 0xRRGGBBAA.
+		uint32_t rgba{};
+	};
+
+	// The value is a uint64_t holding the packed 0xRRGGBBAA color; without alpha
+	// the alpha byte is always 0xFF.
+	struct ColorSettingControl
+	{
+		bool alpha{};
+		std::string presetsLabel;
+		std::vector<ColorSettingPreset> presets;
+	};
+
+	// The value is a std::string holding a chord such as "Ctrl+F5"; "none" is unbound.
+	// Editing it does not register or move a hotkey action.
+	struct KeybindSettingControl
+	{
+		KeyCaptureSlot slot{ KeyCaptureSlot::kKeyboardMouse };
+		bool allowClear{ true };
+		// Returns the conflict or invalid-binding message, empty for none. Runs on
+		// the render thread for visible rows and must be cheap.
+		std::function<std::string()> resolveWarning;
 	};
 
 	struct ReadOnlySettingControl
@@ -315,6 +338,8 @@ namespace dmui
 		UnsignedSettingControl,
 		TextSettingControl,
 		ChoiceSettingControl,
+		ColorSettingControl,
+		KeybindSettingControl,
 		ReadOnlySettingControl,
 		UnsupportedSettingControl>;
 
@@ -326,6 +351,8 @@ namespace dmui
 		kUnsigned,
 		kText,
 		kChoice,
+		kColor,
+		kKeybind,
 		kReadOnly,
 		kUnsupported
 	};
@@ -346,25 +373,34 @@ namespace dmui
 	{
 		if (a_control.valueless_by_exception())
 			return {};
-		switch (a_control.index())
-		{
-		case 0:
-			return { SettingControlKind::kCheckbox, true, true, true };
-		case 1:
-			return { SettingControlKind::kDouble, true, true, true };
-		case 2:
-			return { SettingControlKind::kSigned, true, true, true };
-		case 3:
-			return { SettingControlKind::kUnsigned, true, true, true };
-		case 4:
-			return { SettingControlKind::kText, true, true, true };
-		case 5:
-			return { SettingControlKind::kChoice, true, true, true };
-		case 6:
-			return { SettingControlKind::kReadOnly, true, false, false };
-		default:
-			return {};
-		}
+		return std::visit(
+			[](const auto& a_alternative) noexcept -> SettingControlPresentation {
+				using T = std::remove_cvref_t<decltype(a_alternative)>;
+				constexpr auto editable = [](SettingControlKind a_kind) noexcept {
+					return SettingControlPresentation{ a_kind, true, true, true };
+				};
+				if constexpr (std::same_as<T, CheckboxSettingControl>)
+					return editable(SettingControlKind::kCheckbox);
+				else if constexpr (std::same_as<T, DoubleSettingControl>)
+					return editable(SettingControlKind::kDouble);
+				else if constexpr (std::same_as<T, SignedSettingControl>)
+					return editable(SettingControlKind::kSigned);
+				else if constexpr (std::same_as<T, UnsignedSettingControl>)
+					return editable(SettingControlKind::kUnsigned);
+				else if constexpr (std::same_as<T, TextSettingControl>)
+					return editable(SettingControlKind::kText);
+				else if constexpr (std::same_as<T, ChoiceSettingControl>)
+					return editable(SettingControlKind::kChoice);
+				else if constexpr (std::same_as<T, ColorSettingControl>)
+					return editable(SettingControlKind::kColor);
+				else if constexpr (std::same_as<T, KeybindSettingControl>)
+					return editable(SettingControlKind::kKeybind);
+				else if constexpr (std::same_as<T, ReadOnlySettingControl>)
+					return { SettingControlKind::kReadOnly, true, false, false };
+				else
+					return {};
+			},
+			a_control);
 	}
 
 	[[nodiscard]] inline bool SettingValueMatchesControl(
@@ -380,114 +416,14 @@ namespace dmui
 		case SettingControlKind::kSigned:
 			return std::holds_alternative<int64_t>(a_value);
 		case SettingControlKind::kUnsigned:
+		case SettingControlKind::kColor:
 			return std::holds_alternative<uint64_t>(a_value);
 		case SettingControlKind::kText:
 		case SettingControlKind::kChoice:
+		case SettingControlKind::kKeybind:
 			return std::holds_alternative<std::string>(a_value);
 		default:
 			return false;
-		}
-	}
-
-	enum class NumericSettingWidget : uint8_t
-	{
-		kInput,
-		kDrag,
-		kSlider
-	};
-
-	template <NumericSettingValue T>
-	[[nodiscard]] constexpr NumericSettingWidget ResolveNumericSettingWidget(
-		const NumericSettingControl<T>& a_control) noexcept
-	{
-		if (!a_control.range)
-			return NumericSettingWidget::kInput;
-		if (a_control.range->minimum && a_control.range->maximum)
-			return NumericSettingWidget::kSlider;
-		return NumericSettingWidget::kDrag;
-	}
-
-	template <NumericSettingValue T>
-	[[nodiscard]] inline T ClampSettingNumber(
-		T a_value,
-		T a_default,
-		const std::optional<NumericSettingRange<T>>& a_range) noexcept
-	{
-		if constexpr (std::same_as<T, double>)
-		{
-			if (!std::isfinite(a_value))
-				a_value = std::isfinite(a_default) ? a_default : 0.0;
-		}
-		if (!a_range)
-			return a_value;
-
-		auto minimum = a_range->minimum;
-		auto maximum = a_range->maximum;
-		if constexpr (std::same_as<T, double>)
-		{
-			if (minimum && !std::isfinite(*minimum))
-				minimum.reset();
-			if (maximum && !std::isfinite(*maximum))
-				maximum.reset();
-		}
-		if (minimum && maximum && *maximum < *minimum)
-			std::swap(minimum, maximum);
-		if (minimum)
-			a_value = (std::max)(a_value, *minimum);
-		if (maximum)
-			a_value = (std::min)(a_value, *maximum);
-		return a_value;
-	}
-
-	template <NumericSettingValue T>
-	[[nodiscard]] inline T QuantizeSettingNumber(
-		T a_value,
-		const std::optional<NumericQuantization<T>>& a_quantization) noexcept
-	{
-		if (!a_quantization)
-			return a_value;
-		const auto interval = a_quantization->interval;
-		const auto origin = a_quantization->origin;
-		if constexpr (std::same_as<T, double>)
-		{
-			if (!std::isfinite(a_value) ||
-				!std::isfinite(interval) ||
-				!std::isfinite(origin) ||
-				interval <= 0.0)
-				return a_value;
-			const auto quantized =
-				origin + std::round((a_value - origin) / interval) * interval;
-			return std::isfinite(quantized) ? quantized : a_value;
-		}
-		else
-		{
-			if (interval <= T{})
-				return a_value;
-			using Unsigned = std::make_unsigned_t<T>;
-			const auto unsignedInterval = static_cast<Unsigned>(interval);
-			const auto above = a_value >= origin;
-			const auto distance = above ?
-				static_cast<Unsigned>(a_value) - static_cast<Unsigned>(origin) :
-				static_cast<Unsigned>(origin) - static_cast<Unsigned>(a_value);
-			auto steps = distance / unsignedInterval;
-			const auto remainder = distance % unsignedInterval;
-			if (remainder >= unsignedInterval - remainder)
-				++steps;
-			const auto room = above ?
-				static_cast<Unsigned>((std::numeric_limits<T>::max)()) -
-					static_cast<Unsigned>(origin) :
-				static_cast<Unsigned>(origin) -
-					static_cast<Unsigned>((std::numeric_limits<T>::min)());
-			if (steps > room / unsignedInterval)
-			{
-				return above ?
-					(std::numeric_limits<T>::max)() :
-					(std::numeric_limits<T>::min)();
-			}
-			const auto offset = steps * unsignedInterval;
-			return above ?
-				static_cast<T>(static_cast<Unsigned>(origin) + offset) :
-				static_cast<T>(static_cast<Unsigned>(origin) - offset);
 		}
 	}
 
@@ -553,23 +489,11 @@ namespace dmui
 		Layout layout{ Layout::kLabelValue };
 	};
 
-	enum class FieldFeedbackSeverity : uint32_t
-	{
-		kInfo = DMUI_FIELD_FEEDBACK_SEVERITY_INFO,
-		kWarning = DMUI_FIELD_FEEDBACK_SEVERITY_WARNING,
-		kError = DMUI_FIELD_FEEDBACK_SEVERITY_ERROR
-	};
-
 	struct FieldFeedback
 	{
-		FieldFeedbackSeverity severity{ FieldFeedbackSeverity::kInfo };
+		Severity severity{ Severity::kInfo };
 		std::string message;
 	};
-
-	inline void DrawDivider() noexcept
-	{
-		ui::Separator();
-	}
 
 	struct SettingDescriptor
 	{
@@ -618,7 +542,8 @@ namespace dmui
 	{
 		bool showSearch{ true };
 		bool showModifiedOnly{ true };
-		std::string searchHint{ "Search settings..." };
+		// Empty uses the localized built-in hint.
+		std::string searchHint;
 	};
 
 	struct SettingGroup
@@ -669,7 +594,7 @@ namespace dmui
 	struct SettingsPageNote
 	{
 		std::string text;
-		bool muted{};
+		TextTone tone{ TextTone::kInherit };
 		std::string noteId;
 	};
 
@@ -702,20 +627,6 @@ namespace dmui
 				return true;
 		}
 		return false;
-	}
-
-	[[nodiscard]] inline std::string ResolveSettingDescription(
-		const SettingDescriptor& a_setting)
-	{
-		auto description = a_setting.resolveDescription ?
-			a_setting.resolveDescription() :
-			a_setting.description;
-		if (a_setting.applyTiming != SettingApplyTiming::kImmediate)
-			return description;
-		if (!description.empty())
-			description.push_back('\n');
-		description += "Applies now.";
-		return description;
 	}
 
 	[[nodiscard]] inline bool MatchesSettingFilter(
@@ -795,6 +706,12 @@ namespace dmui
 				value,
 				std::get<uint64_t>(a_setting.defaultValue),
 				control->range);
+		}
+		if (const auto* control =
+				std::get_if<ColorSettingControl>(&a_setting.control))
+		{
+			auto color = std::get<uint64_t>(a_value) & UINT64_C(0xFFFFFFFF);
+			return control->alpha ? color : color | UINT64_C(0xFF);
 		}
 		return a_value;
 	}
@@ -894,28 +811,6 @@ namespace dmui
 	class FontGuard;
 	class FieldScope;
 	class SettingsTableScope;
-	class SettingsRowScope;
-	namespace presentation_detail
-	{
-		template <auto>
-		class FieldScopeState;
-	}
-
-	struct LabeledValueOptions
-	{
-		TextStyle valueStyle;
-		float spacingScale{ 2.0f };
-	};
-
-	[[nodiscard]] bool DrawStyledText(
-		Client& a_client,
-		std::string_view a_text,
-		TextStyle a_style = {}) noexcept;
-	[[nodiscard]] bool DrawLabeledValue(
-		Client& a_client,
-		std::string_view a_label,
-		std::string_view a_value,
-		LabeledValueOptions a_options = {}) noexcept;
 
 	// IMPORTANT: Client instances must outlive the game session because callbacks cannot be unregistered.
 	class Client
@@ -1260,13 +1155,13 @@ namespace dmui
 				return false;
 			auto* callback = registration->callback.release();
 			hotkeyActions_.erase(registration);
-			ReleaseHotkeyCallback(callback);
+			ReleaseCallback(callback);
 			return true;
 		}
 
 		template <class Callable>
 			requires std::invocable<std::decay_t<Callable>&>
-		bool AddAction(
+		[[nodiscard]] std::optional<DMUI_ActionHandle> AddAction(
 			const char* a_id,
 			const char* a_label,
 			const char* a_iconName,
@@ -1275,15 +1170,25 @@ namespace dmui
 			int32_t a_sortKey = 0) noexcept
 		{
 			if (!IsConnected())
-				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			{
+				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+				return std::nullopt;
+			}
 
 			try
 			{
 				std::function<void()> callback{ std::forward<Callable>(a_callback) };
 				if (!callback)
-					return Fail(DMUI_RESULT_INVALID_ARGUMENT);
+				{
+					Fail(DMUI_RESULT_INVALID_ARGUMENT);
+					return std::nullopt;
+				}
 
-				actions_.push_back({ DMUI_INVALID_ACTION_HANDLE, this, std::move(callback) });
+				auto callbackState = std::make_unique<ActionCallbackState>();
+				callbackState->owner = this;
+				callbackState->callback = std::move(callback);
+				actions_.push_back(
+					{ DMUI_INVALID_ACTION_HANDLE, std::move(callbackState) });
 				auto& registration = actions_.back();
 
 				DMUI_ActionDescriptor descriptor{};
@@ -1292,28 +1197,48 @@ namespace dmui
 				descriptor.iconName = a_iconName;
 				descriptor.tooltip = a_tooltip;
 				descriptor.sortKey = a_sortKey;
-				descriptor.callback = &InvokeDrawingCallback<ActionRegistration>;
-				descriptor.userData = &registration;
+				descriptor.callback = &InvokeAction;
+				descriptor.userData = registration.callback.get();
 
 				DMUI_ActionHandle handle{ DMUI_INVALID_ACTION_HANDLE };
 				lastResult_ = api_->registerAction(clientHandle_, &descriptor, &handle);
 				if (lastResult_ != DMUI_RESULT_OK)
 				{
 					actions_.pop_back();
-					return false;
+					return std::nullopt;
 				}
 
 				registration.handle = handle;
-				return true;
+				return handle;
 			}
 			catch (const std::bad_alloc&)
 			{
-				return Fail(DMUI_RESULT_RESOURCE_EXHAUSTED);
+				Fail(DMUI_RESULT_RESOURCE_EXHAUSTED);
+				return std::nullopt;
 			}
 			catch (...)
 			{
-				return Fail(DMUI_RESULT_CALLBACK_FAILED);
+				Fail(DMUI_RESULT_CALLBACK_FAILED);
+				return std::nullopt;
 			}
+		}
+
+		// Render thread only; see DMUI_UnregisterActionFn.
+		bool UnregisterAction(DMUI_ActionHandle a_action) noexcept
+		{
+			if (!IsConnected())
+				return Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
+			const auto registration = std::ranges::find(
+				actions_, a_action, &ActionRegistration::handle);
+			if (registration == actions_.end())
+				return Fail(DMUI_RESULT_ACTION_NOT_FOUND);
+			lastResult_ = api_->unregisterAction(clientHandle_, a_action);
+			if (lastResult_ != DMUI_RESULT_OK)
+				return false;
+			auto* callback = registration->callback.release();
+			actions_.erase(registration);
+			ReleaseCallback(callback);
+			return true;
 		}
 
 		template <class Callable>
@@ -1457,6 +1382,13 @@ namespace dmui
 			return Call<&DMUI_HostAPI::setHotkeyActionEnabled>(a_action, a_enabled ? 1u : 0u);
 		}
 
+		[[nodiscard]] bool SetActionEnabled(
+			DMUI_ActionHandle a_action,
+			bool a_enabled) noexcept
+		{
+			return Call<&DMUI_HostAPI::setActionEnabled>(a_action, a_enabled ? 1u : 0u);
+		}
+
 		[[nodiscard]] std::optional<ImageResource> ImportD3D11Image(
 			void* a_shaderResourceView,
 			uint32_t a_contentWidth = 0,
@@ -1488,6 +1420,17 @@ namespace dmui
 		{
 			const auto handle =
 				Query<DMUI_ImageHandle, &DMUI_HostAPI::loadImageFile>(a_utf8Path);
+			if (!handle)
+				return std::nullopt;
+			return ImageResource{ api_->releaseImage, clientHandle_, *handle };
+		}
+
+		// Same load as LoadImageFile from encoded bytes; they are copied before return.
+		[[nodiscard]] std::optional<ImageResource> LoadImageMemory(
+			std::span<const std::byte> a_bytes) noexcept
+		{
+			const auto handle = Query<DMUI_ImageHandle, &DMUI_HostAPI::loadImageMemory>(
+				static_cast<const void*>(a_bytes.data()), a_bytes.size());
 			if (!handle)
 				return std::nullopt;
 			return ImageResource{ api_->releaseImage, clientHandle_, *handle };
@@ -1541,13 +1484,13 @@ namespace dmui
 		}
 
 		[[nodiscard]] bool PostNotification(
-			DMUI_StatusSeverity a_severity,
+			Severity a_severity,
 			const char* a_message,
 			uint32_t a_durationMilliseconds = 0,
 			const char* a_title = nullptr) noexcept
 		{
 			const DMUI_NotificationDescriptor descriptor{
-				a_severity,
+				static_cast<DMUI_Severity>(a_severity),
 				a_message,
 				a_durationMilliseconds,
 				a_title
@@ -1627,35 +1570,21 @@ namespace dmui
 			return Call<&DMUI_HostAPI::cancelDialog>(a_dialog);
 		}
 
-		bool SetStatus(DMUI_StatusSeverity a_severity, const char* a_message) noexcept
+		bool SetStatus(Severity a_severity, const char* a_message) noexcept
 		{
-			return Call<&DMUI_HostAPI::setStatus>(a_severity, a_message);
+			return Call<&DMUI_HostAPI::setStatus>(
+				static_cast<DMUI_Severity>(a_severity), a_message);
 		}
 
 		bool ReportDiagnostic(const Diagnostic& a_diagnostic) noexcept
 		{
 			const DMUI_DiagnosticDescriptor descriptor{
-				a_diagnostic.severity,
+				static_cast<DMUI_Severity>(a_diagnostic.severity),
 				a_diagnostic.scope,
 				a_diagnostic.summary,
 				a_diagnostic.detail
 			};
 			return Call<&DMUI_HostAPI::reportDiagnostic>(&descriptor);
-		}
-
-		[[nodiscard]] std::optional<DMUI_ThemeColors> GetThemeColors() noexcept
-		{
-			if (!IsConnected())
-			{
-				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-				return std::nullopt;
-			}
-
-			DMUI_ThemeColors colors{};
-			lastResult_ = ui::GetThemeColors(colors);
-			if (lastResult_ != DMUI_RESULT_OK)
-				return std::nullopt;
-			return colors;
 		}
 
 		[[nodiscard]] std::optional<DMUI_StyleMetrics> GetStyleMetrics() noexcept
@@ -1682,11 +1611,6 @@ namespace dmui
 			return Call<&DMUI_HostAPI::popFont>();
 		}
 
-		[[nodiscard]] bool DrawSectionHeader(const char* a_text, char32_t a_glyph = 0) noexcept
-		{
-			return Call<&DMUI_HostAPI::drawSectionHeader>(a_text, static_cast<uint32_t>(a_glyph));
-		}
-
 		[[nodiscard]] std::optional<char32_t> ResolveIconGlyph(
 			const char* a_primaryMetadata,
 			const char* a_explicitName = nullptr,
@@ -1710,36 +1634,6 @@ namespace dmui
 			return static_cast<char32_t>(glyph);
 		}
 
-		[[nodiscard]] bool DrawBulletText(const char* a_text) noexcept
-		{
-			return Call<&DMUI_HostAPI::drawBulletText>(a_text);
-		}
-
-		[[nodiscard]] std::optional<bool> DrawSearchInput(
-			const char* a_id,
-			const char* a_hint,
-			std::string& a_search) noexcept
-		{
-			return DrawSearchInputImpl(
-				a_id,
-				a_hint,
-				a_search,
-				std::nullopt);
-		}
-
-		[[nodiscard]] std::optional<bool> DrawSearchInput(
-			const char* a_id,
-			const char* a_hint,
-			std::string& a_search,
-			size_t a_maximumBytes) noexcept
-		{
-			return DrawSearchInputImpl(
-				a_id,
-				a_hint,
-				a_search,
-				a_maximumBytes);
-		}
-
 		[[nodiscard]] bool DrawTextView(
 			const char* a_id,
 			const TextViewRequest& a_request,
@@ -1759,15 +1653,26 @@ namespace dmui
 				a_request.matchByteOffsets.data(),
 				a_request.matchByteOffsets.size(),
 				a_request.matchByteLength,
+				a_request.spans.data(),
+				a_request.spans.size(),
 				a_request.contentRevision,
 				a_request.matchRevision,
+				a_request.spanRevision,
+				a_request.firstLineNumber,
+				(a_request.followTail ? DMUI_TEXT_VIEW_FOLLOW_TAIL : 0u) |
+					(a_request.selectable ? DMUI_TEXT_VIEW_SELECTABLE : 0u),
 				a_request.viewport
 			};
 			DMUI_TextViewState state{
 				presentation.contentRevision,
 				presentation.matchRevision,
 				presentation.activeMatch,
-				presentation.revealByteOffset
+				presentation.revealByteOffset,
+				kNoTextOffset,
+				0u,
+				static_cast<DMUI_TextViewScrollCommand>(presentation.scroll),
+				0u,
+				0u
 			};
 			lastResult_ = api_->drawTextView(
 				clientHandle_,
@@ -1779,27 +1684,14 @@ namespace dmui
 				state.contentRevision,
 				state.matchRevision,
 				state.activeMatch,
-				state.revealByteOffset
+				state.revealByteOffset,
+				TextViewScroll::kNone,
+				state.atBottom != 0,
+				(state.events & DMUI_TEXT_VIEW_EVENT_SPAN_HOVERED) != 0,
+				(state.events & DMUI_TEXT_VIEW_EVENT_SPAN_CLICKED) != 0,
+				state.spanIndex,
+				state.userId
 			};
-			return true;
-		}
-
-		[[nodiscard]] bool DrawCollapsingSectionHeader(
-			const char* a_key,
-			const char* a_text,
-			char32_t a_glyph,
-			bool& a_expanded,
-			size_t a_count) noexcept
-		{
-			uint32_t expanded = a_expanded ? 1u : 0u;
-			if (!Call<&DMUI_HostAPI::drawCollapsingSectionHeader>(
-					a_key,
-					a_text,
-					static_cast<uint32_t>(a_glyph),
-					&expanded,
-					a_count))
-				return false;
-			a_expanded = expanded != 0;
 			return true;
 		}
 
@@ -1866,13 +1758,22 @@ namespace dmui
 
 			try
 			{
+				std::vector<uint32_t> expanded;
 				std::vector<DMUI_FaqEntry> entries;
+				expanded.reserve(a_entries.size());
 				entries.reserve(a_entries.size());
 				for (const auto& entry : a_entries)
 				{
+					if (!entry.expanded)
+						return Fail(DMUI_RESULT_INVALID_ARGUMENT);
+					expanded.push_back(*entry.expanded ? 1u : 0u);
+				}
+				for (size_t index = 0; index < a_entries.size(); ++index)
+				{
 					entries.push_back({
-						entry.question,
-						entry.answer
+						a_entries[index].question,
+						a_entries[index].answer,
+						&expanded[index]
 					});
 				}
 				lastResult_ = api_->drawFaq(
@@ -1880,7 +1781,11 @@ namespace dmui
 					a_id,
 					entries.empty() ? nullptr : entries.data(),
 					entries.size());
-				return lastResult_ == DMUI_RESULT_OK;
+				if (lastResult_ != DMUI_RESULT_OK)
+					return false;
+				for (size_t index = 0; index < a_entries.size(); ++index)
+					*a_entries[index].expanded = expanded[index] != 0;
+				return true;
 			}
 			catch (const std::bad_alloc&)
 			{
@@ -1892,68 +1797,9 @@ namespace dmui
 			}
 		}
 
-		[[nodiscard]] std::optional<bool> DrawSettingsActionButton(
-			const char* a_id,
-			const ui::Vec2& a_origin,
-			const ui::Vec2& a_size,
-			DMUI_SettingsAction a_action,
-			const char* a_fallbackLabel,
-			const char* a_tooltip,
-			bool a_enabled) noexcept
-		{
-			return QueryFlag<&DMUI_HostAPI::drawSettingsActionButton>(
-				a_id,
-				DMUI_Vec2{ a_origin.x, a_origin.y },
-				DMUI_Vec2{ a_size.x, a_size.y },
-				a_action,
-				a_fallbackLabel,
-				a_tooltip,
-				a_enabled ? 1u : 0u);
-		}
-
-		[[nodiscard]] std::optional<float> SettingsActionButtonWidth(
-			DMUI_SettingsAction a_action,
-			const char* a_fallbackLabel,
-			float a_buttonExtent) noexcept
-		{
-			return Query<float, &DMUI_HostAPI::settingsActionButtonWidth>(a_action, a_fallbackLabel, a_buttonExtent);
-		}
-
-		[[nodiscard]] std::optional<float> SettingsActionButtonExtent() noexcept
-		{
-			return Query<float, &DMUI_HostAPI::settingsActionButtonExtent>();
-		}
-
 		[[nodiscard]] std::optional<bool> BeginSettingsTable(const char* a_id) noexcept
 		{
 			return QueryFlag<&DMUI_HostAPI::beginSettingsTable>(a_id);
-		}
-
-		[[nodiscard]] std::optional<bool> BeginSettingsRow(
-			const char* a_id,
-			const char* a_label,
-			const char* a_description,
-			RowPresentation::Layout a_layout =
-				RowPresentation::Layout::kLabelValue) noexcept
-		{
-			const DMUI_SettingsRowBeginOptions options{
-				a_layout == RowPresentation::Layout::kFullSpan ?
-					DMUI_SETTINGS_ROW_LAYOUT_FULL_SPAN :
-					DMUI_SETTINGS_ROW_LAYOUT_LABEL_VALUE
-			};
-			return QueryFlag<&DMUI_HostAPI::beginSettingsRowEx>(
-				a_id, a_label, a_description, &options);
-		}
-
-		[[nodiscard]] std::optional<bool> EndSettingsRow(
-			bool a_resetVisible,
-			bool a_resetEnabled) noexcept
-		{
-			const DMUI_SettingsRowOptions options{
-				a_resetVisible ? 1u : 0u,
-				a_resetEnabled ? 1u : 0u
-			};
-			return QueryFlag<&DMUI_HostAPI::endSettingsRow>(&options);
 		}
 
 		[[nodiscard]] std::optional<bool> BeginField(
@@ -1973,11 +1819,11 @@ namespace dmui
 		}
 
 		[[nodiscard]] bool SetFieldFeedback(
-			FieldFeedbackSeverity a_severity,
+			Severity a_severity,
 			const char* a_message) noexcept
 		{
 			const DMUI_FieldFeedback feedback{
-				static_cast<DMUI_FieldFeedbackSeverity>(a_severity),
+				static_cast<DMUI_Severity>(a_severity),
 				a_message
 			};
 			return Call<&DMUI_HostAPI::setFieldFeedback>(&feedback);
@@ -1986,7 +1832,7 @@ namespace dmui
 		[[nodiscard]] bool ClearFieldFeedback() noexcept
 		{
 			return SetFieldFeedback(
-				FieldFeedbackSeverity::kInfo,
+				Severity::kInfo,
 				nullptr);
 		}
 
@@ -2068,54 +1914,7 @@ namespace dmui
 #endif
 		friend class FieldScope;
 		friend class SettingsTableScope;
-		friend class SettingsRowScope;
-		template <auto>
-		friend class presentation_detail::FieldScopeState;
-		friend bool DrawStyledText(
-			Client&,
-			std::string_view,
-			TextStyle) noexcept;
-		friend bool DrawLabeledValue(
-			Client&,
-			std::string_view,
-			std::string_view,
-			LabeledValueOptions) noexcept;
-
 		using GetAPIFn = const DMUI_HostAPI* (DMUI_CALL*)(uint32_t) noexcept;
-
-		[[nodiscard]] std::optional<bool> DrawSearchInputImpl(
-			const char* a_id,
-			const char* a_hint,
-			std::string& a_search,
-			std::optional<size_t> a_maximumBytes) noexcept
-		{
-			if (!IsConnected())
-			{
-				Fail(DMUI_RESULT_CLIENT_NOT_FOUND);
-				return std::nullopt;
-			}
-
-			TextInputBuffer buffer{ a_search, a_maximumBytes };
-			if (buffer.Result() != DMUI_RESULT_OK)
-			{
-				Fail(buffer.Result());
-				return std::nullopt;
-			}
-
-			uint32_t changed{};
-			lastResult_ = api_->drawSearchInputBuffer(
-				clientHandle_,
-				a_id,
-				a_hint,
-				buffer.Get(),
-				&changed);
-			if (lastResult_ != DMUI_RESULT_OK)
-				return std::nullopt;
-			lastResult_ = buffer.CommitTo(a_search);
-			if (lastResult_ != DMUI_RESULT_OK)
-				return std::nullopt;
-			return changed != 0;
-		}
 
 		struct PageRegistration
 		{
@@ -2124,12 +1923,25 @@ namespace dmui
 			std::function<void()> callback;
 		};
 
-		struct ActionRegistration
+		// Counted so a callback may unregister its own action while it runs.
+		template <class Signature>
+		struct CallbackState
 		{
-			DMUI_ActionHandle handle;
-			Client* owner;
-			std::function<void()> callback;
+			std::atomic<uint32_t> references{ 1 };
+			Client* owner{};
+			std::function<Signature> callback;
 		};
+
+		template <class Handle, class State>
+		struct CallbackRegistration
+		{
+			Handle handle;
+			std::unique_ptr<State> callback;
+		};
+
+		using ActionCallbackState = CallbackState<void()>;
+		using ActionRegistration =
+			CallbackRegistration<DMUI_ActionHandle, ActionCallbackState>;
 
 		struct FrameObserverRegistration
 		{
@@ -2143,17 +1955,9 @@ namespace dmui
 			std::function<void(const PageActivity&)> callback;
 		};
 
-		struct HotkeyCallbackState
-		{
-			std::atomic<uint32_t> references{ 1 };
-			std::function<void(bool)> callback;
-		};
-
-		struct HotkeyActionRegistration
-		{
-			DMUI_HotkeyActionHandle handle;
-			std::unique_ptr<HotkeyCallbackState> callback;
-		};
+		using HotkeyCallbackState = CallbackState<void(bool)>;
+		using HotkeyActionRegistration =
+			CallbackRegistration<DMUI_HotkeyActionHandle, HotkeyCallbackState>;
 
 		[[nodiscard]] static GetAPIFn FindAPI() noexcept
 		{
@@ -2208,7 +2012,7 @@ namespace dmui
 				clientHandle_ == DMUI_INVALID_CLIENT_HANDLE)
 				return;
 			const DMUI_DiagnosticDescriptor diagnostic{
-				DMUI_STATUS_SEVERITY_ERROR,
+				DMUI_SEVERITY_ERROR,
 				"ui-contract",
 				"Stable UI operation failed; drawing callback was disabled.",
 				DMUI_ResultToString(a_result)
@@ -2325,10 +2129,22 @@ namespace dmui
 			}
 			catch (...)
 			{}
-			ReleaseHotkeyCallback(state);
+			ReleaseCallback(state);
 		}
 
-		static void ReleaseHotkeyCallback(HotkeyCallbackState* a_state) noexcept
+		static DMUI_Result DMUI_CALL InvokeAction(void* a_userData) noexcept
+		{
+			auto* const state = static_cast<ActionCallbackState*>(a_userData);
+			if (!state)
+				return DMUI_RESULT_INVALID_ARGUMENT;
+			state->references.fetch_add(1, std::memory_order_relaxed);
+			const auto result = InvokeDrawingCallback<ActionCallbackState>(state);
+			ReleaseCallback(state);
+			return result;
+		}
+
+		template <class State>
+		static void ReleaseCallback(State* a_state) noexcept
 		{
 			if (a_state &&
 				a_state->references.fetch_sub(1, std::memory_order_acq_rel) == 1)
@@ -2615,153 +2431,8 @@ namespace dmui
 		bool m_active{};
 	};
 
-	namespace presentation_detail
+	class FieldScope
 	{
-		template <auto EndOperation>
-		class FieldScopeState
-		{
-		protected:
-			FieldScopeState(
-				Client& a_client,
-				std::optional<bool> a_begun) noexcept :
-				m_client(&a_client)
-			{
-				m_state.result = a_begun ?
-					DMUI_RESULT_OK :
-					a_client.LastResult();
-				m_state.visible = a_begun.value_or(false);
-				m_active =
-					m_state.result == DMUI_RESULT_OK && m_state.visible;
-				if (m_state.result == DMUI_RESULT_OK && !m_state.visible)
-					m_resetPressed = false;
-			}
-
-			~FieldScopeState() noexcept
-			{
-				if (!m_active)
-					return;
-				const auto original = m_client->LastResult();
-				(void)EndScope();
-				if (original != DMUI_RESULT_OK)
-					m_client->SetPresentationResult(original);
-			}
-
-			FieldScopeState(const FieldScopeState&) = delete;
-			FieldScopeState(FieldScopeState&&) = delete;
-			FieldScopeState& operator=(const FieldScopeState&) = delete;
-			FieldScopeState& operator=(FieldScopeState&&) = delete;
-
-			[[nodiscard]] ScopeResult ScopeState() const noexcept
-			{
-				return m_state;
-			}
-
-			[[nodiscard]] DMUI_Result ScopeResultCode() const noexcept
-			{
-				return m_state.result;
-			}
-
-			[[nodiscard]] bool ScopeVisible() const noexcept
-			{
-				return m_state.visible;
-			}
-
-			[[nodiscard]] std::optional<bool> EndScope(
-				bool a_resetVisible = false,
-				bool a_resetEnabled = false) noexcept
-			{
-				if (!m_active)
-				{
-					if (m_state.result != DMUI_RESULT_OK)
-						return std::nullopt;
-					return m_resetPressed;
-				}
-				m_active = false;
-				m_resetPressed = (m_client->*EndOperation)(
-					a_resetVisible,
-					a_resetEnabled);
-				m_state.result = m_client->LastResult();
-				return m_resetPressed;
-			}
-
-			[[nodiscard]] bool Active() const noexcept
-			{
-				return m_active;
-			}
-
-			[[nodiscard]] Client& Owner() const noexcept
-			{
-				return *m_client;
-			}
-
-		private:
-			Client* m_client;
-			ScopeResult m_state;
-			bool m_active{};
-			std::optional<bool> m_resetPressed;
-		};
-	}
-
-	class SettingsRowScope :
-		private presentation_detail::FieldScopeState<
-			&Client::EndSettingsRow>
-	{
-		using ScopeStateBase = presentation_detail::FieldScopeState<
-			&Client::EndSettingsRow>;
-
-	public:
-		SettingsRowScope(
-			Client& a_client,
-			const char* a_id,
-			const char* a_label,
-			const char* a_description,
-			RowPresentation::Layout a_layout =
-				RowPresentation::Layout::kLabelValue) noexcept :
-			ScopeStateBase(
-				a_client,
-				a_client.BeginSettingsRow(
-					a_id,
-					a_label,
-					a_description,
-					a_layout))
-		{}
-
-		~SettingsRowScope() noexcept = default;
-
-		SettingsRowScope(const SettingsRowScope&) = delete;
-		SettingsRowScope(SettingsRowScope&&) = delete;
-		SettingsRowScope& operator=(const SettingsRowScope&) = delete;
-		SettingsRowScope& operator=(SettingsRowScope&&) = delete;
-
-		[[nodiscard]] ScopeResult State() const noexcept
-		{
-			return ScopeState();
-		}
-
-		[[nodiscard]] DMUI_Result Result() const noexcept
-		{
-			return ScopeResultCode();
-		}
-
-		[[nodiscard]] bool Visible() const noexcept
-		{
-			return ScopeVisible();
-		}
-
-		[[nodiscard]] std::optional<bool> End(
-			bool a_resetVisible = false,
-			bool a_resetEnabled = false) noexcept
-		{
-			return EndScope(a_resetVisible, a_resetEnabled);
-		}
-	};
-
-	class FieldScope :
-		private presentation_detail::FieldScopeState<&Client::EndField>
-	{
-		using ScopeStateBase =
-			presentation_detail::FieldScopeState<&Client::EndField>;
-
 	public:
 		FieldScope(
 			Client& a_client,
@@ -2770,16 +2441,28 @@ namespace dmui
 			const char* a_description = nullptr,
 			RowPresentation::Layout a_layout =
 				RowPresentation::Layout::kLabelValue) noexcept :
-			ScopeStateBase(
-				a_client,
-				a_client.BeginField(
-					a_id,
-					a_label,
-					a_description,
-					a_layout))
-		{}
+			m_client(&a_client)
+		{
+			const auto begun =
+				a_client.BeginField(a_id, a_label, a_description, a_layout);
+			m_state.result = begun ?
+				DMUI_RESULT_OK :
+				a_client.LastResult();
+			m_state.visible = begun.value_or(false);
+			m_active = m_state.result == DMUI_RESULT_OK && m_state.visible;
+			if (m_state.result == DMUI_RESULT_OK && !m_state.visible)
+				m_resetPressed = false;
+		}
 
-		~FieldScope() noexcept = default;
+		~FieldScope() noexcept
+		{
+			if (!m_active)
+				return;
+			const auto original = m_client->LastResult();
+			(void)End();
+			if (original != DMUI_RESULT_OK)
+				m_client->SetPresentationResult(original);
+		}
 
 		FieldScope(const FieldScope&) = delete;
 		FieldScope(FieldScope&&) = delete;
@@ -2788,172 +2471,181 @@ namespace dmui
 
 		[[nodiscard]] ScopeResult State() const noexcept
 		{
-			return ScopeState();
+			return m_state;
 		}
 
 		[[nodiscard]] DMUI_Result Result() const noexcept
 		{
-			return ScopeResultCode();
+			return m_state.result;
 		}
 
 		[[nodiscard]] bool Visible() const noexcept
 		{
-			return ScopeVisible();
+			return m_state.visible;
 		}
 
 		[[nodiscard]] bool SetFeedback(
-			FieldFeedbackSeverity a_severity,
+			Severity a_severity,
 			const char* a_message) noexcept
 		{
-			if (!Active())
+			if (!m_active)
 				return false;
-			return Owner().SetFieldFeedback(a_severity, a_message);
+			return m_client->SetFieldFeedback(a_severity, a_message);
 		}
 
 		[[nodiscard]] bool ClearFeedback() noexcept
 		{
-			if (!Active())
+			if (!m_active)
 				return false;
-			return Owner().ClearFieldFeedback();
+			return m_client->ClearFieldFeedback();
 		}
 
 		[[nodiscard]] std::optional<bool> End(
 			bool a_resetVisible = false,
 			bool a_resetEnabled = false) noexcept
 		{
-			return EndScope(a_resetVisible, a_resetEnabled);
+			if (!m_active)
+			{
+				if (m_state.result != DMUI_RESULT_OK)
+					return std::nullopt;
+				return m_resetPressed;
+			}
+			m_active = false;
+			m_resetPressed = m_client->EndField(a_resetVisible, a_resetEnabled);
+			m_state.result = m_client->LastResult();
+			return m_resetPressed;
 		}
+
+	private:
+		Client* m_client;
+		ScopeResult m_state;
+		bool m_active{};
+		std::optional<bool> m_resetPressed;
 	};
 
-	namespace presentation_detail
+	// Built-in SettingsPage text from the host's own translations, with
+	// English fallbacks. Resolved once, on the first draw after the host is ready.
+	struct SettingsPageText
 	{
-		struct PreparedClientTextStyle
+		std::string resetAll;
+		std::string resetAllTooltip;
+		std::string revert;
+		std::string revertTooltip;
+		std::string apply;
+		std::string applyTooltipOne;
+		std::string applyTooltipMany;
+		std::string modifiedOnly;
+		std::string searchHint;
+		std::string unsupportedControl;
+		std::string appliesNow;
+		std::string unavailable;
+	};
+
+	namespace settings_text_detail
+	{
+		struct Entry
 		{
-			DMUI_ThemeColors theme{};
-			TextStyle style;
+			std::string SettingsPageText::* member;
+			const char* key;
+			const char* english;
 		};
 
-		[[nodiscard]] inline DMUI_Result PrepareClientTextStyle(
-			Client& a_client,
-			TextStyle a_style,
-			PreparedClientTextStyle& a_prepared) noexcept
-		{
-			a_prepared = {};
-			a_prepared.style = a_style;
-			if (!a_client.IsConnected())
-				return DMUI_RESULT_CLIENT_NOT_FOUND;
-			if (!IsValidTextTone(a_style.tone) ||
-				(a_style.fontRole &&
-					*a_style.fontRole >= DMUI_FONT_ROLE_COUNT))
-				return DMUI_RESULT_INVALID_ARGUMENT;
-			if (a_style.tone == TextTone::kInherit)
-				return DMUI_RESULT_OK;
-			const auto result = ui::GetThemeColors(a_prepared.theme);
-			if (result != DMUI_RESULT_OK)
-				return result;
-			const auto color = ResolveTextColor(a_prepared.theme, a_style.tone);
-			if (!color)
-				return color.result;
-			return DMUI_RESULT_OK;
-		}
-
-		[[nodiscard]] inline DMUI_Result DrawPreparedText(
-			std::string_view a_text,
-			const PreparedClientTextStyle& a_prepared) noexcept
-		{
-			return DrawStyledText(
-				a_text,
-				a_prepared.theme,
-				{
-					.tone = a_prepared.style.tone,
-					.wrapped = a_prepared.style.wrapped
-				});
-		}
+		inline constexpr std::array kEntries{
+			Entry{ &SettingsPageText::resetAll,
+				"$DMUI_SettingsPage_ResetAll", "Reset all" },
+			Entry{ &SettingsPageText::resetAllTooltip,
+				"$DMUI_SettingsPage_ResetAllTooltip",
+				"Reset loads every setting's default into the draft. "
+				"Use Apply to save them." },
+			Entry{ &SettingsPageText::revert,
+				"$DMUI_SettingsPage_Revert", "Revert" },
+			Entry{ &SettingsPageText::revertTooltip,
+				"$DMUI_SettingsPage_RevertTooltip",
+				"Revert discards pending edits and restores committed settings." },
+			Entry{ &SettingsPageText::apply,
+				"$DMUI_SettingsPage_Apply", "Apply ({})" },
+			Entry{ &SettingsPageText::applyTooltipOne,
+				"$DMUI_SettingsPage_ApplyTooltipOne",
+				"Apply saves {} pending change." },
+			Entry{ &SettingsPageText::applyTooltipMany,
+				"$DMUI_SettingsPage_ApplyTooltipMany",
+				"Apply saves {} pending changes." },
+			Entry{ &SettingsPageText::modifiedOnly,
+				"$DMUI_SettingsPage_ModifiedOnly", "Modified only" },
+			Entry{ &SettingsPageText::searchHint,
+				"$DMUI_SettingsPage_SearchHint", "Search settings..." },
+			Entry{ &SettingsPageText::unsupportedControl,
+				"$DMUI_SettingsPage_UnsupportedControl",
+				"Unsupported setting control." },
+			Entry{ &SettingsPageText::appliesNow,
+				"$DMUI_SettingsPage_AppliesNow", "Applies now." },
+			Entry{ &SettingsPageText::unavailable,
+				"$DMUI_SettingsPage_Unavailable", "Unavailable" }
+		};
 	}
 
-	inline bool DrawStyledText(
-		Client& a_client,
-		std::string_view a_text,
-		TextStyle a_style) noexcept
+	// a_resolve(key, result) returns the translation or nullopt. A false
+	// a_final means the host had no language yet, so the text is provisional.
+	template <class Resolve>
+	[[nodiscard]] SettingsPageText LoadSettingsPageText(
+		Resolve&& a_resolve,
+		bool& a_final)
 	{
-		presentation_detail::PreparedClientTextStyle prepared;
-		const auto preparedResult =
-			presentation_detail::PrepareClientTextStyle(
-				a_client,
-				a_style,
-				prepared);
-		if (preparedResult != DMUI_RESULT_OK)
-			return a_client.Fail(preparedResult);
-
-		std::optional<FontGuard> font;
-		if (a_style.fontRole)
+		SettingsPageText text;
+		a_final = true;
+		for (const auto& entry : settings_text_detail::kEntries)
 		{
-			font.emplace(a_client, *a_style.fontRole);
-			if (!font->Pushed())
-				return false;
+			DMUI_Result result{};
+			auto value = a_resolve(entry.key, result);
+			if (result == DMUI_RESULT_HOST_NOT_READY)
+				a_final = false;
+			text.*entry.member = value ? std::move(*value) : std::string{ entry.english };
 		}
-		const auto drawResult = presentation_detail::DrawPreparedText(
-			a_text,
-			prepared);
-		const auto fontEnded = !font || font->End();
-		if (drawResult != DMUI_RESULT_OK)
-			return a_client.Fail(drawResult);
-		if (!fontEnded)
-			return false;
-		a_client.SetPresentationResult(DMUI_RESULT_OK);
-		return true;
+		return text;
 	}
 
-	inline bool DrawLabeledValue(
-		Client& a_client,
-		std::string_view a_label,
-		std::string_view a_value,
-		LabeledValueOptions a_options) noexcept
+	// Render thread only.
+	[[nodiscard]] inline const SettingsPageText& GetSettingsPageText()
 	{
-		if (!std::isfinite(a_options.spacingScale) ||
-			a_options.spacingScale < 0.0f)
-			return a_client.Fail(DMUI_RESULT_INVALID_ARGUMENT);
-		presentation_detail::PreparedClientTextStyle prepared;
-		const auto preparedResult =
-			presentation_detail::PrepareClientTextStyle(
-				a_client,
-				a_options.valueStyle,
-				prepared);
-		if (preparedResult != DMUI_RESULT_OK)
-			return a_client.Fail(preparedResult);
-		const auto metrics = a_client.GetStyleMetrics();
-		if (!metrics)
-			return false;
-
-		presentation_detail::DrawUnformatted(a_label, false);
-		ui::SameLine(
-			0.0f,
-			metrics->itemSpacing.x * a_options.spacingScale);
-
-		std::optional<FontGuard> valueFont;
-		if (a_options.valueStyle.fontRole)
+		static SettingsPageText text;
+		static bool resolved{};
+		if (!resolved)
 		{
-			valueFont.emplace(
-				a_client,
-				*a_options.valueStyle.fontRole);
-			if (!valueFont->Pushed())
-				return false;
+			text = LoadSettingsPageText(
+				[](const char* a_key, DMUI_Result& a_result) {
+					return Client::ResolveText("DearModdingUI", a_key, &a_result);
+				},
+				resolved);
 		}
+		return text;
+	}
 
-		const auto drawResult = presentation_detail::DrawPreparedText(
-			a_value,
-			prepared);
-		const auto fontEnded = !valueFont || valueFont->End();
-		if (drawResult != DMUI_RESULT_OK)
-			return a_client.Fail(drawResult);
-		if (!fontEnded)
-			return false;
-		a_client.SetPresentationResult(DMUI_RESULT_OK);
-		return true;
+	[[nodiscard]] inline std::string ResolveSettingDescription(
+		const SettingDescriptor& a_setting)
+	{
+		auto description = a_setting.resolveDescription ?
+			a_setting.resolveDescription() :
+			a_setting.description;
+		if (a_setting.applyTiming != SettingApplyTiming::kImmediate)
+			return description;
+		if (!description.empty())
+			description.push_back('\n');
+		description += GetSettingsPageText().appliesNow;
+		return description;
 	}
 
 	namespace setting_detail
 	{
+		// Fills the first "{}" of a translated template.
+		[[nodiscard]] inline std::string FillPlaceholder(
+			std::string a_template,
+			std::string_view a_value)
+		{
+			if (const auto at = a_template.find("{}"); at != std::string::npos)
+				a_template.replace(at, 2, a_value);
+			return a_template;
+		}
+
 		template <NumericSettingValue T>
 		[[nodiscard]] constexpr const char* DefaultNumericFormat() noexcept
 		{
@@ -2965,75 +2657,55 @@ namespace dmui
 				return "%llu";
 		}
 
+		// The host rejects non-finite numbers, so they are left out of the descriptor.
 		template <NumericSettingValue T>
-		[[nodiscard]] constexpr float DefaultDragSpeed() noexcept
+		[[nodiscard]] bool IsUsableNumber(T a_value) noexcept
 		{
-			return std::same_as<T, double> ? 0.01f : 1.0f;
+			if constexpr (std::same_as<T, double>)
+				return std::isfinite(a_value);
+			else
+				return true;
 		}
 
 		template <NumericSettingValue T>
 		[[nodiscard]] T DrawNumericSetting(
 			const NumericSettingControl<T>& a_control,
 			T a_value,
-			T a_default,
-			bool& a_changed) noexcept
+			bool& a_changed,
+			bool& a_completed) noexcept
 		{
-			auto edited = a_value;
-			const auto* format = a_control.format.empty() ?
-				DefaultNumericFormat<T>() :
-				a_control.format.c_str();
-			switch (ResolveNumericSettingWidget(a_control))
+			NumericOptions<T> options{
+				.id = "Value",
+				.presentation = a_control.presentation,
+				.value = a_value,
+				.format = a_control.format.empty() ?
+					DefaultNumericFormat<T>() :
+					a_control.format.c_str(),
+				.clamp = true,
+				.dragSpeed = a_control.dragSpeed
+			};
+			if (a_control.range)
 			{
-			case NumericSettingWidget::kInput:
-				a_changed = ui::InputScalar(
-					"##Value",
-					&edited,
-					static_cast<const T*>(nullptr),
-					static_cast<const T*>(nullptr),
-					format);
-				break;
-			case NumericSettingWidget::kDrag:
+				const auto& range = *a_control.range;
+				if (range.minimum && IsUsableNumber(*range.minimum))
+					options.minimum = range.minimum;
+				if (range.maximum && IsUsableNumber(*range.maximum))
+					options.maximum = range.maximum;
+			}
+			if (const auto& step = a_control.quantization;
+				step && step->interval > T{} &&
+				IsUsableNumber(step->interval) && IsUsableNumber(step->origin))
 			{
-				const auto* minimum =
-					a_control.range && a_control.range->minimum ?
-					&*a_control.range->minimum :
-					nullptr;
-				const auto* maximum =
-					a_control.range && a_control.range->maximum ?
-					&*a_control.range->maximum :
-					nullptr;
-				a_changed = ui::DragScalar(
-					"##Value",
-					&edited,
-					a_control.dragSpeed > 0.0f ?
-						a_control.dragSpeed :
-						DefaultDragSpeed<T>(),
-					minimum,
-					maximum,
-					format,
-					ui::SliderFlags::kAlwaysClamp);
-				break;
+				options.step = step->interval;
+				options.stepOrigin = step->origin;
 			}
-			case NumericSettingWidget::kSlider:
-			{
-				auto minimum = *a_control.range->minimum;
-				auto maximum = *a_control.range->maximum;
-				if (maximum < minimum)
-					std::swap(minimum, maximum);
-				a_changed = ui::SliderScalar(
-					"##Value",
-					&edited,
-					&minimum,
-					&maximum,
-					format,
-					ui::SliderFlags::kAlwaysClamp);
-				break;
-			}
-			}
-			if (!a_changed)
-				return a_value;
-			edited = QuantizeSettingNumber(edited, a_control.quantization);
-			return ClampSettingNumber(edited, a_default, a_control.range);
+			if (options.presentation == NumericPresentation::kSlider &&
+				!(options.minimum && options.maximum))
+				options.presentation = NumericPresentation::kDrag;
+			const auto draw = ui::Numeric<T>(options);
+			a_changed = draw.changed;
+			a_completed = draw.completed;
+			return draw.value;
 		}
 
 		[[nodiscard]] inline SettingValue AcceptSettingValue(
@@ -3079,62 +2751,99 @@ namespace dmui
 			{
 			case SettingControlKind::kCheckbox:
 			{
-				auto value = std::get<bool>(a_value);
-				changed = ui::Checkbox("##Value", &value);
-				completed = changed;
-				edited = value;
+				const auto draw = ui::Toggle({
+					.id = "Value",
+					.value = std::get<bool>(a_value)
+				});
+				changed = draw.changed;
+				completed = draw.changed;
+				edited = draw.value;
 				break;
 			}
 			case SettingControlKind::kDouble:
 				edited = DrawNumericSetting(
 					std::get<DoubleSettingControl>(a_setting.control),
 					std::get<double>(a_value),
-					std::get<double>(a_setting.defaultValue),
-					changed);
-				completed = ui::IsItemDeactivatedAfterEdit();
+					changed,
+					completed);
 				break;
 			case SettingControlKind::kSigned:
 				edited = DrawNumericSetting(
 					std::get<SignedSettingControl>(a_setting.control),
 					std::get<int64_t>(a_value),
-					std::get<int64_t>(a_setting.defaultValue),
-					changed);
-				completed = ui::IsItemDeactivatedAfterEdit();
+					changed,
+					completed);
 				break;
 			case SettingControlKind::kUnsigned:
 				edited = DrawNumericSetting(
 					std::get<UnsignedSettingControl>(a_setting.control),
 					std::get<uint64_t>(a_value),
-					std::get<uint64_t>(a_setting.defaultValue),
-					changed);
-				completed = ui::IsItemDeactivatedAfterEdit();
+					changed,
+					completed);
 				break;
 			case SettingControlKind::kText:
 			{
 				const auto& control =
 					std::get<TextSettingControl>(a_setting.control);
-				const auto& value = std::get<std::string>(a_value);
-				const auto capacity = (std::max)(
-					(std::max)(control.bufferCapacity, size_t{ 2 }),
-					value.size() + 1);
-				std::vector<char> buffer(capacity);
-				std::copy(value.begin(), value.end(), buffer.begin());
-				changed = control.multiline ?
-					ui::InputTextMultiline(
-						"##Value",
-						buffer.data(),
-						buffer.size(),
-						{
-							0.0f,
-							ui::GetTextLineHeightWithSpacing() * 3.0f
-						}) :
-					ui::InputText(
-						"##Value",
-						buffer.data(),
-						buffer.size());
+				auto text = std::get<std::string>(a_value);
+				changed = ui::InputText(
+					"##Value",
+					text,
+					{
+						.maxBytes = control.maxBytes,
+						.lines = control.multiline ? 3u : 0u
+					});
 				completed = ui::IsItemDeactivatedAfterEdit();
 				if (changed)
-					edited = std::string{ buffer.data() };
+					edited = std::move(text);
+				break;
+			}
+			case SettingControlKind::kKeybind:
+			{
+				const auto& control =
+					std::get<KeybindSettingControl>(a_setting.control);
+				const auto& binding = std::get<std::string>(a_value);
+				const auto warning = control.resolveWarning ?
+					control.resolveWarning() :
+					std::string{};
+				const auto draw = ui::KeyCapture({
+					.id = "Value",
+					.binding = binding.c_str(),
+					.warning = warning.empty() ? nullptr : warning.c_str(),
+					.slot = control.slot,
+					.allowClear = control.allowClear
+				});
+				if (draw.changed)
+				{
+					edited = draw.chord;
+					changed = true;
+					completed = true;
+				}
+				break;
+			}
+			case SettingControlKind::kColor:
+			{
+				const auto& control =
+					std::get<ColorSettingControl>(a_setting.control);
+				std::vector<ColorPreset> presets;
+				presets.reserve(control.presets.size());
+				for (const auto& preset : control.presets)
+				{
+					presets.emplace_back(
+						preset.name.c_str(),
+						preset.rgba,
+						preset.description.c_str());
+				}
+				const auto draw = ui::ColorEdit({
+					.id = "Value",
+					.rgba = static_cast<uint32_t>(std::get<uint64_t>(a_value)),
+					.alpha = control.alpha,
+					.presets = presets,
+					.presetsLabel = control.presetsLabel.c_str()
+				});
+				changed = draw.changed;
+				completed = draw.completed;
+				edited = uint64_t{ draw.rgba };
 				break;
 			}
 			case SettingControlKind::kChoice:
@@ -3142,11 +2851,13 @@ namespace dmui
 				const auto& control =
 					std::get<ChoiceSettingControl>(a_setting.control);
 				const auto& value = std::get<std::string>(a_value);
-				const auto draw = DrawChoice(
+				const auto draw = ui::Choice(
 					"Value",
 					value,
 					std::span<const ChoiceSettingOption>{ control.options },
-					control.unmatchedLabel.c_str());
+					control.unmatchedLabel.empty() ?
+						GetSettingsPageText().unavailable.c_str() :
+						control.unmatchedLabel.c_str());
 				if (draw.changed && draw.selected)
 				{
 					edited = *draw.selected;
@@ -3334,7 +3045,7 @@ namespace dmui
 		{
 			{
 				const DisabledScope disabled;
-				ui::TextUnformatted("Unsupported setting control.");
+				ui::TextUnformatted(GetSettingsPageText().unsupportedControl.c_str());
 			}
 			return EndSettingRow(a_setting, a_row).has_value();
 		}
@@ -3431,20 +3142,20 @@ namespace dmui
 				return true;
 			const auto enabled =
 				action.activate && (!action.isEnabled || action.isEnabled());
+			const auto& label =
+				action.buttonLabel.empty() ? action.label : action.buttonLabel;
+			if (ui::Button({
+					.id = action.id.c_str(),
+					.label = label.c_str(),
+					.enabled = enabled
+				}) && enabled)
 			{
-				const DisabledScope disabled{ !enabled };
-				const auto& label =
-					action.buttonLabel.empty() ? action.label : action.buttonLabel;
-				const auto itemLabel = label + "###" + action.id;
-				if (ui::Button(itemLabel.c_str()) && enabled)
+				try
 				{
-					try
-					{
-						action.activate();
-					}
-					catch (...)
-					{}
+					action.activate();
 				}
+				catch (...)
+				{}
 			}
 			return row.End(false, false).has_value();
 		}
@@ -3474,34 +3185,23 @@ namespace dmui
 				return true;
 
 			const auto key = a_group.id.empty() ? a_group.label : a_group.id;
-			if (a_group.headingMode == SettingGroup::HeadingMode::kDivider)
-			{
-				DrawDivider();
-			}
-			else
-			{
-				const auto label = a_group.label.empty() ? key : a_group.label;
-				auto glyph = a_group.glyph;
-				if (!glyph)
-				{
-					const auto resolved =
-						a_client.ResolveIconGlyph(label.c_str());
-					if (!resolved)
-						return false;
-					glyph = *resolved ?
-						*resolved :
-						DearModdingUI::PhosphorGlyph::kQuestion;
-				}
-				if (!a_client.DrawCollapsingSectionHeader(
-						key.c_str(),
-						label.c_str(),
-						glyph,
-						a_group.expanded,
-						MatchingContentCount(matches)))
-					return false;
-				if (!a_group.expanded)
-					return true;
-			}
+			// A divider heading is a section without title, icon, or collapse state.
+			const auto divider =
+				a_group.headingMode == SettingGroup::HeadingMode::kDivider;
+			const auto label = a_group.label.empty() ? key : a_group.label;
+			ui::SectionScope section{ {
+				.id = key.c_str(),
+				.title = divider ? nullptr : label.c_str(),
+				.glyph = divider ? PhosphorGlyph::kNone : a_group.glyph,
+				.expanded = divider ? nullptr : &a_group.expanded,
+				.count = divider ?
+					std::nullopt :
+					std::optional<uint32_t>{
+						static_cast<uint32_t>(MatchingContentCount(matches))
+					}
+			} };
+			if (!section)
+				return true;
 
 			const auto tableId = "##dmui.settings.table." + key;
 			SettingsTableScope table{ a_client, tableId.c_str() };
@@ -3522,7 +3222,7 @@ namespace dmui
 						{
 							ui::TableNextRow();
 							(void)ui::TableSetColumnIndex(0);
-							DrawDivider();
+							ui::Separator();
 							return true;
 						}
 					},
@@ -3532,6 +3232,7 @@ namespace dmui
 			}
 			if (!table.End())
 				return false;
+			section.End();
 			return SectionSpacing(a_client);
 		}
 
@@ -3539,55 +3240,78 @@ namespace dmui
 			Client& a_client,
 			SettingsPage& a_page)
 		{
+			enum class PageAction
+			{
+				kReset,
+				kRevert,
+				kApply
+			};
 			struct Action
 			{
-				DearModdingUI::SettingsAction action;
+				PageAction action;
 				const char* id;
-				std::string fallbackLabel;
+				char32_t glyph;
+				std::string label;
 				const char* widthLabel;
 				std::string tooltip;
+				ButtonStyle style;
+				bool enabled;
 			};
 
+			const auto& text = GetSettingsPageText();
 			const auto pending = a_page.PendingCount();
+			const auto pendingText = std::to_string(pending);
+			const auto widestApplyLabel = FillPlaceholder(text.apply, "112");
 			const auto dirty = pending != 0;
 			std::array<Action, 3> actions{};
 			size_t actionCount{};
 			if (a_page.actions.showReset || a_page.actions.reset)
 			{
 				actions[actionCount++] = {
-					DearModdingUI::SettingsAction::kReset,
+					PageAction::kReset,
 					"##dmui.settings.reset",
-					"Reset all",
-					"Reset all",
+					PhosphorGlyph::kArrowsClockwise,
+					text.resetAll,
+					text.resetAll.c_str(),
 					a_page.actionTooltips.reset.empty() ?
-						"Reset loads every setting's default into the draft. "
-						"Use Apply to save them." :
-						a_page.actionTooltips.reset
+						text.resetAllTooltip :
+						a_page.actionTooltips.reset,
+					ButtonStyle::kDefault,
+					true
 				};
 			}
 			if (a_page.actions.revert)
 			{
 				actions[actionCount++] = {
-					DearModdingUI::SettingsAction::kRevert,
+					PageAction::kRevert,
 					"##dmui.settings.revert",
-					"Revert",
-					"Revert",
+					PhosphorGlyph::kArrowCounterClockwise,
+					text.revert,
+					text.revert.c_str(),
 					a_page.actionTooltips.revert.empty() ?
-						"Revert discards pending edits and restores committed settings." :
-						a_page.actionTooltips.revert
+						text.revertTooltip :
+						a_page.actionTooltips.revert,
+					ButtonStyle::kDefault,
+					dirty
 				};
 			}
 			if (a_page.actions.apply)
 			{
 				actions[actionCount++] = {
-					DearModdingUI::SettingsAction::kApply,
+					PageAction::kApply,
 					"##dmui.settings.apply",
-					"Apply (" + std::to_string(pending) + ")",
-					"Apply (112)",
+					PhosphorGlyph::kFloppyDisk,
+					FillPlaceholder(text.apply, pendingText),
+					widestApplyLabel.c_str(),
 					a_page.actionTooltips.apply ?
 						a_page.actionTooltips.apply(pending) :
-						"Apply saves " + std::to_string(pending) + " pending " +
-							(pending == 1 ? "change." : "changes.")
+						FillPlaceholder(
+							pending == 1 ?
+								text.applyTooltipOne :
+								text.applyTooltipMany,
+							pendingText),
+					ButtonStyle::kPrimary,
+					dirty
 				};
 			}
 
@@ -3607,37 +3331,29 @@ namespace dmui
 			const auto itemSpacingY = style->itemSpacing.y;
 			const auto itemInnerSpacingX = style->itemInnerSpacing.x;
 			const auto frameHeight = ui::GetFrameHeight();
-			auto buttonExtent = frameHeight;
+			auto buttonHeight = frameHeight;
 			std::array<float, actions.size()> widths{};
-			if (actionCount != 0)
+			for (size_t index = 0; index < actionCount; ++index)
 			{
-				const auto extent = a_client.SettingsActionButtonExtent();
-				if (!extent)
-					return false;
-				buttonExtent = *extent;
-				for (size_t index = 0; index < actionCount; ++index)
-				{
-					const auto width = a_client.SettingsActionButtonWidth(
-						static_cast<DMUI_SettingsAction>(actions[index].action),
-						actions[index].widthLabel,
-						buttonExtent);
-					if (!width)
-						return false;
-					widths[index] = *width;
-				}
+				// The widest label reserves the width so Apply never resizes.
+				const auto size = ui::MeasureButton({
+					.id = actions[index].id,
+					.label = actions[index].widthLabel,
+					.glyph = actions[index].glyph,
+					.style = actions[index].style
+				});
+				widths[index] = size.x;
+				buttonHeight = (std::max)(buttonHeight, size.y);
 			}
 			const auto widthSum =
-				DearModdingUI::ResolveSettingsActionButtonWidthSum(
-					widths,
-					dirty,
-					pending);
-			const auto layout = DearModdingUI::ResolvePageActionRowLayout(
+				std::accumulate(widths.begin(), widths.end(), 0.0f);
+			const auto layout = ResolvePageActionRowLayout(
 				start.x,
 				start.x + available,
 				widthSum,
 				actionCount,
 				spacing);
-			auto rowHeight = (std::max)(frameHeight, buttonExtent);
+			auto rowHeight = buttonHeight;
 			const auto filterWidth =
 				(std::max)(layout.titleMaxX - start.x, 0.0f);
 
@@ -3648,7 +3364,7 @@ namespace dmui
 					a_page.filterOptions.showModifiedOnly ?
 					frameHeight +
 						itemInnerSpacingX +
-						ui::CalcTextSize("Modified only").x :
+						ui::CalcTextSize(text.modifiedOnly.c_str()).x :
 					0.0f;
 				const auto minimumSearchWidth = ui::GetFontSize() * 10.0f;
 				const auto searchWidth = (std::max)(
@@ -3656,12 +3372,16 @@ namespace dmui
 					(std::min)(
 						ui::GetFontSize() * 24.0f,
 						filterWidth - modifiedWidth - spacing));
-				ui::SetNextItemWidth((std::min)(searchWidth, filterWidth));
-				if (!a_client.DrawSearchInput(
-						"##dmui.settings.search",
-						a_page.filterOptions.searchHint.c_str(),
-						a_page.filter.search))
-					return false;
+				(void)ui::InputText(
+					"##dmui.settings.search",
+					a_page.filter.search,
+					{
+						.hint = a_page.filterOptions.searchHint.empty() ?
+							text.searchHint.c_str() :
+							a_page.filterOptions.searchHint.c_str(),
+						.style = ui::TextFieldStyle::kSearch,
+						.size = { (std::min)(searchWidth, filterWidth), 0.0f }
+					});
 				// The host search frame can be taller than a plain frame.
 				rowHeight = (std::max)(
 					rowHeight,
@@ -3683,35 +3403,36 @@ namespace dmui
 			}
 			if (a_page.filterOptions.showModifiedOnly)
 			{
-				(void)ui::Checkbox(
-					"Modified only###dmui.settings.modified",
-					&a_page.filter.modifiedOnly);
+				const auto modified = ui::Toggle({
+					.id = "dmui.settings.modified",
+					.label = text.modifiedOnly.c_str(),
+					.value = a_page.filter.modifiedOnly
+				});
+				if (modified.changed)
+					a_page.filter.modifiedOnly = modified.value;
 			}
 
-			std::optional<DearModdingUI::SettingsAction> pressed;
+			std::optional<PageAction> pressed;
 			auto actionX = layout.actionsMinX;
 			for (size_t index = 0; index < actionCount; ++index)
 			{
 				const auto& action = actions[index];
-				const auto selected = a_client.DrawSettingsActionButton(
-					action.id,
-					{
-						actionX,
-						start.y + DearModdingUI::RowContentOffsetY(
-							rowHeight,
-							{ buttonExtent },
-							DearModdingUI::RowContentMetric::kBox)
-					},
-					{ widths[index], buttonExtent },
-					static_cast<DMUI_SettingsAction>(action.action),
-					action.fallbackLabel.c_str(),
-					action.tooltip.c_str(),
-					DearModdingUI::SettingsActionEnabled(
-						action.action,
-						dirty));
-				if (!selected)
-					return false;
-				if (*selected)
+				ui::SetCursorScreenPos({
+					actionX,
+					start.y + RowContentOffsetY(
+						rowHeight,
+						{ buttonHeight },
+						RowContentMetric::kBox)
+				});
+				if (ui::Button({
+						.id = action.id,
+						.label = action.label.c_str(),
+						.glyph = action.glyph,
+						.tooltip = action.tooltip.c_str(),
+						.enabled = action.enabled,
+						.style = action.style,
+						.size = { widths[index], buttonHeight }
+					}))
 					pressed = action.action;
 				actionX += widths[index] + spacing;
 			}
@@ -3730,16 +3451,16 @@ namespace dmui
 				return true;
 			switch (*pressed)
 			{
-			case DearModdingUI::SettingsAction::kReset:
+			case PageAction::kReset:
 				if (a_page.actions.reset)
 					a_page.actions.reset();
 				else
 					a_page.ResetToDefaults();
 				break;
-			case DearModdingUI::SettingsAction::kRevert:
+			case PageAction::kRevert:
 				a_page.actions.revert();
 				break;
-			case DearModdingUI::SettingsAction::kApply:
+			case PageAction::kApply:
 				a_page.actions.apply();
 				break;
 			}
@@ -3751,18 +3472,7 @@ namespace dmui
 			const SettingsPage& a_page) noexcept
 		{
 			for (const auto& note : a_page.notes)
-			{
-				if (!DrawStyledText(
-						a_client,
-						note.text,
-						{
-							.tone = note.muted ?
-								TextTone::kMuted :
-								TextTone::kInherit,
-							.wrapped = true
-						}))
-					return false;
-			}
+				ui::Text(note.text, TextStyle{}.Tone(note.tone), { .wrap = true });
 			return a_page.notes.empty() || SectionSpacing(a_client);
 		}
 	}

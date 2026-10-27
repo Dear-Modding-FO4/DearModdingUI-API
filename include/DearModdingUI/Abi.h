@@ -7,15 +7,6 @@ namespace dmui::detail
 	template <auto Slot>
 	inline constexpr uint32_t SlotAbiMinor{ 0u };
 
-	template <>
-	inline constexpr uint32_t SlotAbiMinor<&DMUI_HostAPI::requestOverlayFocus>{ 1u };
-	template <>
-	inline constexpr uint32_t SlotAbiMinor<&DMUI_HostAPI::releaseOverlayFocus>{ 1u };
-	template <>
-	inline constexpr uint32_t SlotAbiMinor<&DMUI_HostAPI::queryOverlayFocus>{ 1u };
-	template <>
-	inline constexpr uint32_t SlotAbiMinor<&DMUI_HostAPI::resolveText>{ 2u };
-
 	template <class GetAPI>
 	[[nodiscard]] constexpr const DMUI_HostAPI* NegotiateAPI(
 		GetAPI a_getAPI, uint32_t& a_minor) noexcept

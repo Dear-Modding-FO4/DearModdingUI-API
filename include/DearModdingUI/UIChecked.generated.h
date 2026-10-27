@@ -5,12 +5,6 @@
 
 namespace dmui::detail
 {
-	template <>
-	inline constexpr uint32_t SlotAbiMinor<&DMUI_UIAPI::inputTextEditor>{ 1u };
-	template <>
-	inline constexpr uint32_t SlotAbiMinor<&DMUI_UIAPI::beginTooltipAt>{ 1u };
-	template <>
-	inline constexpr uint32_t SlotAbiMinor<&DMUI_UIAPI::getPointerState>{ 2u };
 }
 
 namespace dmui::ui
@@ -131,57 +125,6 @@ namespace dmui::ui
 		kNavWindowingDimBg = DMUI_UI_COLOR_NAV_WINDOWING_DIM_BG,
 		kModalWindowDimBg = DMUI_UI_COLOR_MODAL_WINDOW_DIM_BG
 	};
-
-	enum class DataType : uint32_t
-	{
-		kNone = 0u,
-		kS8 = DMUI_UI_DATA_TYPE_S8,
-		kU8 = DMUI_UI_DATA_TYPE_U8,
-		kS16 = DMUI_UI_DATA_TYPE_S16,
-		kU16 = DMUI_UI_DATA_TYPE_U16,
-		kS32 = DMUI_UI_DATA_TYPE_S32,
-		kU32 = DMUI_UI_DATA_TYPE_U32,
-		kS64 = DMUI_UI_DATA_TYPE_S64,
-		kU64 = DMUI_UI_DATA_TYPE_U64,
-		kFloat = DMUI_UI_DATA_TYPE_FLOAT,
-		kDouble = DMUI_UI_DATA_TYPE_DOUBLE
-	};
-
-	enum class ComboFlags : uint32_t
-	{
-		kNone = 0u,
-		kPopupAlignLeft = DMUI_UI_COMBO_FLAGS_POPUP_ALIGN_LEFT,
-		kHeightSmall = DMUI_UI_COMBO_FLAGS_HEIGHT_SMALL,
-		kHeightRegular = DMUI_UI_COMBO_FLAGS_HEIGHT_REGULAR,
-		kHeightLarge = DMUI_UI_COMBO_FLAGS_HEIGHT_LARGE,
-		kHeightLargest = DMUI_UI_COMBO_FLAGS_HEIGHT_LARGEST,
-		kNoArrowButton = DMUI_UI_COMBO_FLAGS_NO_ARROW_BUTTON,
-		kNoPreview = DMUI_UI_COMBO_FLAGS_NO_PREVIEW,
-		kWidthFitPreview = DMUI_UI_COMBO_FLAGS_WIDTH_FIT_PREVIEW
-	};
-
-	[[nodiscard]] constexpr ComboFlags operator|(
-		ComboFlags a_left, ComboFlags a_right) noexcept
-	{
-		return static_cast<ComboFlags>(
-			static_cast<uint32_t>(a_left) |
-			static_cast<uint32_t>(a_right));
-	}
-
-	[[nodiscard]] constexpr ComboFlags operator&(
-		ComboFlags a_left, ComboFlags a_right) noexcept
-	{
-		return static_cast<ComboFlags>(
-			static_cast<uint32_t>(a_left) &
-			static_cast<uint32_t>(a_right));
-	}
-
-	constexpr ComboFlags& operator|=(
-		ComboFlags& a_left, ComboFlags a_right) noexcept
-	{
-		a_left = a_left | a_right;
-		return a_left;
-	}
 
 	enum class HoveredFlags : uint32_t
 	{
@@ -307,43 +250,6 @@ namespace dmui::ui
 
 	constexpr SelectableFlags& operator|=(
 		SelectableFlags& a_left, SelectableFlags a_right) noexcept
-	{
-		a_left = a_left | a_right;
-		return a_left;
-	}
-
-	enum class SliderFlags : uint32_t
-	{
-		kNone = 0u,
-		kLogarithmic = DMUI_UI_SLIDER_FLAGS_LOGARITHMIC,
-		kNoRoundToFormat = DMUI_UI_SLIDER_FLAGS_NO_ROUND_TO_FORMAT,
-		kNoInput = DMUI_UI_SLIDER_FLAGS_NO_INPUT,
-		kWrapAround = DMUI_UI_SLIDER_FLAGS_WRAP_AROUND,
-		kClampOnInput = DMUI_UI_SLIDER_FLAGS_CLAMP_ON_INPUT,
-		kClampZeroRange = DMUI_UI_SLIDER_FLAGS_CLAMP_ZERO_RANGE,
-		kNoSpeedTweaks = DMUI_UI_SLIDER_FLAGS_NO_SPEED_TWEAKS,
-		kColorMarkers = DMUI_UI_SLIDER_FLAGS_COLOR_MARKERS,
-		kAlwaysClamp = DMUI_UI_SLIDER_FLAGS_ALWAYS_CLAMP
-	};
-
-	[[nodiscard]] constexpr SliderFlags operator|(
-		SliderFlags a_left, SliderFlags a_right) noexcept
-	{
-		return static_cast<SliderFlags>(
-			static_cast<uint32_t>(a_left) |
-			static_cast<uint32_t>(a_right));
-	}
-
-	[[nodiscard]] constexpr SliderFlags operator&(
-		SliderFlags a_left, SliderFlags a_right) noexcept
-	{
-		return static_cast<SliderFlags>(
-			static_cast<uint32_t>(a_left) &
-			static_cast<uint32_t>(a_right));
-	}
-
-	constexpr SliderFlags& operator|=(
-		SliderFlags& a_left, SliderFlags a_right) noexcept
 	{
 		a_left = a_left | a_right;
 		return a_left;
@@ -483,55 +389,6 @@ namespace dmui::ui
 
 	constexpr TableRowFlags& operator|=(
 		TableRowFlags& a_left, TableRowFlags a_right) noexcept
-	{
-		a_left = a_left | a_right;
-		return a_left;
-	}
-
-	enum class TreeNodeFlags : uint32_t
-	{
-		kNone = 0u,
-		kSelected = DMUI_UI_TREE_NODE_FLAGS_SELECTED,
-		kFramed = DMUI_UI_TREE_NODE_FLAGS_FRAMED,
-		kAllowOverlap = DMUI_UI_TREE_NODE_FLAGS_ALLOW_OVERLAP,
-		kNoTreePushOnOpen = DMUI_UI_TREE_NODE_FLAGS_NO_TREE_PUSH_ON_OPEN,
-		kNoAutoOpenOnLog = DMUI_UI_TREE_NODE_FLAGS_NO_AUTO_OPEN_ON_LOG,
-		kDefaultOpen = DMUI_UI_TREE_NODE_FLAGS_DEFAULT_OPEN,
-		kOpenOnDoubleClick = DMUI_UI_TREE_NODE_FLAGS_OPEN_ON_DOUBLE_CLICK,
-		kOpenOnArrow = DMUI_UI_TREE_NODE_FLAGS_OPEN_ON_ARROW,
-		kLeaf = DMUI_UI_TREE_NODE_FLAGS_LEAF,
-		kBullet = DMUI_UI_TREE_NODE_FLAGS_BULLET,
-		kFramePadding = DMUI_UI_TREE_NODE_FLAGS_FRAME_PADDING,
-		kSpanAvailWidth = DMUI_UI_TREE_NODE_FLAGS_SPAN_AVAIL_WIDTH,
-		kSpanFullWidth = DMUI_UI_TREE_NODE_FLAGS_SPAN_FULL_WIDTH,
-		kSpanLabelWidth = DMUI_UI_TREE_NODE_FLAGS_SPAN_LABEL_WIDTH,
-		kSpanAllColumns = DMUI_UI_TREE_NODE_FLAGS_SPAN_ALL_COLUMNS,
-		kLabelSpanAllColumns = DMUI_UI_TREE_NODE_FLAGS_LABEL_SPAN_ALL_COLUMNS,
-		kNavLeftJumpsToParent = DMUI_UI_TREE_NODE_FLAGS_NAV_LEFT_JUMPS_TO_PARENT,
-		kDrawLinesNone = DMUI_UI_TREE_NODE_FLAGS_DRAW_LINES_NONE,
-		kDrawLinesFull = DMUI_UI_TREE_NODE_FLAGS_DRAW_LINES_FULL,
-		kDrawLinesToNodes = DMUI_UI_TREE_NODE_FLAGS_DRAW_LINES_TO_NODES,
-		kCollapsingHeader = DMUI_UI_TREE_NODE_FLAGS_COLLAPSING_HEADER
-	};
-
-	[[nodiscard]] constexpr TreeNodeFlags operator|(
-		TreeNodeFlags a_left, TreeNodeFlags a_right) noexcept
-	{
-		return static_cast<TreeNodeFlags>(
-			static_cast<uint32_t>(a_left) |
-			static_cast<uint32_t>(a_right));
-	}
-
-	[[nodiscard]] constexpr TreeNodeFlags operator&(
-		TreeNodeFlags a_left, TreeNodeFlags a_right) noexcept
-	{
-		return static_cast<TreeNodeFlags>(
-			static_cast<uint32_t>(a_left) &
-			static_cast<uint32_t>(a_right));
-	}
-
-	constexpr TreeNodeFlags& operator|=(
-		TreeNodeFlags& a_left, TreeNodeFlags a_right) noexcept
 	{
 		a_left = a_left | a_right;
 		return a_left;
@@ -687,6 +544,35 @@ namespace dmui::ui
 		return a_left;
 	}
 
+	enum class ShortcutFlags : uint32_t
+	{
+		kNone = 0u,
+		kRepeat = DMUI_UI_SHORTCUT_FLAGS_REPEAT
+	};
+
+	[[nodiscard]] constexpr ShortcutFlags operator|(
+		ShortcutFlags a_left, ShortcutFlags a_right) noexcept
+	{
+		return static_cast<ShortcutFlags>(
+			static_cast<uint32_t>(a_left) |
+			static_cast<uint32_t>(a_right));
+	}
+
+	[[nodiscard]] constexpr ShortcutFlags operator&(
+		ShortcutFlags a_left, ShortcutFlags a_right) noexcept
+	{
+		return static_cast<ShortcutFlags>(
+			static_cast<uint32_t>(a_left) &
+			static_cast<uint32_t>(a_right));
+	}
+
+	constexpr ShortcutFlags& operator|=(
+		ShortcutFlags& a_left, ShortcutFlags a_right) noexcept
+	{
+		a_left = a_left | a_right;
+		return a_left;
+	}
+
 	namespace checked
 	{
 		[[nodiscard]] inline DMUI_Result GetStyleMetrics(
@@ -694,23 +580,6 @@ namespace dmui::ui
 		{
 			return detail::Invoke<&DMUI_UIAPI::getStyleMetrics>(
 				metrics);
-		}
-
-		[[nodiscard]] inline DMUI_Result BeginCombo(
-			const char* label,
-		const char* previewValue,
-		DMUI_UIComboFlags flags,
-		uint32_t* visible) noexcept
-		{
-			return detail::Invoke<&DMUI_UIAPI::beginCombo>(
-				label, previewValue, flags, visible);
-		}
-
-		[[nodiscard]] inline DMUI_Result EndCombo(
-			void) noexcept
-		{
-			return detail::Invoke<&DMUI_UIAPI::endCombo>(
-				);
 		}
 
 		[[nodiscard]] inline DMUI_Result BeginDisabled(
@@ -760,13 +629,67 @@ namespace dmui::ui
 				);
 		}
 
+		[[nodiscard]] inline DMUI_Result BeginItemTooltip(
+			uint32_t* visible) noexcept
+		{
+			return detail::Invoke<&DMUI_UIAPI::beginItemTooltip>(
+				visible);
+		}
+
 		[[nodiscard]] inline DMUI_Result Button(
-			const char* label,
-		DMUI_Vec2 size,
+			const DMUI_ButtonDescriptor* button,
 		uint32_t* pressed) noexcept
 		{
 			return detail::Invoke<&DMUI_UIAPI::button>(
-				label, size, pressed);
+				button, pressed);
+		}
+
+		[[nodiscard]] inline DMUI_Result MeasureButton(
+			const DMUI_ButtonDescriptor* button,
+		DMUI_Vec2* size) noexcept
+		{
+			return detail::Invoke<&DMUI_UIAPI::measureButton>(
+				button, size);
+		}
+
+		[[nodiscard]] inline DMUI_Result Choice(
+			const DMUI_ChoiceDescriptor* choice,
+		DMUI_ChoiceResult* result) noexcept
+		{
+			return detail::Invoke<&DMUI_UIAPI::choice>(
+				choice, result);
+		}
+
+		[[nodiscard]] inline DMUI_Result Toggle(
+			const DMUI_ToggleDescriptor* toggle,
+		DMUI_ToggleResult* result) noexcept
+		{
+			return detail::Invoke<&DMUI_UIAPI::toggle>(
+				toggle, result);
+		}
+
+		[[nodiscard]] inline DMUI_Result Numeric(
+			const DMUI_NumericDescriptor* numeric,
+		DMUI_NumericResult* result) noexcept
+		{
+			return detail::Invoke<&DMUI_UIAPI::numeric>(
+				numeric, result);
+		}
+
+		[[nodiscard]] inline DMUI_Result ColorEdit(
+			const DMUI_ColorEditDescriptor* color,
+		DMUI_ColorEditResult* result) noexcept
+		{
+			return detail::Invoke<&DMUI_UIAPI::colorEdit>(
+				color, result);
+		}
+
+		[[nodiscard]] inline DMUI_Result KeyCapture(
+			const DMUI_KeyCaptureDescriptor* capture,
+		DMUI_KeyCaptureResult* result) noexcept
+		{
+			return detail::Invoke<&DMUI_UIAPI::keyCapture>(
+				capture, result);
 		}
 
 		[[nodiscard]] inline DMUI_Result CalcTextSize(
@@ -778,52 +701,6 @@ namespace dmui::ui
 		{
 			return detail::Invoke<&DMUI_UIAPI::calcTextSize>(
 				text, textLength, hideTextAfterDoubleHash, wrapWidth, size);
-		}
-
-		[[nodiscard]] inline DMUI_Result Checkbox(
-			const char* label,
-		uint32_t* value,
-		uint32_t* changed) noexcept
-		{
-			return detail::Invoke<&DMUI_UIAPI::checkbox>(
-				label, value, changed);
-		}
-
-		[[nodiscard]] inline DMUI_Result CollapsingHeader(
-			const char* label,
-		DMUI_UITreeNodeFlags flags,
-		uint32_t* open) noexcept
-		{
-			return detail::Invoke<&DMUI_UIAPI::collapsingHeader>(
-				label, flags, open);
-		}
-
-		[[nodiscard]] inline DMUI_Result CollapsingHeaderVisible(
-			const char* label,
-		uint32_t* visible,
-		DMUI_UITreeNodeFlags flags,
-		uint32_t* open) noexcept
-		{
-			return detail::Invoke<&DMUI_UIAPI::collapsingHeaderVisible>(
-				label, visible, flags, open);
-		}
-
-		[[nodiscard]] inline DMUI_Result DragScalar(
-			const char* label,
-		DMUI_UIDataType dataType,
-		void* data,
-		uint32_t dataSize,
-		float speed,
-		const void* minimum,
-		uint32_t minimumSize,
-		const void* maximum,
-		uint32_t maximumSize,
-		const char* format,
-		DMUI_UISliderFlags flags,
-		uint32_t* changed) noexcept
-		{
-			return detail::Invoke<&DMUI_UIAPI::dragScalar>(
-				label, dataType, data, dataSize, speed, minimum, minimumSize, maximum, maximumSize, format, flags, changed);
 		}
 
 		[[nodiscard]] inline DMUI_Result Dummy(
@@ -883,56 +760,14 @@ namespace dmui::ui
 				width);
 		}
 
-		[[nodiscard]] inline DMUI_Result InputScalar(
-			const char* label,
-		DMUI_UIDataType dataType,
-		void* data,
-		uint32_t dataSize,
-		const void* step,
-		uint32_t stepSize,
-		const void* fastStep,
-		uint32_t fastStepSize,
-		const char* format,
-		DMUI_UIInputTextFlags flags,
-		uint32_t* changed) noexcept
-		{
-			return detail::Invoke<&DMUI_UIAPI::inputScalar>(
-				label, dataType, data, dataSize, step, stepSize, fastStep, fastStepSize, format, flags, changed);
-		}
-
 		[[nodiscard]] inline DMUI_Result InputText(
-			const char* label,
-		char* buffer,
-		uint32_t capacity,
-		DMUI_UIInputTextFlags flags,
-		uint32_t* changed) noexcept
+			const char* id,
+		DMUI_TextBuffer* buffer,
+		const DMUI_TextFieldOptions* options,
+		DMUI_TextEditState* state) noexcept
 		{
 			return detail::Invoke<&DMUI_UIAPI::inputText>(
-				label, buffer, capacity, flags, changed);
-		}
-
-		[[nodiscard]] inline DMUI_Result InputTextMultiline(
-			const char* label,
-		char* buffer,
-		uint32_t capacity,
-		DMUI_Vec2 size,
-		DMUI_UIInputTextFlags flags,
-		uint32_t* changed) noexcept
-		{
-			return detail::Invoke<&DMUI_UIAPI::inputTextMultiline>(
-				label, buffer, capacity, size, flags, changed);
-		}
-
-		[[nodiscard]] inline DMUI_Result InputTextWithHint(
-			const char* label,
-		const char* hint,
-		char* buffer,
-		uint32_t capacity,
-		DMUI_UIInputTextFlags flags,
-		uint32_t* changed) noexcept
-		{
-			return detail::Invoke<&DMUI_UIAPI::inputTextWithHint>(
-				label, hint, buffer, capacity, flags, changed);
+				id, buffer, options, state);
 		}
 
 		[[nodiscard]] inline DMUI_Result IsItemDeactivatedAfterEdit(
@@ -955,13 +790,6 @@ namespace dmui::ui
 		{
 			return detail::Invoke<&DMUI_UIAPI::popID>(
 				);
-		}
-
-		[[nodiscard]] inline DMUI_Result PopStyleColor(
-			int32_t count) noexcept
-		{
-			return detail::Invoke<&DMUI_UIAPI::popStyleColor>(
-				count);
 		}
 
 		[[nodiscard]] inline DMUI_Result PopTextWrapPos(
@@ -1001,22 +829,6 @@ namespace dmui::ui
 		{
 			return detail::Invoke<&DMUI_UIAPI::pushIDValue>(
 				id);
-		}
-
-		[[nodiscard]] inline DMUI_Result PushStyleColorU32(
-			DMUI_UIColor color,
-		uint32_t rgba) noexcept
-		{
-			return detail::Invoke<&DMUI_UIAPI::pushStyleColorU32>(
-				color, rgba);
-		}
-
-		[[nodiscard]] inline DMUI_Result PushStyleColor(
-			DMUI_UIColor color,
-		DMUI_Vec4 value) noexcept
-		{
-			return detail::Invoke<&DMUI_UIAPI::pushStyleColor>(
-				color, value);
 		}
 
 		[[nodiscard]] inline DMUI_Result PushTextWrapPos(
@@ -1092,31 +904,6 @@ namespace dmui::ui
 				width);
 		}
 
-		[[nodiscard]] inline DMUI_Result SetTooltipText(
-			const char* text,
-		size_t textLength) noexcept
-		{
-			return detail::Invoke<&DMUI_UIAPI::setTooltipText>(
-				text, textLength);
-		}
-
-		[[nodiscard]] inline DMUI_Result SliderScalar(
-			const char* label,
-		DMUI_UIDataType dataType,
-		void* data,
-		uint32_t dataSize,
-		const void* minimum,
-		uint32_t minimumSize,
-		const void* maximum,
-		uint32_t maximumSize,
-		const char* format,
-		DMUI_UISliderFlags flags,
-		uint32_t* changed) noexcept
-		{
-			return detail::Invoke<&DMUI_UIAPI::sliderScalar>(
-				label, dataType, data, dataSize, minimum, minimumSize, maximum, maximumSize, format, flags, changed);
-		}
-
 		[[nodiscard]] inline DMUI_Result Spacing(
 			void) noexcept
 		{
@@ -1174,35 +961,13 @@ namespace dmui::ui
 
 		[[nodiscard]] inline DMUI_Result Text(
 			const char* text,
-		size_t textLength) noexcept
+		size_t textLength,
+		const DMUI_TextSpan* spans,
+		uint32_t spanCount,
+		const DMUI_TextOptions* options) noexcept
 		{
 			return detail::Invoke<&DMUI_UIAPI::text>(
-				text, textLength);
-		}
-
-		[[nodiscard]] inline DMUI_Result TextColored(
-			DMUI_Vec4 color,
-		const char* text,
-		size_t textLength) noexcept
-		{
-			return detail::Invoke<&DMUI_UIAPI::textColored>(
-				color, text, textLength);
-		}
-
-		[[nodiscard]] inline DMUI_Result TextDisabled(
-			const char* text,
-		size_t textLength) noexcept
-		{
-			return detail::Invoke<&DMUI_UIAPI::textDisabled>(
-				text, textLength);
-		}
-
-		[[nodiscard]] inline DMUI_Result TextWrapped(
-			const char* text,
-		size_t textLength) noexcept
-		{
-			return detail::Invoke<&DMUI_UIAPI::textWrapped>(
-				text, textLength);
+				text, textLength, spans, spanCount, options);
 		}
 
 		[[nodiscard]] inline DMUI_Result Unindent(
@@ -1532,11 +1297,11 @@ namespace dmui::ui
 				target);
 		}
 
-		[[nodiscard]] inline DMUI_Result GetThemeColors(
-			DMUI_ThemeColors* colors) noexcept
+		[[nodiscard]] inline DMUI_Result GetThemeTokens(
+			DMUI_ThemeTokens* tokens) noexcept
 		{
-			return detail::Invoke<&DMUI_UIAPI::getThemeColors>(
-				colors);
+			return detail::Invoke<&DMUI_UIAPI::getThemeTokens>(
+				tokens);
 		}
 
 		[[nodiscard]] inline DMUI_Result BeginPanel(
@@ -1556,26 +1321,27 @@ namespace dmui::ui
 				);
 		}
 
-		[[nodiscard]] inline DMUI_Result InputTextEditor(
-			const char* label,
-		const char* hint,
-		DMUI_TextBuffer* buffer,
-		DMUI_UIInputTextFlags flags,
-		DMUI_UITextEditFlags editFlags,
-		size_t cursor,
-		DMUI_TextEditState* state) noexcept
+		[[nodiscard]] inline DMUI_Result BeginSection(
+			const DMUI_SectionDescriptor* section,
+		uint32_t* visible) noexcept
 		{
-			return detail::Invoke<&DMUI_UIAPI::inputTextEditor>(
-				label, hint, buffer, flags, editFlags, cursor, state);
+			return detail::Invoke<&DMUI_UIAPI::beginSection>(
+				section, visible);
+		}
+
+		[[nodiscard]] inline DMUI_Result EndSection(
+			void) noexcept
+		{
+			return detail::Invoke<&DMUI_UIAPI::endSection>(
+				);
 		}
 
 		[[nodiscard]] inline DMUI_Result BeginTooltipAt(
-			DMUI_Vec2 position,
-		DMUI_Vec2 pivot,
+			DMUI_Placement placement,
 		uint32_t* visible) noexcept
 		{
 			return detail::Invoke<&DMUI_UIAPI::beginTooltipAt>(
-				position, pivot, visible);
+				placement, visible);
 		}
 
 		[[nodiscard]] inline DMUI_Result GetPointerState(
@@ -1583,6 +1349,46 @@ namespace dmui::ui
 		{
 			return detail::Invoke<&DMUI_UIAPI::getPointerState>(
 				state);
+		}
+
+		[[nodiscard]] inline DMUI_Result BeginPopupAt(
+			const char* id,
+		DMUI_Placement placement,
+		DMUI_UIWindowFlags flags,
+		uint32_t* visible) noexcept
+		{
+			return detail::Invoke<&DMUI_UIAPI::beginPopupAt>(
+				id, placement, flags, visible);
+		}
+
+		[[nodiscard]] inline DMUI_Result GetTime(
+			double* seconds) noexcept
+		{
+			return detail::Invoke<&DMUI_UIAPI::getTime>(
+				seconds);
+		}
+
+		[[nodiscard]] inline DMUI_Result GetDeltaTime(
+			float* seconds) noexcept
+		{
+			return detail::Invoke<&DMUI_UIAPI::getDeltaTime>(
+				seconds);
+		}
+
+		[[nodiscard]] inline DMUI_Result Spinner(
+			const DMUI_SpinnerDescriptor* spinner) noexcept
+		{
+			return detail::Invoke<&DMUI_UIAPI::spinner>(
+				spinner);
+		}
+
+		[[nodiscard]] inline DMUI_Result Shortcut(
+			const char* chord,
+		DMUI_UIShortcutFlags flags,
+		uint32_t* pressed) noexcept
+		{
+			return detail::Invoke<&DMUI_UIAPI::shortcut>(
+				chord, flags, pressed);
 		}
 	}
 }

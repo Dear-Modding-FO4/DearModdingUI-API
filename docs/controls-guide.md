@@ -16,20 +16,104 @@ dmui::ui::TextUnformatted("Hello, world!");
 dmui::ui::Spacing();
 dmui::ui::Separator();
 
-// Checkboxes and buttons
+// Checkboxes and buttons; the toggle draws no label, so label it with a field
 static bool enabled = true;
-dmui::ui::Checkbox("Enable feature", &enabled);
-
-if (dmui::ui::Button("Run Action")) {
-    // Action logic
+const auto toggle = dmui::ui::Toggle({ .id = "enabled", .value = enabled });
+if (toggle.changed) {
+    enabled = toggle.value;
 }
 
-// Sliders with explicit type and bounds
-static float intensity = 1.0f;
-float minVal = 0.0f;
-float maxVal = 2.0f;
-dmui::ui::SliderScalar("##intensity", &intensity, &minVal, &maxVal, "%.2fx");
+if (dmui::ui::Button({
+        .label = "Save Preset",
+        .glyph = dmui::PhosphorGlyph::kFloppyDisk,
+        .tooltip = "Saves the current preset.",
+        .style = dmui::ButtonStyle::kPrimary })) {
+    // Action logic
+}
 ```
+
+### Numeric Inputs
+
+`dmui::ui::Numeric<T>` is the one numeric input for every integer width, `float`,
+and `double`. The presentation is explicit: `kSlider` needs both bounds, while
+`kDrag` and `kInput` take either. No label is drawn; put it in a field bracket.
+
+```cpp
+static float intensity = 1.0f;
+const auto edited = dmui::ui::Numeric<float>({
+    .id = "intensity",
+    .presentation = dmui::NumericPresentation::kSlider,
+    .value = intensity,
+    .minimum = 0.0f,
+    .maximum = 2.0f,
+    .step = 0.05f,       // results snap to stepOrigin + n * step
+    .format = "%.2f",    // one printf conversion; null uses the type default
+    .unit = "x",         // appended to the formatted value
+    .clamp = true        // typed values stay inside the bounds too
+});
+if (edited.changed) {
+    intensity = edited.value;
+}
+```
+
+`changed` is set on the frame an edit changes the value and `completed` when the
+edit ends. `dragSpeed` applies to `kDrag`. `dmui::NumericOptions<T>` maps onto
+`DMUI_NumericDescriptor`, which carries the data type, so the C ABI offers the
+same control for any width.
+
+### Color Edit
+
+`dmui::ui::ColorEdit` is the one color edit: the inline RGB(A) fields with their
+picker, then an optional row of preset swatches. Colors are packed `0xRRGGBBAA`.
+No label is drawn; put it in a field bracket.
+
+```cpp
+static uint32_t tint = 0x42FA60FF;
+const std::array presets{
+    dmui::ColorPreset{ "Green", 0x42FA60FF, "The default accent" },
+    dmui::ColorPreset{ "Blue", 0x0072B2FF }
+};
+const auto edit = dmui::ui::ColorEdit({
+    .id = "tint",
+    .rgba = tint,
+    .alpha = false,                       // true also edits the alpha channel
+    .presets = presets,
+    .presetsLabel = "Suggested colors"
+});
+if (edit.changed) {
+    tint = edit.rgba;
+}
+```
+
+Without `alpha` the alpha byte passes through unchanged. A declarative page uses
+`dmui::ColorSettingControl`, whose value is a `uint64_t` holding the packed color.
+
+### Key Capture
+
+`dmui::ui::KeyCapture` is the one key binding editor. The field shows the binding;
+pressing it listens for the next chord of the slot (keyboard and mouse, or
+gamepad) and binds it when released. Escape or the controller B button cancels.
+No label is drawn; put it in a field bracket.
+
+```cpp
+static std::string binding = "Ctrl+F5";
+const auto capture = dmui::ui::KeyCapture({
+    .id = "toggle",
+    .binding = binding.c_str(),
+    .warning = conflict.empty() ? nullptr : conflict.c_str(),  // tints the field
+    .slot = dmui::KeyCaptureSlot::kKeyboardMouse,
+    .allowClear = true                                          // shows an unbind button
+});
+if (capture.changed) {
+    binding = capture.chord;                                    // "none" when cleared
+}
+```
+
+The editor stores nothing: assign the new chord to whatever owns it, for example
+a hotkey override. `readOnly` shows a binding without editing it, and
+`displayText` replaces the formatted binding for a client whose bindings are not
+host chords. A declarative page uses `dmui::KeybindSettingControl`, whose value is
+the chord string.
 
 ### List Clipping
 
@@ -47,47 +131,52 @@ Rows must have uniform height. Omit `itemsHeight` or pass a value <= 0 to measur
 the first row. Keep each clipper inside one drawing callback and the same window
 and table; end nested clippers in reverse order. Destruction ends a clipper early.
 
-### Search and Read-Only Text
+### Text Fields
 
-`Client::DrawSearchInput(id, hint, text)` is growable by default, with no
-application-level byte cap. It starts with a small frame-local writable buffer
-and can complete a large paste in the same frame by growing up to the backend
-limit of `INT_MAX` bytes including the terminating NUL. The caller's string is
-updated transactionally only after a successful draw; a resize or draw failure
-leaves it unchanged.
+`dmui::ui::InputText(id, text, options)` is the one text field. The string grows as
+needed, so a large paste completes in the same frame up to the backend limit of
+`INT_MAX` bytes including the terminating NUL. The caller's string is updated only
+after a successful draw; a resize or draw failure leaves it unchanged. The id scopes
+the field and is not drawn; label it with a field bracket.
+
+```cpp
+dmui::ui::InputText("name", name);
+dmui::ui::InputText("search", query, {
+	.hint = "Search...",
+	.style = dmui::ui::TextFieldStyle::kSearch // the host search frame
+});
+dmui::ui::InputText("notes", notes, { .lines = 4 });         // multiline
+dmui::ui::InputText("tag", tag, { .maxBytes = 32 });         // at most 32 UTF-8 bytes
+```
+
+`maxBytes` clips new input at the limit and never truncates text that is already
+longer. Pass a `DMUI_TextBuffer` instead of a string to own the storage; without a
+resize callback its capacity is the limit, and a paste may be inserted partially at
+a UTF-8 boundary. Both forms reject embedded NUL bytes. A multiline field has no
+hint and no history or completion keys.
 
 The bundled backend currently suppresses single-line glyph rendering once the
 buffer exceeds 2 MiB. This is a display safeguard in the native input widget,
-not a wrapper storage cap; editing storage remains growable up to the backend
-capacity bound.
+not a wrapper storage cap.
 
-Pass an explicit maximum UTF-8 byte count to request fixed-capacity behavior:
-
-```cpp
-client.DrawSearchInput("search", "Search", query, 512);
-```
-
-This allocates 513 writable bytes including the terminator and supplies no
-resize callback. New input is limited to the remaining capacity, so a paste may
-be inserted partially at a complete UTF-8 boundary. Existing text is never
-truncated. Both forms reject embedded NUL bytes. The bounded form also rejects
-an existing string longer than the maximum or a maximum of `INT_MAX` or greater.
-
-For a console or any autocompleting field, `ui::InputTextEditor` reports
-history, completion, submit, cancel, and edit events, plus the caret position
-(ABI 2.1). Replace the text by assigning the string and passing `kReload` with
+For a console or any autocompleting field, the same call reports history,
+completion, submit, cancel, and edit events, plus the caret position.
+Replace the text by assigning the string and passing `kReload` with
 the new cursor on the next frame:
 
 ```cpp
 using Flags = dmui::ui::TextEditFlags;
 dmui::ui::TextEditState state{};
-(void)dmui::ui::InputTextEditor("##command", "Command", input,
-	Flags::kHistoryKeys | Flags::kCompletionKey | Flags::kKeepFocusOnSubmit | reload,
-	reloadCursor, state);
+(void)dmui::ui::InputText("command", input, {
+		.hint = "Command",
+		.editFlags = Flags::kHistoryKeys | Flags::kCompletionKey |
+			Flags::kKeepFocusOnSubmit | reload,
+		.cursor = reloadCursor
+	}, state);
 if (dmui::ui::HasTextEditEvent(state, dmui::ui::TextEditEvents::kCompletion))
 	ShowCompletions();
-if (state.active && dmui::ui::BeginTooltipAt(
-		{ state.caretPosition.x, state.caretPosition.y + state.lineHeight }))
+if (state.active && dmui::ui::BeginTooltipAt({
+		.position = { state.caretPosition.x, state.caretPosition.y + state.lineHeight } }))
 {
 	DrawCompletionList();
 	dmui::ui::EndTooltip();
@@ -96,6 +185,31 @@ if (state.active && dmui::ui::BeginTooltipAt(
 
 The example plugin's Console page is a complete version with history and a
 selectable suggestion list.
+
+A single-line field can color its text, for example to highlight a command. The
+styler runs after the frame's edits with the current text and returns spans over
+it; the field then draws in the monospace role:
+
+```cpp
+dmui::ui::TextStyler styler = [](std::string_view text) {
+    static std::vector<dmui::TextSpan> spans;
+    spans.clear();
+    if (const auto end = text.find(' '); end != 0) {
+        spans.push_back(dmui::TextStyle{}.Tone(dmui::TextTone::kAccent).Bold()
+            .Span(0, end == std::string_view::npos ? text.size() : end));
+    }
+    return std::span<const dmui::TextSpan>{ spans };
+};
+dmui::ui::InputText("command", input, { .styler = &styler });
+```
+
+`dmui::ui::Shortcut("Ctrl+Enter")` reports a keyboard chord for the focused page:
+
+```cpp
+if (dmui::ui::Shortcut("Ctrl+Enter")) {
+    Submit();
+}
+```
 
 For large immutable text, pass existing storage and indexes to the host-owned
 viewer:
@@ -106,8 +220,13 @@ dmui::TextViewRequest request{
     .lineOffsets = lineOffsets,
     .matchByteOffsets = matchOffsets,
     .matchByteLength = query.size(),
+    .spans = highlightSpans,           // optional styled and interactive ranges
     .contentRevision = reportGeneration,
     .matchRevision = searchGeneration,
+    .spanRevision = highlightGeneration,
+    .firstLineNumber = linesTrimmedFromFront,
+    .followTail = true,                // pinned only while at the end
+    .selectable = true,                // drag to select, Ctrl+C to copy
     .viewport = { 0.0f, 420.0f }
 };
 
@@ -119,7 +238,15 @@ if (sectionPressed) {
     dmui::RevealTextOffset(request, state, sectionByteOffset);
 }
 client.DrawTextView("report-preview", request, state);
+if (state.spanClicked) {
+    OpenEntry(state.spanUserId);
+}
 ```
+
+Set `state.scroll = dmui::TextViewScroll::kTop` (or `kBottom`, `kPageUp`,
+`kPageDown`) to scroll once; a content change otherwise keeps the reader's
+place, anchored by `firstLineNumber`. `state.atBottom` tells whether the view
+shows its end.
 
 The arrays and text are borrowed only for the draw call. Line offsets enumerate
 every line start, including the final empty line after a trailing newline.
@@ -169,10 +296,13 @@ if (table.Visible())
 
     if (field.Visible())
     {
-        dmui::ui::Checkbox("##setting_id", &currentValue);
+        const auto toggle = dmui::ui::Toggle({ .id = "value", .value = currentValue });
+        if (toggle.changed) {
+            currentValue = toggle.value;
+        }
         if (needsRestart) {
             field.SetFeedback(
-                dmui::FieldFeedbackSeverity::kInfo,
+                dmui::Severity::kInfo,
                 "Restart the game for changes to take effect.");
         }
 
@@ -196,74 +326,89 @@ it. See [Field Feedback](specification.md#field-feedback) for the full contract.
 frame, after control edits and before row end. Keep it fast and side-effect-free;
 Reset is reflected next frame.
 
-### Compatibility
+## Sections
 
-Existing `SettingsRowScope`, `BeginSettingsRow`, and `EndSettingsRow` code works
-unchanged after rebuilding for ABI 2. `FieldScope` is optional for standalone
-fields and feedback. All host and UI operations share one ABI version.
+`dmui::ui::SectionScope` draws a section header and its content. Pass an `id`, a
+`title`, and optionally a `glyph` (zero infers an icon from the title,
+`PhosphorGlyph::kNone` draws none), `box` for the themed panel, a `count`, and a
+caller-owned `expanded` flag that makes the section collapsible.
 
-## Choice Dropdowns (`dmui::DrawChoice`)
+```cpp
+static bool advancedOpen = true;
+dmui::ui::SectionScope advanced{ {
+    .id = "advanced",
+    .title = "Advanced",
+    .box = true,
+    .expanded = &advancedOpen
+} };
+if (advanced) {
+    // Draw the content; the host collapsed it when this is false.
+}
+```
 
-`dmui::DrawChoice` renders a type-deduced dropdown from an array or span of options:
+A section without a title and glyph is a plain rule. `FaqEntry::expanded` is the
+same caller-owned state for each `DrawFaq` row.
+
+## Choice Dropdowns (`dmui::ui::Choice`)
+
+`dmui::ui::Choice` renders the one dropdown from an array or span of options. No
+label is drawn beside it; put it in a `FieldScope` or settings row for the label:
 
 ```cpp
 const std::array options{
     dmui::ChoiceOption<int>{ 0, "Low Quality", "low", true },
-    dmui::ChoiceOption<int>{ 1, "Medium Quality", "med", true },
+    dmui::ChoiceOption<int>{ 1, "Medium Quality", "med", true, "Balanced" },
     dmui::ChoiceOption<int>{ 2, "High Quality", "high", true }
 };
 
-auto choice = dmui::DrawChoice(
+dmui::FieldScope field{ client, "quality", "Graphics Preset" };
+auto choice = dmui::ui::Choice(
     "quality_combo",
     currentQuality,
     options,
-    "Custom",          // Fallback text if currentQuality matches no option
-    "Graphics Preset"  // Label drawn beside combo
+    "Custom"   // Preview when currentQuality matches no option
 );
+(void)field.End();
 
 if (choice.changed && choice.selected) {
     currentQuality = *choice.selected;
 }
 ```
 
+An option's description shows as its tooltip. The raw form takes `dmui::ChoiceOptions`
+with `dmui::ChoiceItem` entries and an index.
+
 ## Typography and Styled Text
 
-### Formatted Text and Tones
+### Styled Text Spans
 
-`dmui::DrawStyledText` applies host theme colors and text wrapping:
+`dmui::ui::Text(text, spans, options)` draws one item of styled text. Spans are
+byte ranges of the one text; each can set foreground and background tones or
+colors, a font role, bold, italic, underline, and strikethrough, and the host
+lays the runs out inline and wraps across them. `dmui::StyledText` composes the
+text and records the ranges:
 
 ```cpp
-dmui::DrawStyledText(
-    client,
-    "Configuration loaded successfully.",
-    {
-        .tone = dmui::TextTone::kSuccess,
-        .wrapped = true
-    });
+dmui::StyledText text;
+text.Append("Renderer Backend", dmui::TextStyle{}.Bold())
+    .Append("  ")
+    .Append("Direct3D 11", dmui::TextStyle{}.Tone(dmui::TextTone::kAccent));
+dmui::ui::Text(text, { .wrap = true });
+
+// One style over the whole string.
+dmui::ui::Text("Restart required", dmui::TextStyle{}.Tone(dmui::TextTone::kWarning));
 ```
+
+`TextOptions::wrap` breaks lines at the content region, or at `wrapWidth` when
+it is positive. `TextOptions::bullet` draws a bullet and indents the item.
+The text and spans are borrowed for the call.
 
 Available tones in `dmui::TextTone`:
 - `kInherit`: Uses active text color.
-- `kSuccess`: Green status tone.
-- `kWarning`: Yellow warning tone.
-- `kError`: Red error tone.
+- `kSuccess`, `kWarning`, `kError`, `kInfo`: Status tones.
 - `kAccent`, `kAccentMuted`: Host accent colors.
-- `kMuted`: Subdued body text tone.
-
-### Labeled Values
-
-`dmui::DrawLabeledValue` creates inline key-value pairs:
-
-```cpp
-dmui::DrawLabeledValue(
-    client,
-    "Renderer Backend",
-    "Direct3D 11",
-    {
-        .valueStyle = { .tone = dmui::TextTone::kAccent },
-        .spacingScale = 2.0f
-    });
-```
+- `kMuted`, `kDisabled`: Subdued body text tones.
+- `kRestartNeeded`, `kCurrentHotkey`: Settings-specific tones.
 
 ### Font Roles (`dmui::FontGuard`)
 
@@ -286,8 +431,10 @@ Available roles:
 - `DMUI_FONT_ROLE_SUBTEXT`
 - `DMUI_FONT_ROLE_MONOSPACE`
 
-The monospace role is always the host's built-in default-vector font, provisioned
-through `AddFontDefaultVector`. It does not fall back to a proportional family.
+The monospace role is the host's monospace family (JetBrains Mono by default, with
+bold and italic faces), which the user can change in the settings. The built-in
+vector font is the fallback when that family is not installed; the role does not
+fall back to a proportional family.
 
 ## Notifications and Status
 

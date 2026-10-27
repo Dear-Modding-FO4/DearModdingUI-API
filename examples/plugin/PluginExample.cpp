@@ -67,64 +67,60 @@ namespace
 		.iconName = "chart-line"
 	};
 
+	// Bold label, then the value in the given tone, as one wrapped line.
+	void DrawLabeledValue(std::string_view a_label, std::string_view a_value, dmui::TextTone a_tone)
+	{
+		dmui::StyledText text;
+		text.Append(a_label, dmui::TextStyle{}.Bold())
+			.Append("  ")
+			.Append(a_value, dmui::TextStyle{}.Tone(a_tone));
+		dmui::ui::Text(text);
+	}
+
+	void DrawMutedNote(std::string_view a_text)
+	{
+		dmui::ui::Text(a_text, dmui::TextStyle{}.Tone(dmui::TextTone::kMuted), { .wrap = true });
+	}
+
 	// Page 1: Overview & Status
 	void DrawOverviewPage(dmui::Client& a_client)
 	{
-		(void)a_client.DrawSectionHeader("Active Environment");
+		const dmui::ui::SectionScope section{ { .id = "environment", .title = "Active Environment" } };
 
-		(void)dmui::DrawStyledText(
-			a_client,
+		dmui::ui::Text(
 			"Lighting runtime operating normally with hardware acceleration.",
-			{
-				.tone = dmui::TextTone::kSuccess,
-				.wrapped = true
-			});
+			dmui::TextStyle{}.Tone(dmui::TextTone::kSuccess),
+			{ .wrap = true });
 
 		dmui::ui::Spacing();
 
-		(void)dmui::DrawLabeledValue(
-			a_client,
-			"Volumetric Engine",
-			"Active (Direct3D 11)",
-			{
-				.valueStyle = { .tone = dmui::TextTone::kSuccess },
-				.spacingScale = 2.0f
-			});
-
-		(void)dmui::DrawLabeledValue(
-			a_client,
+		DrawLabeledValue("Volumetric Engine", "Active (Direct3D 11)", dmui::TextTone::kSuccess);
+		DrawLabeledValue(
 			"Selected Preset",
-			g_presetOptions[static_cast<size_t>(g_settings.activePresetIndex)].label.c_str(),
-			{
-				.valueStyle = { .tone = dmui::TextTone::kAccent },
-				.spacingScale = 2.0f
-			});
-
-		(void)dmui::DrawLabeledValue(
-			a_client,
+			g_presetOptions[static_cast<size_t>(g_settings.activePresetIndex)].label,
+			dmui::TextTone::kAccent);
+		DrawLabeledValue(
 			"Interior Occlusion",
 			g_settings.interiorFog ? "Enabled" : "Disabled",
-			{
-				.valueStyle = {
-					.tone = g_settings.interiorFog ?
-						dmui::TextTone::kSuccess :
-						dmui::TextTone::kMuted
-				},
-				.spacingScale = 2.0f
-			});
+			g_settings.interiorFog ? dmui::TextTone::kSuccess : dmui::TextTone::kMuted);
 
 		dmui::ui::Spacing();
 		dmui::ui::Separator();
 		dmui::ui::Spacing();
 
-		if (dmui::ui::Button("Cycle Active Preset"))
+		if (dmui::ui::Button({
+				.label = "Cycle Active Preset",
+				.glyph = dmui::PhosphorGlyph::kArrowsClockwise,
+				.tooltip = "Switches to the next weather preset.",
+				.style = dmui::ButtonStyle::kPrimary
+			}))
 		{
 			g_settings.activePresetIndex = static_cast<int>(
 				(static_cast<size_t>(g_settings.activePresetIndex) + 1) %
 				g_presetOptions.size());
 
 			(void)a_client.PostNotification(
-				DMUI_STATUS_SEVERITY_SUCCESS,
+				dmui::Severity::kSuccess,
 				"Weather preset switched successfully.",
 				3000);
 		}
@@ -133,7 +129,7 @@ namespace
 	// Page 2: Two-column settings table
 	void DrawLightingSettingsPage(dmui::Client& a_client)
 	{
-		(void)a_client.DrawSectionHeader("Volumetrics and Shading");
+		const dmui::ui::SectionScope section{ { .id = "volumetrics", .title = "Volumetrics and Shading" } };
 
 		dmui::SettingsTableScope table{ a_client, "lighting_table" };
 		if (!table.Visible())
@@ -150,7 +146,12 @@ namespace
 
 			if (row.Visible())
 			{
-				(void)dmui::ui::Checkbox("##god_rays", &g_settings.enableGodRays);
+				const auto toggled = dmui::ui::Toggle({
+					.id = "god_rays",
+					.value = g_settings.enableGodRays
+				});
+				if (toggled.changed)
+					g_settings.enableGodRays = toggled.value;
 				const auto resetClicked = row.End(
 					true,
 					g_settings.enableGodRays != g_defaults.enableGodRays);
@@ -171,7 +172,12 @@ namespace
 
 			if (row.Visible())
 			{
-				(void)dmui::ui::Checkbox("##interior_fog", &g_settings.interiorFog);
+				const auto toggled = dmui::ui::Toggle({
+					.id = "interior_fog",
+					.value = g_settings.interiorFog
+				});
+				if (toggled.changed)
+					g_settings.interiorFog = toggled.value;
 				const auto resetClicked = row.End(
 					true,
 					g_settings.interiorFog != g_defaults.interiorFog);
@@ -192,14 +198,18 @@ namespace
 
 			if (row.Visible())
 			{
-				float minVal{ 0.1f };
-				float maxVal{ 3.0f };
-				(void)dmui::ui::SliderScalar(
-					"##ray_intensity",
-					&g_settings.godRayIntensity,
-					&minVal,
-					&maxVal,
-					"%.2fx");
+				const auto edited = dmui::ui::Numeric<float>({
+					.id = "ray_intensity",
+					.presentation = dmui::NumericPresentation::kSlider,
+					.value = g_settings.godRayIntensity,
+					.minimum = 0.1f,
+					.maximum = 3.0f,
+					.format = "%.2f",
+					.unit = "x",
+					.clamp = true
+				});
+				if (edited.changed)
+					g_settings.godRayIntensity = edited.value;
 
 				const auto resetClicked = row.End(
 					true,
@@ -221,14 +231,17 @@ namespace
 
 			if (row.Visible())
 			{
-				float minVal{ 0.0f };
-				float maxVal{ 1.0f };
-				(void)dmui::ui::SliderScalar(
-					"##shadow_softness",
-					&g_settings.shadowSoftness,
-					&minVal,
-					&maxVal,
-					"%.2f");
+				const auto edited = dmui::ui::Numeric<float>({
+					.id = "shadow_softness",
+					.presentation = dmui::NumericPresentation::kSlider,
+					.value = g_settings.shadowSoftness,
+					.minimum = 0.0f,
+					.maximum = 1.0f,
+					.format = "%.2f",
+					.clamp = true
+				});
+				if (edited.changed)
+					g_settings.shadowSoftness = edited.value;
 
 				const auto resetClicked = row.End(
 					true,
@@ -245,24 +258,25 @@ namespace
 	// Page 3: Presets dropdown
 	void DrawPresetsPage(dmui::Client& a_client)
 	{
-		(void)a_client.DrawSectionHeader("Preset Profiles");
+		const dmui::ui::SectionScope section{ { .id = "profiles", .title = "Preset Profiles" } };
 
 		dmui::ui::TextUnformatted(
 			"Choose a curated lighting preset for the active worldspace.");
 		dmui::ui::Spacing();
 
-		auto choice = dmui::DrawChoice(
+		dmui::FieldScope field{ a_client, "lighting_preset", "Active Color Grade" };
+		const auto choice = dmui::ui::Choice(
 			"lighting_preset_choice",
 			g_settings.activePresetIndex,
 			g_presetOptions,
-			"Custom",
-			"Active Color Grade");
+			"Custom");
+		(void)field.End();
 
 		if (choice.changed && choice.selected)
 		{
 			g_settings.activePresetIndex = *choice.selected;
 			(void)a_client.PostNotification(
-				DMUI_STATUS_SEVERITY_INFO,
+				dmui::Severity::kInfo,
 				"Selected profile applied to local cache.",
 				2500);
 		}
@@ -274,28 +288,20 @@ namespace
 		switch (g_settings.activePresetIndex)
 		{
 		case 0:
-			(void)dmui::DrawStyledText(
-				a_client,
-				"Vanilla Enhanced: True to original art direction with improved volumetric depth.",
-				{ .tone = dmui::TextTone::kMuted, .wrapped = true });
+			DrawMutedNote(
+				"Vanilla Enhanced: True to original art direction with improved volumetric depth.");
 			break;
 		case 1:
-			(void)dmui::DrawStyledText(
-				a_client,
-				"Bleak Wasteland: Desaturated color tones with cold ambient fog.",
-				{ .tone = dmui::TextTone::kMuted, .wrapped = true });
+			DrawMutedNote(
+				"Bleak Wasteland: Desaturated color tones with cold ambient fog.");
 			break;
 		case 2:
-			(void)dmui::DrawStyledText(
-				a_client,
-				"Vibrant Commonwealth: Warmer highlights, deeper greens, and vibrant sky gradients.",
-				{ .tone = dmui::TextTone::kMuted, .wrapped = true });
+			DrawMutedNote(
+				"Vibrant Commonwealth: Warmer highlights, deeper greens, and vibrant sky gradients.");
 			break;
 		case 3:
-			(void)dmui::DrawStyledText(
-				a_client,
-				"Cinematic Noir: Crushed blacks with high contrast directional key lights.",
-				{ .tone = dmui::TextTone::kMuted, .wrapped = true });
+			DrawMutedNote(
+				"Cinematic Noir: Crushed blacks with high contrast directional key lights.");
 			break;
 		default:
 			break;
@@ -305,7 +311,7 @@ namespace
 	// Page 4: Telemetry & diagnostics
 	void DrawDiagnosticsPage(dmui::Client& a_client)
 	{
-		(void)a_client.DrawSectionHeader("Performance & Telemetry");
+		const dmui::ui::SectionScope section{ { .id = "telemetry", .title = "Performance & Telemetry" } };
 
 		dmui::ui::TextUnformatted("Frame duration samples (last 60 frames, ms):");
 		dmui::ui::PlotLines(
@@ -320,19 +326,19 @@ namespace
 
 		dmui::ui::Spacing();
 
-		if (dmui::ui::Button("Trigger Test Warning"))
+		if (dmui::ui::Button({ .label = "Trigger Test Warning" }))
 		{
 			(void)a_client.SetStatus(
-				DMUI_STATUS_SEVERITY_WARNING,
+				dmui::Severity::kWarning,
 				"Ambient occlusion resolution clamped due to VRAM threshold.");
 		}
 
 		dmui::ui::SameLine();
 
-		if (dmui::ui::Button("Clear Status Message"))
+		if (dmui::ui::Button({ .label = "Clear Status Message" }))
 		{
 			(void)a_client.SetStatus(
-				DMUI_STATUS_SEVERITY_INFO,
+				dmui::Severity::kInfo,
 				"All systems operating within nominal limits.");
 		}
 	}
@@ -428,9 +434,11 @@ namespace
 		if (g_console.popupOpen)
 			flags |= Flags::kCaptureCancel;
 		dmui::ui::TextEditState state{};
-		const auto edited = dmui::ui::InputTextEditor(
-			"##command", "Type a command", g_console.input, flags,
-			g_console.reloadCursor, state);
+		const auto edited = dmui::ui::InputText(
+			"##command",
+			g_console.input,
+			{ .hint = "Type a command", .editFlags = flags, .cursor = g_console.reloadCursor },
+			state);
 		g_console.reload = Flags::kNone;
 
 		const auto has = [&](Events a_event) {
@@ -474,7 +482,8 @@ namespace
 
 		// Tooltips never take focus, so typing continues in the field.
 		if (g_console.popupOpen && state.active &&
-			dmui::ui::BeginTooltipAt({ state.caretPosition.x, state.caretPosition.y + state.lineHeight }))
+			dmui::ui::BeginTooltipAt({
+				.position = { state.caretPosition.x, state.caretPosition.y + state.lineHeight } }))
 		{
 			for (size_t index = 0; index < g_console.matches.size(); ++index)
 				(void)dmui::ui::Selectable(g_console.matches[index], index == g_console.selected);
@@ -591,7 +600,7 @@ void InitializeDearModdingUI()
 		"Reloads INI configurations and color LUTs from disk.",
 		[] {
 			(void)g_client.PostNotification(
-				DMUI_STATUS_SEVERITY_SUCCESS,
+				dmui::Severity::kSuccess,
 				"Lighting presets reloaded from disk.",
 				3000);
 		});

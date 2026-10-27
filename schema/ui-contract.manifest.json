@@ -1,8 +1,8 @@
 {
   "contract": {
     "name": "DearModdingUI stable UI",
-    "abiMajor": 2,
-    "abiMinor": 2,
+    "abiMajor": 3,
+    "abiMinor": 0,
     "namespace": "dmui::ui",
     "packedColor": "RRGGBBAA"
   },
@@ -331,96 +331,6 @@
       "rejectedMask": 0
     },
     {
-      "name": "DataType",
-      "cName": "DMUI_UIDataType",
-      "kind": "value",
-      "values": [
-        {
-          "name": "S8",
-          "value": 101
-        },
-        {
-          "name": "U8",
-          "value": 102
-        },
-        {
-          "name": "S16",
-          "value": 103
-        },
-        {
-          "name": "U16",
-          "value": 104
-        },
-        {
-          "name": "S32",
-          "value": 105
-        },
-        {
-          "name": "U32",
-          "value": 106
-        },
-        {
-          "name": "S64",
-          "value": 107
-        },
-        {
-          "name": "U64",
-          "value": 108
-        },
-        {
-          "name": "Float",
-          "value": 109
-        },
-        {
-          "name": "Double",
-          "value": 110
-        }
-      ],
-      "aliases": [],
-      "rejectedMask": 0
-    },
-    {
-      "name": "ComboFlags",
-      "cName": "DMUI_UIComboFlags",
-      "kind": "flags",
-      "values": [
-        {
-          "name": "PopupAlignLeft",
-          "value": 1
-        },
-        {
-          "name": "HeightSmall",
-          "value": 2
-        },
-        {
-          "name": "HeightRegular",
-          "value": 4
-        },
-        {
-          "name": "HeightLarge",
-          "value": 8
-        },
-        {
-          "name": "HeightLargest",
-          "value": 16
-        },
-        {
-          "name": "NoArrowButton",
-          "value": 32
-        },
-        {
-          "name": "NoPreview",
-          "value": 64
-        },
-        {
-          "name": "WidthFitPreview",
-          "value": 128
-        }
-      ],
-      "aliases": [],
-      "rejectedMask": 0
-    },
-    {
       "name": "HoveredFlags",
       "cName": "DMUI_UIHoveredFlags",
       "kind": "flags",
@@ -617,52 +527,6 @@
         }
       ],
       "aliases": [],
-      "rejectedMask": 0
-    },
-    {
-      "name": "SliderFlags",
-      "cName": "DMUI_UISliderFlags",
-      "kind": "flags",
-      "values": [
-        {
-          "name": "Logarithmic",
-          "value": 1
-        },
-        {
-          "name": "NoRoundToFormat",
-          "value": 2
-        },
-        {
-          "name": "NoInput",
-          "value": 4
-        },
-        {
-          "name": "WrapAround",
-          "value": 8
-        },
-        {
-          "name": "ClampOnInput",
-          "value": 16
-        },
-        {
-          "name": "ClampZeroRange",
-          "value": 32
-        },
-        {
-          "name": "NoSpeedTweaks",
-          "value": 64
-        },
-        {
-          "name": "ColorMarkers",
-          "value": 128
-        }
-      ],
-      "aliases": [
-        {
-          "name": "AlwaysClamp",
-          "value": 48
-        }
-      ],
       "rejectedMask": 0
     },
     {
@@ -911,100 +775,6 @@
         }
       ],
       "aliases": [],
-      "rejectedMask": 0
-    },
-    {
-      "name": "TreeNodeFlags",
-      "cName": "DMUI_UITreeNodeFlags",
-      "kind": "flags",
-      "values": [
-        {
-          "name": "Selected",
-          "value": 1
-        },
-        {
-          "name": "Framed",
-          "value": 2
-        },
-        {
-          "name": "AllowOverlap",
-          "value": 4
-        },
-        {
-          "name": "NoTreePushOnOpen",
-          "value": 8
-        },
-        {
-          "name": "NoAutoOpenOnLog",
-          "value": 16
-        },
-        {
-          "name": "DefaultOpen",
-          "value": 32
-        },
-        {
-          "name": "OpenOnDoubleClick",
-          "value": 64
-        },
-        {
-          "name": "OpenOnArrow",
-          "value": 128
-        },
-        {
-          "name": "Leaf",
-          "value": 256
-        },
-        {
-          "name": "Bullet",
-          "value": 512
-        },
-        {
-          "name": "FramePadding",
-          "value": 1024
-        },
-        {
-          "name": "SpanAvailWidth",
-          "value": 2048
-        },
-        {
-          "name": "SpanFullWidth",
-          "value": 4096
-        },
-        {
-          "name": "SpanLabelWidth",
-          "value": 8192
-        },
-        {
-          "name": "SpanAllColumns",
-          "value": 16384
-        },
-        {
-          "name": "LabelSpanAllColumns",
-          "value": 32768
-        },
-        {
-          "name": "NavLeftJumpsToParent",
-          "value": 65536
-        },
-        {
-          "name": "DrawLinesNone",
-          "value": 131072
-        },
-        {
-          "name": "DrawLinesFull",
-          "value": 262144
-        },
-        {
-          "name": "DrawLinesToNodes",
-          "value": 524288
-        }
-      ],
-      "aliases": [
-        {
-          "name": "CollapsingHeader",
-          "value": 26
-        }
-      ],
       "rejectedMask": 0
     },
     {
@@ -1286,6 +1056,19 @@
       ],
       "aliases": [],
       "rejectedMask": 0
+    },
+    {
+      "name": "ShortcutFlags",
+      "cName": "DMUI_UIShortcutFlags",
+      "kind": "flags",
+      "values": [
+        {
+          "name": "Repeat",
+          "value": 1
+        }
+      ],
+      "aliases": [],
+      "rejectedMask": 0
     }
   ],
   "operations": [
@@ -1308,48 +1091,6 @@
     },
     {
       "id": 2,
-      "name": "BeginCombo",
-      "field": "beginCombo",
-      "kind": "bool",
-      "sinceMinor": 0,
-      "signature": [
-        [
-          "DMUI_ClientHandle",
-          "client"
-        ],
-        [
-          "const char*",
-          "label"
-        ],
-        [
-          "const char*",
-          "previewValue"
-        ],
-        [
-          "DMUI_UIComboFlags",
-          "flags"
-        ],
-        [
-          "uint32_t*",
-          "visible"
-        ]
-      ]
-    },
-    {
-      "id": 3,
-      "name": "EndCombo",
-      "field": "endCombo",
-      "kind": "void",
-      "sinceMinor": 0,
-      "signature": [
-        [
-          "DMUI_ClientHandle",
-          "client"
-        ]
-      ]
-    },
-    {
-      "id": 4,
       "name": "BeginDisabled",
       "field": "beginDisabled",
       "kind": "void",
@@ -1366,7 +1107,7 @@
       ]
     },
     {
-      "id": 5,
+      "id": 3,
       "name": "EndDisabled",
       "field": "endDisabled",
       "kind": "void",
@@ -1379,7 +1120,7 @@
       ]
     },
     {
-      "id": 6,
+      "id": 4,
       "name": "BeginTable",
       "field": "beginTable",
       "kind": "bool",
@@ -1416,7 +1157,7 @@
       ]
     },
     {
-      "id": 7,
+      "id": 5,
       "name": "EndTable",
       "field": "endTable",
       "kind": "void",
@@ -1429,7 +1170,7 @@
       ]
     },
     {
-      "id": 8,
+      "id": 6,
       "name": "BeginTooltip",
       "field": "beginTooltip",
       "kind": "bool",
@@ -1446,7 +1187,7 @@
       ]
     },
     {
-      "id": 9,
+      "id": 7,
       "name": "EndTooltip",
       "field": "endTooltip",
       "kind": "void",
@@ -1459,9 +1200,9 @@
       ]
     },
     {
-      "id": 10,
-      "name": "Button",
-      "field": "button",
+      "id": 8,
+      "name": "BeginItemTooltip",
+      "field": "beginItemTooltip",
       "kind": "bool",
       "sinceMinor": 0,
       "signature": [
@@ -1470,12 +1211,25 @@
           "client"
         ],
         [
-          "const char*",
-          "label"
+          "uint32_t*",
+          "visible"
+        ]
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Button",
+      "field": "button",
+      "kind": "custom",
+      "sinceMinor": 0,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
         ],
         [
-          "DMUI_Vec2",
-          "size"
+          "const DMUI_ButtonDescriptor*",
+          "button"
         ],
         [
           "uint32_t*",
@@ -1484,7 +1238,133 @@
       ]
     },
     {
+      "id": 10,
+      "name": "MeasureButton",
+      "field": "measureButton",
+      "kind": "custom",
+      "sinceMinor": 0,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const DMUI_ButtonDescriptor*",
+          "button"
+        ],
+        [
+          "DMUI_Vec2*",
+          "size"
+        ]
+      ]
+    },
+    {
       "id": 11,
+      "name": "Choice",
+      "field": "choice",
+      "kind": "custom",
+      "sinceMinor": 0,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const DMUI_ChoiceDescriptor*",
+          "choice"
+        ],
+        [
+          "DMUI_ChoiceResult*",
+          "result"
+        ]
+      ]
+    },
+    {
+      "id": 12,
+      "name": "Toggle",
+      "field": "toggle",
+      "kind": "custom",
+      "sinceMinor": 0,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const DMUI_ToggleDescriptor*",
+          "toggle"
+        ],
+        [
+          "DMUI_ToggleResult*",
+          "result"
+        ]
+      ]
+    },
+    {
+      "id": 13,
+      "name": "Numeric",
+      "field": "numeric",
+      "kind": "custom",
+      "sinceMinor": 0,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const DMUI_NumericDescriptor*",
+          "numeric"
+        ],
+        [
+          "DMUI_NumericResult*",
+          "result"
+        ]
+      ]
+    },
+    {
+      "id": 14,
+      "name": "ColorEdit",
+      "field": "colorEdit",
+      "kind": "custom",
+      "sinceMinor": 0,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const DMUI_ColorEditDescriptor*",
+          "color"
+        ],
+        [
+          "DMUI_ColorEditResult*",
+          "result"
+        ]
+      ]
+    },
+    {
+      "id": 15,
+      "name": "KeyCapture",
+      "field": "keyCapture",
+      "kind": "custom",
+      "sinceMinor": 0,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const DMUI_KeyCaptureDescriptor*",
+          "capture"
+        ],
+        [
+          "DMUI_KeyCaptureResult*",
+          "result"
+        ]
+      ]
+    },
+    {
+      "id": 16,
       "name": "CalcTextSize",
       "field": "calcTextSize",
       "kind": "vec2",
@@ -1517,147 +1397,7 @@
       ]
     },
     {
-      "id": 12,
-      "name": "Checkbox",
-      "field": "checkbox",
-      "kind": "bool_inout",
-      "sinceMinor": 0,
-      "signature": [
-        [
-          "DMUI_ClientHandle",
-          "client"
-        ],
-        [
-          "const char*",
-          "label"
-        ],
-        [
-          "uint32_t*",
-          "value"
-        ],
-        [
-          "uint32_t*",
-          "changed"
-        ]
-      ]
-    },
-    {
-      "id": 13,
-      "name": "CollapsingHeader",
-      "field": "collapsingHeader",
-      "kind": "bool",
-      "sinceMinor": 0,
-      "signature": [
-        [
-          "DMUI_ClientHandle",
-          "client"
-        ],
-        [
-          "const char*",
-          "label"
-        ],
-        [
-          "DMUI_UITreeNodeFlags",
-          "flags"
-        ],
-        [
-          "uint32_t*",
-          "open"
-        ]
-      ]
-    },
-    {
-      "id": 14,
-      "name": "CollapsingHeaderVisible",
-      "field": "collapsingHeaderVisible",
-      "kind": "bool_inout_result",
-      "sinceMinor": 0,
-      "signature": [
-        [
-          "DMUI_ClientHandle",
-          "client"
-        ],
-        [
-          "const char*",
-          "label"
-        ],
-        [
-          "uint32_t*",
-          "visible"
-        ],
-        [
-          "DMUI_UITreeNodeFlags",
-          "flags"
-        ],
-        [
-          "uint32_t*",
-          "open"
-        ]
-      ]
-    },
-    {
-      "id": 15,
-      "name": "DragScalar",
-      "field": "dragScalar",
-      "kind": "scalar",
-      "sinceMinor": 0,
-      "signature": [
-        [
-          "DMUI_ClientHandle",
-          "client"
-        ],
-        [
-          "const char*",
-          "label"
-        ],
-        [
-          "DMUI_UIDataType",
-          "dataType"
-        ],
-        [
-          "void*",
-          "data"
-        ],
-        [
-          "uint32_t",
-          "dataSize"
-        ],
-        [
-          "float",
-          "speed"
-        ],
-        [
-          "const void*",
-          "minimum"
-        ],
-        [
-          "uint32_t",
-          "minimumSize"
-        ],
-        [
-          "const void*",
-          "maximum"
-        ],
-        [
-          "uint32_t",
-          "maximumSize"
-        ],
-        [
-          "const char*",
-          "format"
-        ],
-        [
-          "DMUI_UISliderFlags",
-          "flags"
-        ],
-        [
-          "uint32_t*",
-          "changed"
-        ]
-      ]
-    },
-    {
-      "id": 16,
+      "id": 17,
       "name": "Dummy",
       "field": "dummy",
       "kind": "void",
@@ -1674,7 +1414,7 @@
       ]
     },
     {
-      "id": 17,
+      "id": 18,
       "name": "GetContentRegionAvail",
       "field": "getContentRegionAvail",
       "kind": "vec2",
@@ -1691,7 +1431,7 @@
       ]
     },
     {
-      "id": 18,
+      "id": 19,
       "name": "GetCursorScreenPos",
       "field": "getCursorScreenPos",
       "kind": "vec2",
@@ -1708,7 +1448,7 @@
       ]
     },
     {
-      "id": 19,
+      "id": 20,
       "name": "GetFontSize",
       "field": "getFontSize",
       "kind": "float",
@@ -1725,7 +1465,7 @@
       ]
     },
     {
-      "id": 20,
+      "id": 21,
       "name": "GetFrameHeight",
       "field": "getFrameHeight",
       "kind": "float",
@@ -1742,7 +1482,7 @@
       ]
     },
     {
-      "id": 21,
+      "id": 22,
       "name": "GetStyleColor",
       "field": "getStyleColor",
       "kind": "vec4",
@@ -1763,7 +1503,7 @@
       ]
     },
     {
-      "id": 22,
+      "id": 23,
       "name": "GetTextLineHeightWithSpacing",
       "field": "getTextLineHeightWithSpacing",
       "kind": "float",
@@ -1780,7 +1520,7 @@
       ]
     },
     {
-      "id": 23,
+      "id": 24,
       "name": "Indent",
       "field": "indent",
       "kind": "void",
@@ -1797,63 +1537,6 @@
       ]
     },
     {
-      "id": 24,
-      "name": "InputScalar",
-      "field": "inputScalar",
-      "kind": "scalar",
-      "sinceMinor": 0,
-      "signature": [
-        [
-          "DMUI_ClientHandle",
-          "client"
-        ],
-        [
-          "const char*",
-          "label"
-        ],
-        [
-          "DMUI_UIDataType",
-          "dataType"
-        ],
-        [
-          "void*",
-          "data"
-        ],
-        [
-          "uint32_t",
-          "dataSize"
-        ],
-        [
-          "const void*",
-          "step"
-        ],
-        [
-          "uint32_t",
-          "stepSize"
-        ],
-        [
-          "const void*",
-          "fastStep"
-        ],
-        [
-          "uint32_t",
-          "fastStepSize"
-        ],
-        [
-          "const char*",
-          "format"
-        ],
-        [
-          "DMUI_UIInputTextFlags",
-          "flags"
-        ],
-        [
-          "uint32_t*",
-          "changed"
-        ]
-      ]
-    },
-    {
       "id": 25,
       "name": "InputText",
       "field": "inputText",
@@ -1866,102 +1549,24 @@
         ],
         [
           "const char*",
-          "label"
+          "id"
         ],
         [
-          "char*",
+          "DMUI_TextBuffer*",
           "buffer"
         ],
         [
-          "uint32_t",
-          "capacity"
+          "const DMUI_TextFieldOptions*",
+          "options"
         ],
         [
-          "DMUI_UIInputTextFlags",
-          "flags"
-        ],
-        [
-          "uint32_t*",
-          "changed"
+          "DMUI_TextEditState*",
+          "state"
         ]
       ]
     },
     {
       "id": 26,
-      "name": "InputTextMultiline",
-      "field": "inputTextMultiline",
-      "kind": "input_text",
-      "sinceMinor": 0,
-      "signature": [
-        [
-          "DMUI_ClientHandle",
-          "client"
-        ],
-        [
-          "const char*",
-          "label"
-        ],
-        [
-          "char*",
-          "buffer"
-        ],
-        [
-          "uint32_t",
-          "capacity"
-        ],
-        [
-          "DMUI_Vec2",
-          "size"
-        ],
-        [
-          "DMUI_UIInputTextFlags",
-          "flags"
-        ],
-        [
-          "uint32_t*",
-          "changed"
-        ]
-      ]
-    },
-    {
-      "id": 27,
-      "name": "InputTextWithHint",
-      "field": "inputTextWithHint",
-      "kind": "input_text",
-      "sinceMinor": 0,
-      "signature": [
-        [
-          "DMUI_ClientHandle",
-          "client"
-        ],
-        [
-          "const char*",
-          "label"
-        ],
-        [
-          "const char*",
-          "hint"
-        ],
-        [
-          "char*",
-          "buffer"
-        ],
-        [
-          "uint32_t",
-          "capacity"
-        ],
-        [
-          "DMUI_UIInputTextFlags",
-          "flags"
-        ],
-        [
-          "uint32_t*",
-          "changed"
-        ]
-      ]
-    },
-    {
-      "id": 28,
       "name": "IsItemDeactivatedAfterEdit",
       "field": "isItemDeactivatedAfterEdit",
       "kind": "bool",
@@ -1978,7 +1583,7 @@
       ]
     },
     {
-      "id": 29,
+      "id": 27,
       "name": "IsItemHovered",
       "field": "isItemHovered",
       "kind": "bool",
@@ -1999,7 +1604,7 @@
       ]
     },
     {
-      "id": 30,
+      "id": 28,
       "name": "PopID",
       "field": "popID",
       "kind": "void",
@@ -2012,24 +1617,7 @@
       ]
     },
     {
-      "id": 31,
-      "name": "PopStyleColor",
-      "field": "popStyleColor",
-      "kind": "void",
-      "sinceMinor": 0,
-      "signature": [
-        [
-          "DMUI_ClientHandle",
-          "client"
-        ],
-        [
-          "int32_t",
-          "count"
-        ]
-      ]
-    },
-    {
-      "id": 32,
+      "id": 29,
       "name": "PopTextWrapPos",
       "field": "popTextWrapPos",
       "kind": "void",
@@ -2042,7 +1630,7 @@
       ]
     },
     {
-      "id": 33,
+      "id": 30,
       "name": "ProgressBar",
       "field": "progressBar",
       "kind": "void",
@@ -2071,7 +1659,7 @@
       ]
     },
     {
-      "id": 34,
+      "id": 31,
       "name": "PushIDString",
       "field": "pushIDString",
       "kind": "void",
@@ -2088,7 +1676,7 @@
       ]
     },
     {
-      "id": 35,
+      "id": 32,
       "name": "PushIDRange",
       "field": "pushIDRange",
       "kind": "void",
@@ -2109,7 +1697,7 @@
       ]
     },
     {
-      "id": 36,
+      "id": 33,
       "name": "PushIDValue",
       "field": "pushIDValue",
       "kind": "void",
@@ -2126,49 +1714,7 @@
       ]
     },
     {
-      "id": 37,
-      "name": "PushStyleColorU32",
-      "field": "pushStyleColorU32",
-      "kind": "void",
-      "sinceMinor": 0,
-      "signature": [
-        [
-          "DMUI_ClientHandle",
-          "client"
-        ],
-        [
-          "DMUI_UIColor",
-          "color"
-        ],
-        [
-          "uint32_t",
-          "rgba"
-        ]
-      ]
-    },
-    {
-      "id": 38,
-      "name": "PushStyleColor",
-      "field": "pushStyleColor",
-      "kind": "void",
-      "sinceMinor": 0,
-      "signature": [
-        [
-          "DMUI_ClientHandle",
-          "client"
-        ],
-        [
-          "DMUI_UIColor",
-          "color"
-        ],
-        [
-          "DMUI_Vec4",
-          "value"
-        ]
-      ]
-    },
-    {
-      "id": 39,
+      "id": 34,
       "name": "PushTextWrapPos",
       "field": "pushTextWrapPos",
       "kind": "void",
@@ -2185,7 +1731,7 @@
       ]
     },
     {
-      "id": 40,
+      "id": 35,
       "name": "SameLine",
       "field": "sameLine",
       "kind": "void",
@@ -2206,7 +1752,7 @@
       ]
     },
     {
-      "id": 41,
+      "id": 36,
       "name": "Selectable",
       "field": "selectable",
       "kind": "bool",
@@ -2239,7 +1785,7 @@
       ]
     },
     {
-      "id": 42,
+      "id": 37,
       "name": "SelectableToggle",
       "field": "selectableToggle",
       "kind": "bool_inout_result",
@@ -2272,7 +1818,7 @@
       ]
     },
     {
-      "id": 43,
+      "id": 38,
       "name": "Separator",
       "field": "separator",
       "kind": "void",
@@ -2285,7 +1831,7 @@
       ]
     },
     {
-      "id": 44,
+      "id": 39,
       "name": "SetClipboardText",
       "field": "setClipboardText",
       "kind": "void",
@@ -2306,7 +1852,7 @@
       ]
     },
     {
-      "id": 45,
+      "id": 40,
       "name": "SetCursorScreenPos",
       "field": "setCursorScreenPos",
       "kind": "void",
@@ -2323,7 +1869,7 @@
       ]
     },
     {
-      "id": 46,
+      "id": 41,
       "name": "SetItemDefaultFocus",
       "field": "setItemDefaultFocus",
       "kind": "void",
@@ -2336,7 +1882,7 @@
       ]
     },
     {
-      "id": 47,
+      "id": 42,
       "name": "SetNextItemWidth",
       "field": "setNextItemWidth",
       "kind": "void",
@@ -2353,85 +1899,7 @@
       ]
     },
     {
-      "id": 48,
-      "name": "SetTooltipText",
-      "field": "setTooltipText",
-      "kind": "text",
-      "sinceMinor": 0,
-      "signature": [
-        [
-          "DMUI_ClientHandle",
-          "client"
-        ],
-        [
-          "const char*",
-          "text"
-        ],
-        [
-          "size_t",
-          "textLength"
-        ]
-      ]
-    },
-    {
-      "id": 49,
-      "name": "SliderScalar",
-      "field": "sliderScalar",
-      "kind": "scalar",
-      "sinceMinor": 0,
-      "signature": [
-        [
-          "DMUI_ClientHandle",
-          "client"
-        ],
-        [
-          "const char*",
-          "label"
-        ],
-        [
-          "DMUI_UIDataType",
-          "dataType"
-        ],
-        [
-          "void*",
-          "data"
-        ],
-        [
-          "uint32_t",
-          "dataSize"
-        ],
-        [
-          "const void*",
-          "minimum"
-        ],
-        [
-          "uint32_t",
-          "minimumSize"
-        ],
-        [
-          "const void*",
-          "maximum"
-        ],
-        [
-          "uint32_t",
-          "maximumSize"
-        ],
-        [
-          "const char*",
-          "format"
-        ],
-        [
-          "DMUI_UISliderFlags",
-          "flags"
-        ],
-        [
-          "uint32_t*",
-          "changed"
-        ]
-      ]
-    },
-    {
-      "id": 50,
+      "id": 43,
       "name": "Spacing",
       "field": "spacing",
       "kind": "void",
@@ -2444,7 +1912,7 @@
       ]
     },
     {
-      "id": 51,
+      "id": 44,
       "name": "TableHeadersRow",
       "field": "tableHeadersRow",
       "kind": "void",
@@ -2457,7 +1925,7 @@
       ]
     },
     {
-      "id": 52,
+      "id": 45,
       "name": "TableNextColumn",
       "field": "tableNextColumn",
       "kind": "bool",
@@ -2474,7 +1942,7 @@
       ]
     },
     {
-      "id": 53,
+      "id": 46,
       "name": "TableNextRow",
       "field": "tableNextRow",
       "kind": "void",
@@ -2495,7 +1963,7 @@
       ]
     },
     {
-      "id": 54,
+      "id": 47,
       "name": "TableSetColumnIndex",
       "field": "tableSetColumnIndex",
       "kind": "bool",
@@ -2516,7 +1984,7 @@
       ]
     },
     {
-      "id": 55,
+      "id": 48,
       "name": "TableSetupColumn",
       "field": "tableSetupColumn",
       "kind": "void",
@@ -2545,7 +2013,7 @@
       ]
     },
     {
-      "id": 56,
+      "id": 49,
       "name": "TableSetupScrollFreeze",
       "field": "tableSetupScrollFreeze",
       "kind": "void",
@@ -2566,10 +2034,10 @@
       ]
     },
     {
-      "id": 57,
+      "id": 50,
       "name": "Text",
       "field": "text",
-      "kind": "text",
+      "kind": "custom",
       "sinceMinor": 0,
       "signature": [
         [
@@ -2583,78 +2051,23 @@
         [
           "size_t",
           "textLength"
+        ],
+        [
+          "const DMUI_TextSpan*",
+          "spans"
+        ],
+        [
+          "uint32_t",
+          "spanCount"
+        ],
+        [
+          "const DMUI_TextOptions*",
+          "options"
         ]
       ]
     },
     {
-      "id": 58,
-      "name": "TextColored",
-      "field": "textColored",
-      "kind": "text",
-      "sinceMinor": 0,
-      "signature": [
-        [
-          "DMUI_ClientHandle",
-          "client"
-        ],
-        [
-          "DMUI_Vec4",
-          "color"
-        ],
-        [
-          "const char*",
-          "text"
-        ],
-        [
-          "size_t",
-          "textLength"
-        ]
-      ]
-    },
-    {
-      "id": 59,
-      "name": "TextDisabled",
-      "field": "textDisabled",
-      "kind": "text",
-      "sinceMinor": 0,
-      "signature": [
-        [
-          "DMUI_ClientHandle",
-          "client"
-        ],
-        [
-          "const char*",
-          "text"
-        ],
-        [
-          "size_t",
-          "textLength"
-        ]
-      ]
-    },
-    {
-      "id": 60,
-      "name": "TextWrapped",
-      "field": "textWrapped",
-      "kind": "text",
-      "sinceMinor": 0,
-      "signature": [
-        [
-          "DMUI_ClientHandle",
-          "client"
-        ],
-        [
-          "const char*",
-          "text"
-        ],
-        [
-          "size_t",
-          "textLength"
-        ]
-      ]
-    },
-    {
-      "id": 61,
+      "id": 51,
       "name": "Unindent",
       "field": "unindent",
       "kind": "void",
@@ -2671,7 +2084,7 @@
       ]
     },
     {
-      "id": 62,
+      "id": 52,
       "name": "NewLine",
       "field": "newLine",
       "kind": "void",
@@ -2684,7 +2097,7 @@
       ]
     },
     {
-      "id": 63,
+      "id": 53,
       "name": "PlotLines",
       "field": "plotLines",
       "kind": "plot",
@@ -2737,7 +2150,7 @@
       ]
     },
     {
-      "id": 64,
+      "id": 54,
       "name": "PushStyleVarFloat",
       "field": "pushStyleVarFloat",
       "kind": "void",
@@ -2758,7 +2171,7 @@
       ]
     },
     {
-      "id": 65,
+      "id": 55,
       "name": "PushStyleVarVec2",
       "field": "pushStyleVarVec2",
       "kind": "void",
@@ -2779,7 +2192,7 @@
       ]
     },
     {
-      "id": 66,
+      "id": 56,
       "name": "PopStyleVar",
       "field": "popStyleVar",
       "kind": "void",
@@ -2796,7 +2209,7 @@
       ]
     },
     {
-      "id": 67,
+      "id": 57,
       "name": "ListClipperBegin",
       "field": "listClipperBegin",
       "kind": "handle",
@@ -2821,7 +2234,7 @@
       ]
     },
     {
-      "id": 68,
+      "id": 58,
       "name": "ListClipperStep",
       "field": "listClipperStep",
       "kind": "list_clipper_step",
@@ -2850,7 +2263,7 @@
       ]
     },
     {
-      "id": 69,
+      "id": 59,
       "name": "ListClipperEnd",
       "field": "listClipperEnd",
       "kind": "void",
@@ -2867,7 +2280,7 @@
       ]
     },
     {
-      "id": 70,
+      "id": 60,
       "name": "Image",
       "field": "image",
       "kind": "custom",
@@ -2892,7 +2305,7 @@
       ]
     },
     {
-      "id": 71,
+      "id": 61,
       "name": "PlotAnnotated",
       "field": "plotAnnotated",
       "kind": "custom",
@@ -2913,7 +2326,7 @@
       ]
     },
     {
-      "id": 72,
+      "id": 62,
       "name": "GetCursorPos",
       "field": "getCursorPos",
       "kind": "custom",
@@ -2930,7 +2343,7 @@
       ]
     },
     {
-      "id": 73,
+      "id": 63,
       "name": "SetCursorPos",
       "field": "setCursorPos",
       "kind": "custom",
@@ -2947,7 +2360,7 @@
       ]
     },
     {
-      "id": 74,
+      "id": 64,
       "name": "TextAligned",
       "field": "textAligned",
       "kind": "custom",
@@ -2976,7 +2389,7 @@
       ]
     },
     {
-      "id": 75,
+      "id": 65,
       "name": "OpenPopup",
       "field": "openPopup",
       "kind": "void",
@@ -2993,7 +2406,7 @@
       ]
     },
     {
-      "id": 76,
+      "id": 66,
       "name": "BeginPopup",
       "field": "beginPopup",
       "kind": "bool",
@@ -3018,7 +2431,7 @@
       ]
     },
     {
-      "id": 77,
+      "id": 67,
       "name": "BeginPopupModal",
       "field": "beginPopupModal",
       "kind": "custom",
@@ -3051,7 +2464,7 @@
       ]
     },
     {
-      "id": 78,
+      "id": 68,
       "name": "EndPopup",
       "field": "endPopup",
       "kind": "void",
@@ -3064,7 +2477,7 @@
       ]
     },
     {
-      "id": 79,
+      "id": 69,
       "name": "CloseCurrentPopup",
       "field": "closeCurrentPopup",
       "kind": "void",
@@ -3077,7 +2490,7 @@
       ]
     },
     {
-      "id": 80,
+      "id": 70,
       "name": "IsPopupOpen",
       "field": "isPopupOpen",
       "kind": "bool",
@@ -3098,7 +2511,7 @@
       ]
     },
     {
-      "id": 81,
+      "id": 71,
       "name": "DrawListAddLine",
       "field": "drawListAddLine",
       "kind": "void",
@@ -3131,7 +2544,7 @@
       ]
     },
     {
-      "id": 82,
+      "id": 72,
       "name": "DrawListAddRect",
       "field": "drawListAddRect",
       "kind": "void",
@@ -3168,7 +2581,7 @@
       ]
     },
     {
-      "id": 83,
+      "id": 73,
       "name": "DrawListAddRectFilled",
       "field": "drawListAddRectFilled",
       "kind": "void",
@@ -3201,7 +2614,7 @@
       ]
     },
     {
-      "id": 84,
+      "id": 74,
       "name": "DrawListAddCircle",
       "field": "drawListAddCircle",
       "kind": "void",
@@ -3238,7 +2651,7 @@
       ]
     },
     {
-      "id": 85,
+      "id": 75,
       "name": "DrawListAddCircleFilled",
       "field": "drawListAddCircleFilled",
       "kind": "void",
@@ -3271,7 +2684,7 @@
       ]
     },
     {
-      "id": 86,
+      "id": 76,
       "name": "DrawListAddTriangle",
       "field": "drawListAddTriangle",
       "kind": "void",
@@ -3308,7 +2721,7 @@
       ]
     },
     {
-      "id": 87,
+      "id": 77,
       "name": "DrawListAddTriangleFilled",
       "field": "drawListAddTriangleFilled",
       "kind": "void",
@@ -3341,7 +2754,7 @@
       ]
     },
     {
-      "id": 88,
+      "id": 78,
       "name": "DrawListAddBezierCubic",
       "field": "drawListAddBezierCubic",
       "kind": "void",
@@ -3386,7 +2799,7 @@
       ]
     },
     {
-      "id": 89,
+      "id": 79,
       "name": "DrawListAddPolyline",
       "field": "drawListAddPolyline",
       "kind": "void",
@@ -3423,7 +2836,7 @@
       ]
     },
     {
-      "id": 90,
+      "id": 80,
       "name": "DrawListAddPolygonFilled",
       "field": "drawListAddPolygonFilled",
       "kind": "void",
@@ -3452,7 +2865,7 @@
       ]
     },
     {
-      "id": 91,
+      "id": 81,
       "name": "DrawListAddText",
       "field": "drawListAddText",
       "kind": "void",
@@ -3489,7 +2902,7 @@
       ]
     },
     {
-      "id": 92,
+      "id": 82,
       "name": "DrawListAddImage",
       "field": "drawListAddImage",
       "kind": "void",
@@ -3530,7 +2943,7 @@
       ]
     },
     {
-      "id": 93,
+      "id": 83,
       "name": "DrawListPushClipRect",
       "field": "drawListPushClipRect",
       "kind": "void",
@@ -3559,7 +2972,7 @@
       ]
     },
     {
-      "id": 94,
+      "id": 84,
       "name": "DrawListPopClipRect",
       "field": "drawListPopClipRect",
       "kind": "void",
@@ -3576,9 +2989,9 @@
       ]
     },
     {
-      "id": 95,
-      "name": "GetThemeColors",
-      "field": "getThemeColors",
+      "id": 85,
+      "name": "GetThemeTokens",
+      "field": "getThemeTokens",
       "kind": "custom",
       "sinceMinor": 0,
       "signature": [
@@ -3587,13 +3000,13 @@
           "client"
         ],
         [
-          "DMUI_ThemeColors*",
-          "colors"
+          "DMUI_ThemeTokens*",
+          "tokens"
         ]
       ]
     },
     {
-      "id": 96,
+      "id": 86,
       "name": "BeginPanel",
       "field": "beginPanel",
       "kind": "bool",
@@ -3622,7 +3035,7 @@
       ]
     },
     {
-      "id": 97,
+      "id": 87,
       "name": "EndPanel",
       "field": "endPanel",
       "kind": "void",
@@ -3635,64 +3048,19 @@
       ]
     },
     {
-      "id": 98,
-      "name": "InputTextEditor",
-      "field": "inputTextEditor",
-      "kind": "input_text",
-      "sinceMinor": 1,
-      "signature": [
-        [
-          "DMUI_ClientHandle",
-          "client"
-        ],
-        [
-          "const char*",
-          "label"
-        ],
-        [
-          "const char*",
-          "hint"
-        ],
-        [
-          "DMUI_TextBuffer*",
-          "buffer"
-        ],
-        [
-          "DMUI_UIInputTextFlags",
-          "flags"
-        ],
-        [
-          "DMUI_UITextEditFlags",
-          "editFlags"
-        ],
-        [
-          "size_t",
-          "cursor"
-        ],
-        [
-          "DMUI_TextEditState*",
-          "state"
-        ]
-      ]
-    },
-    {
-      "id": 99,
-      "name": "BeginTooltipAt",
-      "field": "beginTooltipAt",
+      "id": 88,
+      "name": "BeginSection",
+      "field": "beginSection",
       "kind": "bool",
-      "sinceMinor": 1,
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
           "client"
         ],
         [
-          "DMUI_Vec2",
-          "position"
-        ],
-        [
-          "DMUI_Vec2",
-          "pivot"
+          "const DMUI_SectionDescriptor*",
+          "section"
         ],
         [
           "uint32_t*",
@@ -3701,11 +3069,45 @@
       ]
     },
     {
-      "id": 100,
+      "id": 89,
+      "name": "EndSection",
+      "field": "endSection",
+      "kind": "void",
+      "sinceMinor": 0,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ]
+      ]
+    },
+    {
+      "id": 90,
+      "name": "BeginTooltipAt",
+      "field": "beginTooltipAt",
+      "kind": "bool",
+      "sinceMinor": 0,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_Placement",
+          "placement"
+        ],
+        [
+          "uint32_t*",
+          "visible"
+        ]
+      ]
+    },
+    {
+      "id": 91,
       "name": "GetPointerState",
       "field": "getPointerState",
       "kind": "custom",
-      "sinceMinor": 2,
+      "sinceMinor": 0,
       "signature": [
         [
           "DMUI_ClientHandle",
@@ -3716,11 +3118,116 @@
           "state"
         ]
       ]
+    },
+    {
+      "id": 92,
+      "name": "BeginPopupAt",
+      "field": "beginPopupAt",
+      "kind": "bool",
+      "sinceMinor": 0,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "id"
+        ],
+        [
+          "DMUI_Placement",
+          "placement"
+        ],
+        [
+          "DMUI_UIWindowFlags",
+          "flags"
+        ],
+        [
+          "uint32_t*",
+          "visible"
+        ]
+      ]
+    },
+    {
+      "id": 93,
+      "name": "GetTime",
+      "field": "getTime",
+      "kind": "double",
+      "sinceMinor": 0,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "double*",
+          "seconds"
+        ]
+      ]
+    },
+    {
+      "id": 94,
+      "name": "GetDeltaTime",
+      "field": "getDeltaTime",
+      "kind": "float",
+      "sinceMinor": 0,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "float*",
+          "seconds"
+        ]
+      ]
+    },
+    {
+      "id": 95,
+      "name": "Spinner",
+      "field": "spinner",
+      "kind": "custom",
+      "sinceMinor": 0,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const DMUI_SpinnerDescriptor*",
+          "spinner"
+        ]
+      ]
+    },
+    {
+      "id": 96,
+      "name": "Shortcut",
+      "field": "shortcut",
+      "kind": "custom",
+      "sinceMinor": 0,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "const char*",
+          "chord"
+        ],
+        [
+          "DMUI_UIShortcutFlags",
+          "flags"
+        ],
+        [
+          "uint32_t*",
+          "pressed"
+        ]
+      ]
     }
   ],
   "host": {
     "defines": {
-      "DMUI_ABI_MAJOR": "2u",
+      "DMUI_ABI_MAJOR": "3u",
       "DMUI_RESULT_OK": "0u",
       "DMUI_RESULT_UNSUPPORTED_ABI": "1u",
       "DMUI_RESULT_INVALID_ARGUMENT": "2u",
@@ -3774,10 +3281,10 @@
       "DMUI_UNAVAILABLE_BACKEND_FAILED": "2u",
       "DMUI_PAGE_KIND_SETTINGS": "1u",
       "DMUI_PAGE_KIND_OVERLAY": "2u",
-      "DMUI_STATUS_SEVERITY_INFO": "0u",
-      "DMUI_STATUS_SEVERITY_SUCCESS": "1u",
-      "DMUI_STATUS_SEVERITY_WARNING": "2u",
-      "DMUI_STATUS_SEVERITY_ERROR": "3u",
+      "DMUI_SEVERITY_INFO": "0u",
+      "DMUI_SEVERITY_SUCCESS": "1u",
+      "DMUI_SEVERITY_WARNING": "2u",
+      "DMUI_SEVERITY_ERROR": "3u",
       "DMUI_FONT_ROLE_BODY": "0u",
       "DMUI_FONT_ROLE_TITLE": "1u",
       "DMUI_FONT_ROLE_HEADING": "2u",
@@ -3785,9 +3292,69 @@
       "DMUI_FONT_ROLE_SUBTEXT": "4u",
       "DMUI_FONT_ROLE_MONOSPACE": "5u",
       "DMUI_FONT_ROLE_COUNT": "6u",
-      "DMUI_SETTINGS_ACTION_RESET": "0u",
-      "DMUI_SETTINGS_ACTION_REVERT": "1u",
-      "DMUI_SETTINGS_ACTION_APPLY": "2u",
+      "DMUI_TEXT_TONE_INHERIT": "0u",
+      "DMUI_TEXT_TONE_MUTED": "1u",
+      "DMUI_TEXT_TONE_ACCENT": "2u",
+      "DMUI_TEXT_TONE_ACCENT_MUTED": "3u",
+      "DMUI_TEXT_TONE_INFO": "4u",
+      "DMUI_TEXT_TONE_SUCCESS": "5u",
+      "DMUI_TEXT_TONE_WARNING": "6u",
+      "DMUI_TEXT_TONE_ERROR": "7u",
+      "DMUI_TEXT_TONE_DISABLED": "8u",
+      "DMUI_TEXT_TONE_RESTART_NEEDED": "9u",
+      "DMUI_TEXT_TONE_CURRENT_HOTKEY": "10u",
+      "DMUI_TEXT_TONE_COUNT": "11u",
+      "DMUI_TEXT_SPAN_BOLD": "0x00000001u",
+      "DMUI_TEXT_SPAN_ITALIC": "0x00000002u",
+      "DMUI_TEXT_SPAN_UNDERLINE": "0x00000004u",
+      "DMUI_TEXT_SPAN_STRIKETHROUGH": "0x00000008u",
+      "DMUI_TEXT_SPAN_INTERACTIVE": "0x00000010u",
+      "DMUI_TEXT_SPAN_HAS_ROLE": "0x00000020u",
+      "DMUI_TEXT_SPAN_CUSTOM_FOREGROUND": "0x00000040u",
+      "DMUI_TEXT_SPAN_CUSTOM_BACKGROUND": "0x00000080u",
+      "DMUI_TEXT_OPTION_WRAP": "0x00000001u",
+      "DMUI_TEXT_OPTION_BULLET": "0x00000002u",
+      "DMUI_TEXT_VIEW_FOLLOW_TAIL": "0x00000001u",
+      "DMUI_TEXT_VIEW_SELECTABLE": "0x00000002u",
+      "DMUI_TEXT_VIEW_SCROLL_NONE": "0u",
+      "DMUI_TEXT_VIEW_SCROLL_PAGE_UP": "1u",
+      "DMUI_TEXT_VIEW_SCROLL_PAGE_DOWN": "2u",
+      "DMUI_TEXT_VIEW_SCROLL_TOP": "3u",
+      "DMUI_TEXT_VIEW_SCROLL_BOTTOM": "4u",
+      "DMUI_TEXT_VIEW_SCROLL_COUNT": "5u",
+      "DMUI_TEXT_VIEW_EVENT_SPAN_HOVERED": "0x00000001u",
+      "DMUI_TEXT_VIEW_EVENT_SPAN_CLICKED": "0x00000002u",
+      "DMUI_BUTTON_STYLE_DEFAULT": "0u",
+      "DMUI_BUTTON_STYLE_PRIMARY": "1u",
+      "DMUI_BUTTON_STYLE_SUBTLE": "2u",
+      "DMUI_TEXT_FIELD_STYLE_PLAIN": "0u",
+      "DMUI_TEXT_FIELD_STYLE_SEARCH": "1u",
+      "DMUI_NUMERIC_TYPE_S8": "1u",
+      "DMUI_NUMERIC_TYPE_U8": "2u",
+      "DMUI_NUMERIC_TYPE_S16": "3u",
+      "DMUI_NUMERIC_TYPE_U16": "4u",
+      "DMUI_NUMERIC_TYPE_S32": "5u",
+      "DMUI_NUMERIC_TYPE_U32": "6u",
+      "DMUI_NUMERIC_TYPE_S64": "7u",
+      "DMUI_NUMERIC_TYPE_U64": "8u",
+      "DMUI_NUMERIC_TYPE_FLOAT": "9u",
+      "DMUI_NUMERIC_TYPE_DOUBLE": "10u",
+      "DMUI_NUMERIC_PRESENTATION_SLIDER": "0u",
+      "DMUI_NUMERIC_PRESENTATION_DRAG": "1u",
+      "DMUI_NUMERIC_PRESENTATION_INPUT": "2u",
+      "DMUI_NUMERIC_HAS_MINIMUM": "0x00000001u",
+      "DMUI_NUMERIC_HAS_MAXIMUM": "0x00000002u",
+      "DMUI_NUMERIC_HAS_STEP": "0x00000004u",
+      "DMUI_NUMERIC_CLAMP": "0x00000008u",
+      "DMUI_COLOR_EDIT_ALPHA": "0x00000001u",
+      "DMUI_KEY_CAPTURE_SLOT_KEYBOARD_MOUSE": "0u",
+      "DMUI_KEY_CAPTURE_SLOT_GAMEPAD": "1u",
+      "DMUI_KEY_CAPTURE_ALLOW_CLEAR": "0x00000001u",
+      "DMUI_KEY_CAPTURE_READ_ONLY": "0x00000002u",
+      "DMUI_KEY_CHORD_CAPACITY": "32u",
+      "DMUI_SECTION_BOX": "0x00000001u",
+      "DMUI_SECTION_HAS_COUNT": "0x00000002u",
+      "DMUI_GLYPH_NONE": "0xFFFFFFFFu",
       "DMUI_HOTKEY_BINDING_BOUND": "0u",
       "DMUI_HOTKEY_BINDING_UNBOUND_USER": "1u",
       "DMUI_HOTKEY_BINDING_UNBOUND_DEFAULT_CONFLICT": "2u",
@@ -3809,13 +3376,8 @@
       "DMUI_PAGE_ACTIVITY_ACTIVATED": "1u",
       "DMUI_PAGE_ACTIVITY_CHANGED": "2u",
       "DMUI_PAGE_ACTIVITY_DEACTIVATED": "3u",
-      "DMUI_SETTINGS_ROW_LAYOUT_LABEL_VALUE": "0u",
-      "DMUI_SETTINGS_ROW_LAYOUT_FULL_SPAN": "1u",
       "DMUI_FIELD_LAYOUT_LABEL_VALUE": "0u",
       "DMUI_FIELD_LAYOUT_FULL_SPAN": "1u",
-      "DMUI_FIELD_FEEDBACK_SEVERITY_INFO": "0u",
-      "DMUI_FIELD_FEEDBACK_SEVERITY_WARNING": "1u",
-      "DMUI_FIELD_FEEDBACK_SEVERITY_ERROR": "2u",
       "DMUI_FIELD_FEEDBACK_MAX_MESSAGE_BYTES": "16384u",
       "DMUI_HOTKEY_CONTEXT_ALWAYS": "0u",
       "DMUI_HOTKEY_CONTEXT_HOST_INPUT_INACTIVE": "1u",
@@ -3864,9 +3426,23 @@
       "DMUI_HostState": "uint32_t",
       "DMUI_UnavailableReason": "uint32_t",
       "DMUI_PageKind": "uint32_t",
-      "DMUI_StatusSeverity": "uint32_t",
+      "DMUI_Severity": "uint32_t",
       "DMUI_FontRole": "uint32_t",
-      "DMUI_SettingsAction": "uint32_t",
+      "DMUI_TextTone": "uint32_t",
+      "DMUI_TextSpanFlags": "uint32_t",
+      "DMUI_TextOptionFlags": "uint32_t",
+      "DMUI_TextViewFlags": "uint32_t",
+      "DMUI_TextViewScrollCommand": "uint32_t",
+      "DMUI_TextViewEvents": "uint32_t",
+      "DMUI_ButtonStyle": "uint32_t",
+      "DMUI_TextFieldStyle": "uint32_t",
+      "DMUI_NumericType": "uint32_t",
+      "DMUI_NumericPresentation": "uint32_t",
+      "DMUI_NumericFlags": "uint32_t",
+      "DMUI_ColorEditFlags": "uint32_t",
+      "DMUI_KeyCaptureSlot": "uint32_t",
+      "DMUI_KeyCaptureFlags": "uint32_t",
+      "DMUI_SectionFlags": "uint32_t",
       "DMUI_HotkeyBindingState": "uint32_t",
       "DMUI_ClientCapabilities": "uint32_t",
       "DMUI_ClientOrigin": "uint32_t",
@@ -3879,9 +3455,7 @@
       "DMUI_ImageHandle": "uint64_t",
       "DMUI_DialogHandle": "uint64_t",
       "DMUI_PageActivityKind": "uint32_t",
-      "DMUI_SettingsRowLayout": "uint32_t",
       "DMUI_FieldLayout": "uint32_t",
-      "DMUI_FieldFeedbackSeverity": "uint32_t",
       "DMUI_HotkeyContextPolicy": "uint32_t",
       "DMUI_ImageStatus": "uint32_t",
       "DMUI_PixelFormat": "uint32_t",
@@ -3902,6 +3476,7 @@
       "DMUI_FrameCallback": "void (void* userData)",
       "DMUI_HotkeyCallback": "void (DMUI_HotkeyActionHandle action, uint32_t pressed, void* userData)",
       "DMUI_ResizeTextBufferFn": "DMUI_Result (void* userData, size_t minimumCapacity, char** data, size_t* capacity) DMUI_NOEXCEPT",
+      "DMUI_TextStyleFn": "DMUI_Result (void* userData, const char* text, size_t length, const DMUI_TextSpan** spans, size_t* count) DMUI_NOEXCEPT",
       "DMUI_RegisterClientFn": "DMUI_Result (const DMUI_ClientDescriptor* descriptor, DMUI_ClientHandle* client) DMUI_NOEXCEPT",
       "DMUI_RegisterCategoryFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_CategoryDescriptor* descriptor) DMUI_NOEXCEPT",
       "DMUI_RegisterPageFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_PageDescriptor* descriptor, DMUI_PageHandle* page) DMUI_NOEXCEPT",
@@ -3912,31 +3487,22 @@
       "DMUI_SelectPageFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_PageHandle page) DMUI_NOEXCEPT",
       "DMUI_AttachSwapChainFn": "DMUI_Result (DMUI_ClientHandle client, void* nativeSwapChain) DMUI_NOEXCEPT",
       "DMUI_RegisterActionFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_ActionDescriptor* descriptor, DMUI_ActionHandle* action) DMUI_NOEXCEPT",
-      "DMUI_SetStatusFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_StatusSeverity severity, const char* message) DMUI_NOEXCEPT",
+      "DMUI_UnregisterActionFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_ActionHandle action) DMUI_NOEXCEPT",
+      "DMUI_SetActionEnabledFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_ActionHandle action, uint32_t enabled) DMUI_NOEXCEPT",
+      "DMUI_SetStatusFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_Severity severity, const char* message) DMUI_NOEXCEPT",
       "DMUI_PushFontFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_FontRole role) DMUI_NOEXCEPT",
       "DMUI_PopFontFn": "DMUI_Result (DMUI_ClientHandle client) DMUI_NOEXCEPT",
-      "DMUI_DrawSectionHeaderFn": "DMUI_Result (DMUI_ClientHandle client, const char* text, uint32_t glyph) DMUI_NOEXCEPT",
-      "DMUI_DrawBulletTextFn": "DMUI_Result (DMUI_ClientHandle client, const char* text) DMUI_NOEXCEPT",
-      "DMUI_DrawSearchInputFn": "DMUI_Result (DMUI_ClientHandle client, const char* id, const char* hint, char* buffer, size_t capacity, uint32_t* changed) DMUI_NOEXCEPT",
-      "DMUI_DrawSearchInputBufferFn": "DMUI_Result (DMUI_ClientHandle client, const char* id, const char* hint, DMUI_TextBuffer* buffer, uint32_t* changed) DMUI_NOEXCEPT",
       "DMUI_DrawTextViewFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_TextViewDescriptor* descriptor, DMUI_TextViewState* state) DMUI_NOEXCEPT",
-      "DMUI_DrawCollapsingSectionHeaderFn": "DMUI_Result (DMUI_ClientHandle client, const char* key, const char* text, uint32_t glyph, uint32_t* expanded, size_t count) DMUI_NOEXCEPT",
       "DMUI_DrawLinkRowFn": "DMUI_Result (DMUI_ClientHandle client, const char* id, const DMUI_LinkDescriptor* links, size_t count) DMUI_NOEXCEPT",
       "DMUI_DrawFaqFn": "DMUI_Result (DMUI_ClientHandle client, const char* id, const DMUI_FaqEntry* entries, size_t count) DMUI_NOEXCEPT",
       "DMUI_ReportDiagnosticFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_DiagnosticDescriptor* diagnostic) DMUI_NOEXCEPT",
-      "DMUI_DrawSettingsActionButtonFn": "DMUI_Result (DMUI_ClientHandle client, const char* id, DMUI_Vec2 origin, DMUI_Vec2 size, DMUI_SettingsAction action, const char* fallbackLabel, const char* tooltip, uint32_t enabled, uint32_t* pressed) DMUI_NOEXCEPT",
-      "DMUI_SettingsActionButtonWidthFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_SettingsAction action, const char* fallbackLabel, float buttonExtent, float* width) DMUI_NOEXCEPT",
-      "DMUI_SettingsActionButtonExtentFn": "DMUI_Result (DMUI_ClientHandle client, float* extent) DMUI_NOEXCEPT",
       "DMUI_RegisterFrameObserverFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_FrameObserverDescriptor* descriptor, DMUI_FrameObserverHandle* observer) DMUI_NOEXCEPT",
       "DMUI_QueryVideoMemoryFn": "DMUI_Result (DMUI_ClientHandle client, uint64_t* used, uint64_t* budget) DMUI_NOEXCEPT",
       "DMUI_RegisterHotkeyActionFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_HotkeyActionDescriptor* descriptor, DMUI_HotkeyActionHandle* action) DMUI_NOEXCEPT",
       "DMUI_QueryHotkeyBindingFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_HotkeyActionHandle action, DMUI_HotkeyBindingInfo* binding) DMUI_NOEXCEPT",
       "DMUI_UnregisterHotkeyActionFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_HotkeyActionHandle action) DMUI_NOEXCEPT",
       "DMUI_BeginSettingsTableFn": "DMUI_Result (DMUI_ClientHandle client, const char* id, uint32_t* visible) DMUI_NOEXCEPT",
-      "DMUI_BeginSettingsRowFn": "DMUI_Result (DMUI_ClientHandle client, const char* id, const char* label, const char* description, uint32_t* visible) DMUI_NOEXCEPT",
-      "DMUI_EndSettingsRowFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_SettingsRowOptions* options, uint32_t* resetPressed) DMUI_NOEXCEPT",
       "DMUI_EndSettingsTableFn": "DMUI_Result (DMUI_ClientHandle client) DMUI_NOEXCEPT",
-      "DMUI_BeginSettingsRowExFn": "DMUI_Result (DMUI_ClientHandle client, const char* id, const char* label, const char* description, const DMUI_SettingsRowBeginOptions* options, uint32_t* visible) DMUI_NOEXCEPT",
       "DMUI_RegisterPageActivityObserverFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_PageActivityObserverDescriptor* descriptor, DMUI_PageActivityObserverHandle* observer) DMUI_NOEXCEPT",
       "DMUI_SetHotkeyActionEnabledFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_HotkeyActionHandle action, uint32_t enabled) DMUI_NOEXCEPT",
       "DMUI_ImportD3D11ImageFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_D3D11ImageDescriptor* descriptor, DMUI_ImageHandle* image) DMUI_NOEXCEPT",
@@ -3957,6 +3523,7 @@
       "DMUI_CreateImageFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_ImageDescriptor* descriptor, DMUI_ImageHandle* image) DMUI_NOEXCEPT",
       "DMUI_UpdateImageFn": "DMUI_Result (DMUI_ClientHandle client, DMUI_ImageHandle image, const DMUI_ImageDescriptor* descriptor) DMUI_NOEXCEPT",
       "DMUI_LoadImageFileFn": "DMUI_Result (DMUI_ClientHandle client, const char* utf8Path, DMUI_ImageHandle* image) DMUI_NOEXCEPT",
+      "DMUI_LoadImageMemoryFn": "DMUI_Result (DMUI_ClientHandle client, const void* bytes, size_t size, DMUI_ImageHandle* image) DMUI_NOEXCEPT",
       "DMUI_OpenExternalFn": "DMUI_Result (DMUI_ClientHandle client, const DMUI_ExternalOpenDescriptor* descriptor, uint32_t* nativeError) DMUI_NOEXCEPT",
       "DMUI_ResolveIconGlyphFn": "DMUI_Result (const DMUI_IconResolutionRequest* request, uint32_t* glyph) DMUI_NOEXCEPT",
       "DMUI_BeginFieldFn": "DMUI_Result (DMUI_ClientHandle client, const char* id, const char* label, const char* description, const DMUI_FieldBeginOptions* options, uint32_t* visible) DMUI_NOEXCEPT",
@@ -4039,10 +3606,11 @@
       ],
       "DMUI_FaqEntry": [
         "const char* question",
-        "const char* answer"
+        "const char* answer",
+        "uint32_t* expanded"
       ],
       "DMUI_DiagnosticDescriptor": [
-        "DMUI_StatusSeverity severity",
+        "DMUI_Severity severity",
         "const char* scope",
         "const char* summary",
         "const char* detail"
@@ -4058,7 +3626,7 @@
       ],
       "DMUI_HotkeyBindingInfo": [
         "DMUI_HotkeyBindingState state",
-        "char chord[32]"
+        "char chord[DMUI_KEY_CHORD_CAPACITY]"
       ],
       "DMUI_HostStateInfo": [
         "DMUI_HostState state",
@@ -4071,6 +3639,10 @@
       "DMUI_Vec2": [
         "float x",
         "float y"
+      ],
+      "DMUI_Placement": [
+        "DMUI_Vec2 position",
+        "DMUI_Vec2 pivot"
       ],
       "DMUI_TextBuffer": [
         "char* data",
@@ -4087,6 +3659,23 @@
         "DMUI_Vec2 caretPosition",
         "float lineHeight"
       ],
+      "DMUI_Vec4": [
+        "float x",
+        "float y",
+        "float z",
+        "float w"
+      ],
+      "DMUI_TextSpan": [
+        "size_t offset",
+        "size_t length",
+        "DMUI_TextTone foreground",
+        "DMUI_TextTone background",
+        "DMUI_Vec4 foregroundColor",
+        "DMUI_Vec4 backgroundColor",
+        "DMUI_FontRole role",
+        "DMUI_TextSpanFlags flags",
+        "uint64_t userId"
+      ],
       "DMUI_TextViewDescriptor": [
         "const char* id",
         "const char* text",
@@ -4096,21 +3685,25 @@
         "const size_t* matchByteOffsets",
         "size_t matchCount",
         "size_t matchByteLength",
+        "const DMUI_TextSpan* spans",
+        "size_t spanCount",
         "uint64_t contentRevision",
         "uint64_t matchRevision",
+        "uint64_t spanRevision",
+        "uint64_t firstLineNumber",
+        "DMUI_TextViewFlags flags",
         "DMUI_Vec2 viewport"
       ],
       "DMUI_TextViewState": [
         "uint64_t contentRevision",
         "uint64_t matchRevision",
         "size_t activeMatch",
-        "size_t revealByteOffset"
-      ],
-      "DMUI_Vec4": [
-        "float x",
-        "float y",
-        "float z",
-        "float w"
+        "size_t revealByteOffset",
+        "size_t spanIndex",
+        "uint64_t userId",
+        "DMUI_TextViewScrollCommand scrollCommand",
+        "uint32_t atBottom",
+        "DMUI_TextViewEvents events"
       ],
       "DMUI_StyleMetrics": [
         "DMUI_Vec2 itemSpacing",
@@ -4127,13 +3720,6 @@
         "float sectionGap",
         "DMUI_Vec2 panelPadding"
       ],
-      "DMUI_SettingsRowOptions": [
-        "uint32_t resetVisible",
-        "uint32_t resetEnabled"
-      ],
-      "DMUI_SettingsRowBeginOptions": [
-        "DMUI_SettingsRowLayout layout"
-      ],
       "DMUI_FieldBeginOptions": [
         "DMUI_FieldLayout layout"
       ],
@@ -4142,25 +3728,155 @@
         "uint32_t resetEnabled"
       ],
       "DMUI_FieldFeedback": [
-        "DMUI_FieldFeedbackSeverity severity",
+        "DMUI_Severity severity",
         "const char* message"
       ],
-      "DMUI_ThemeColors": [
-        "DMUI_Vec4 success",
-        "DMUI_Vec4 warning",
-        "DMUI_Vec4 error",
-        "DMUI_Vec4 info",
+      "DMUI_ButtonDescriptor": [
+        "const char* id",
+        "const char* label",
+        "uint32_t glyph",
+        "uint32_t enabled",
+        "DMUI_ButtonStyle style",
+        "uint32_t reserved",
+        "const char* tooltip",
+        "DMUI_Vec2 size"
+      ],
+      "DMUI_TextFieldOptions": [
+        "const char* hint",
+        "size_t cursor",
+        "DMUI_TextFieldStyle style",
+        "uint32_t flags",
+        "uint32_t editFlags",
+        "uint32_t maxBytes",
+        "uint32_t lines",
+        "uint32_t reserved",
+        "DMUI_Vec2 size",
+        "DMUI_TextStyleFn styleSpans",
+        "void* styleUserData"
+      ],
+      "DMUI_SectionDescriptor": [
+        "const char* id",
+        "const char* title",
+        "uint32_t* expanded",
+        "uint32_t glyph",
+        "DMUI_SectionFlags flags",
+        "uint32_t count",
+        "uint32_t reserved"
+      ],
+      "DMUI_ChoiceOption": [
+        "const char* label",
+        "const char* description",
+        "uint32_t enabled",
+        "uint32_t reserved"
+      ],
+      "DMUI_ChoiceDescriptor": [
+        "const char* id",
+        "const DMUI_ChoiceOption* options",
+        "const char* unmatchedLabel",
+        "uint32_t optionCount",
+        "int32_t selected",
+        "float width",
+        "uint32_t reserved"
+      ],
+      "DMUI_ChoiceResult": [
+        "int32_t selected",
+        "uint32_t changed",
+        "uint32_t completed"
+      ],
+      "DMUI_ToggleDescriptor": [
+        "const char* id",
+        "const char* label",
+        "uint32_t value",
+        "uint32_t reserved"
+      ],
+      "DMUI_ToggleResult": [
+        "uint32_t value",
+        "uint32_t changed"
+      ],
+      "DMUI_SpinnerDescriptor": [
+        "const char* id",
+        "float size",
+        "uint32_t reserved"
+      ],
+      "DMUI_NumericValue": [
+        "int64_t i",
+        "uint64_t u",
+        "double f"
+      ],
+      "DMUI_NumericDescriptor": [
+        "const char* id",
+        "const char* format",
+        "const char* unit",
+        "DMUI_NumericType type",
+        "DMUI_NumericPresentation presentation",
+        "DMUI_NumericFlags flags",
+        "uint32_t reserved",
+        "float width",
+        "float dragSpeed",
+        "DMUI_NumericValue value",
+        "DMUI_NumericValue minimum",
+        "DMUI_NumericValue maximum",
+        "DMUI_NumericValue step",
+        "DMUI_NumericValue stepOrigin"
+      ],
+      "DMUI_NumericResult": [
+        "DMUI_NumericValue value",
+        "uint32_t changed",
+        "uint32_t completed"
+      ],
+      "DMUI_ColorPreset": [
+        "const char* name",
+        "const char* description",
+        "uint32_t rgba",
+        "uint32_t reserved"
+      ],
+      "DMUI_ColorEditDescriptor": [
+        "const char* id",
+        "const DMUI_ColorPreset* presets",
+        "const char* presetsLabel",
+        "uint32_t presetCount",
+        "uint32_t rgba",
+        "DMUI_ColorEditFlags flags",
+        "uint32_t reserved",
+        "float width"
+      ],
+      "DMUI_ColorEditResult": [
+        "uint32_t rgba",
+        "uint32_t changed",
+        "uint32_t completed"
+      ],
+      "DMUI_KeyCaptureDescriptor": [
+        "const char* id",
+        "const char* binding",
+        "const char* displayText",
+        "const char* details",
+        "const char* warning",
+        "DMUI_KeyCaptureSlot slot",
+        "DMUI_KeyCaptureFlags flags",
+        "float width",
+        "uint32_t reserved"
+      ],
+      "DMUI_KeyCaptureResult": [
+        "uint32_t changed",
+        "char chord[DMUI_KEY_CHORD_CAPACITY]"
+      ],
+      "DMUI_TextOptions": [
+        "DMUI_TextOptionFlags flags",
+        "float wrapWidth"
+      ],
+      "DMUI_ThemeTokens": [
+        "DMUI_Vec4 text",
         "DMUI_Vec4 muted",
         "DMUI_Vec4 accent",
         "DMUI_Vec4 accentMuted",
-        "DMUI_Vec4 panel",
-        "DMUI_Vec4 statusDisable",
-        "DMUI_Vec4 statusError",
-        "DMUI_Vec4 statusWarning",
-        "DMUI_Vec4 statusRestartNeeded",
-        "DMUI_Vec4 statusCurrentHotkey",
-        "DMUI_Vec4 statusSuccess",
-        "DMUI_Vec4 statusInfo"
+        "DMUI_Vec4 info",
+        "DMUI_Vec4 success",
+        "DMUI_Vec4 warning",
+        "DMUI_Vec4 error",
+        "DMUI_Vec4 disabled",
+        "DMUI_Vec4 restartNeeded",
+        "DMUI_Vec4 currentHotkey",
+        "DMUI_Vec4 rowAlt"
       ],
       "DMUI_D3D11ImageDescriptor": [
         "void* shaderResourceView",
@@ -4228,7 +3944,7 @@
         "uint32_t released"
       ],
       "DMUI_NotificationDescriptor": [
-        "DMUI_StatusSeverity severity",
+        "DMUI_Severity severity",
         "const char* message",
         "uint32_t durationMilliseconds",
         "const char* title"
@@ -4280,26 +3996,18 @@
         "DMUI_SelectPageFn selectPage",
         "DMUI_AttachSwapChainFn attachSwapChain",
         "DMUI_RegisterActionFn registerAction",
+        "DMUI_UnregisterActionFn unregisterAction",
+        "DMUI_SetActionEnabledFn setActionEnabled",
         "DMUI_SetStatusFn setStatus",
         "DMUI_PushFontFn pushFont",
         "DMUI_PopFontFn popFont",
-        "DMUI_DrawSectionHeaderFn drawSectionHeader",
-        "DMUI_DrawSearchInputFn drawSearchInput",
-        "DMUI_DrawCollapsingSectionHeaderFn drawCollapsingSectionHeader",
-        "DMUI_DrawSettingsActionButtonFn drawSettingsActionButton",
-        "DMUI_SettingsActionButtonWidthFn settingsActionButtonWidth",
-        "DMUI_SettingsActionButtonExtentFn settingsActionButtonExtent",
         "DMUI_RegisterFrameObserverFn registerFrameObserver",
         "DMUI_QueryVideoMemoryFn queryVideoMemory",
-        "DMUI_DrawBulletTextFn drawBulletText",
         "DMUI_RegisterHotkeyActionFn registerHotkeyAction",
         "DMUI_QueryHotkeyBindingFn queryHotkeyBinding",
         "DMUI_UnregisterHotkeyActionFn unregisterHotkeyAction",
         "DMUI_BeginSettingsTableFn beginSettingsTable",
-        "DMUI_BeginSettingsRowFn beginSettingsRow",
-        "DMUI_EndSettingsRowFn endSettingsRow",
         "DMUI_EndSettingsTableFn endSettingsTable",
-        "DMUI_BeginSettingsRowExFn beginSettingsRowEx",
         "DMUI_RegisterPageActivityObserverFn registerPageActivityObserver",
         "DMUI_DrawLinkRowFn drawLinkRow",
         "DMUI_DrawFaqFn drawFaq",
@@ -4325,8 +4033,8 @@
         "DMUI_SetFieldFeedbackFn setFieldFeedback",
         "DMUI_EndFieldFn endField",
         "DMUI_DrawTextViewFn drawTextView",
-        "DMUI_DrawSearchInputBufferFn drawSearchInputBuffer",
         "DMUI_LoadImageFileFn loadImageFile",
+        "DMUI_LoadImageMemoryFn loadImageMemory",
         "DMUI_RequestOverlayFocusFn requestOverlayFocus",
         "DMUI_ReleaseOverlayFocusFn releaseOverlayFocus",
         "DMUI_QueryOverlayFocusFn queryOverlayFocus",

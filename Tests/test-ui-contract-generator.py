@@ -72,7 +72,9 @@ class ABIContractTests(unittest.TestCase):
         breaking = {
             "reorder_operations": self.changed(reorder_operations),
             "change_slot_minor": self.changed(
-                lambda schema: schema["operationMinors"].update({"1": 97})
+                lambda schema: schema["operationMinors"].update(
+                    {"1": len(schema["operations"])}
+                )
             ),
         }
         for name, old, new in (
