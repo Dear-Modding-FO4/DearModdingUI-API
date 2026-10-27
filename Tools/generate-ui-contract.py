@@ -265,6 +265,7 @@ def native_type(enum_name: str) -> str:
         "TableFlags": "ImGuiTableFlags",
         "TableColumnFlags": "ImGuiTableColumnFlags",
         "TableRowFlags": "ImGuiTableRowFlags",
+        "TableBgTarget": "ImGuiTableBgTarget",
         "TreeNodeFlags": "ImGuiTreeNodeFlags",
     }[enum_name]
 

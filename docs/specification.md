@@ -294,6 +294,10 @@ The host reads translations itself from `Data\Interface\Translations\<owner>_<la
 
 `resolveText(owner, key, buffer, capacity, requiredCapacity)` writes the NUL-terminated translation of `key` from `owner`'s files and needs no client handle. It returns `TEXT_NOT_FOUND` when neither file has the key, `HOST_NOT_READY` until the game language is known, and `BUFFER_TOO_SMALL` when `capacity` is less than `requiredCapacity`, the byte count including the terminator. It may be called from any thread. `Client::ResolveText(owner, key)` returns the translation or `std::nullopt`, and `Client::Localize(owner, key, fallback)` returns the fallback when there is none. `<DearModdingUI/Localization.h>` keeps `localize::LocalizeString` values that `LocalizationManager::Load(owner)` refreshes through the same lookup.
 
+### Built-in settings page text
+
+`SettingsPage` draws its button, filter, tooltip, and fallback text from `$DMUI_SettingsPage_*` keys in the host's `DearModdingUI` owner, falling back to English when the host is older than ABI 2.2 or lacks the key. `Apply` and the Apply tooltips take the pending count in a single `{}`. An empty `SettingFilterOptions::searchHint` or `ChoiceSettingControl::unmatchedLabel` uses the built-in text; non-empty values and `SettingsPageActionTooltips` entries are drawn as passed.
+
 ## External Open and Virtual Files
 
 `Client::OpenExternal` dispatches targets via the host process:
@@ -367,6 +371,14 @@ The UI operation `getPointerState(client, state)` returns the pointer input that
 - `wheel` reports notches (positive y is away from the user, positive x is right) of wheel input that no DMUI window took and no host hotkey would act on. `captured` is informational: it says whether a DMUI window or popup captures hover and wheel now.
 - Edges are per frame and not queued, unlike hotkey edges. `pressed` and `released` may both be set in one frame.
 - Mouse movement always reaches DMUI windows.
+
+### Table sort state and backgrounds (ABI 2.2)
+
+Both UI operations are valid only inside `BeginTable`/`EndTable`; elsewhere they return `DMUI_RESULT_UNBALANCED_BRACKET`.
+
+`tableGetSortSpecs(client, specs, capacity, count)` reads the sort of the current table, primary column first, after `TableSetupColumn` and `TableHeadersRow`. `count` is always set to the number of active specs, and is 0 for an unsorted or non-sortable table. Each `DMUI_UITableSortSpec` holds the zero-based `column` setup index and a `direction` of `DMUI_UI_SORT_DIRECTION_ASCENDING` or `DESCENDING` (`ui::SortDirection`). A `capacity` below `count` returns `BUFFER_TOO_SMALL` and writes nothing; `specs` may be null only when `capacity` is 0. `ui::TableGetSortSpecs()` returns the specs in a `std::vector`.
+
+`tableSetBgColor(client, target, rgba, column)` colors the next draw of a row or cell. `target` is `DMUI_UI_TABLE_BG_TARGET_ROW_BG0`, `ROW_BG1`, or `CELL`; other values return `INVALID_ARGUMENT`. `rgba` is a packed `RRGGBBAA` color. `column` selects the cell for `CELL`, where -1 is the current column, and is ignored for the row targets. A cell column outside the table returns `INVALID_ARGUMENT`, as does a request that would color more distinct runs of cells in one row than the table has columns (for example columns 1, 0, 1 in a two-column table).
 
 ### Dialog sessions
 

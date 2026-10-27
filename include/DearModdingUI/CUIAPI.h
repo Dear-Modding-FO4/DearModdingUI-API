@@ -240,6 +240,12 @@ typedef uint32_t DMUI_UITableRowFlags;
 #define DMUI_UI_TABLE_ROW_FLAGS_NONE 0u
 #define DMUI_UI_TABLE_ROW_FLAGS_HEADERS 1u
 
+typedef uint32_t DMUI_UITableBgTarget;
+#define DMUI_UI_TABLE_BG_TARGET_NONE 0u
+#define DMUI_UI_TABLE_BG_TARGET_ROW_BG0 1u
+#define DMUI_UI_TABLE_BG_TARGET_ROW_BG1 2u
+#define DMUI_UI_TABLE_BG_TARGET_CELL 3u
+
 typedef uint32_t DMUI_UITreeNodeFlags;
 #define DMUI_UI_TREE_NODE_FLAGS_NONE 0u
 #define DMUI_UI_TREE_NODE_FLAGS_SELECTED 1u
@@ -336,6 +342,11 @@ typedef uint32_t DMUI_UITextEditEvents;
 #define DMUI_UI_TEXT_EDIT_EVENTS_HISTORY_NEXT 8u
 #define DMUI_UI_TEXT_EDIT_EVENTS_COMPLETION 16u
 #define DMUI_UI_TEXT_EDIT_EVENTS_CANCELED 32u
+
+typedef uint32_t DMUI_UISortDirection;
+#define DMUI_UI_SORT_DIRECTION_NONE 0u
+#define DMUI_UI_SORT_DIRECTION_ASCENDING 1u
+#define DMUI_UI_SORT_DIRECTION_DESCENDING 2u
 
 typedef DMUI_Result (DMUI_CALL *DMUI_UIGetStyleMetricsFn)(
 	DMUI_ClientHandle client,
@@ -819,6 +830,16 @@ typedef DMUI_Result (DMUI_CALL *DMUI_UIBeginTooltipAtFn)(
 typedef DMUI_Result (DMUI_CALL *DMUI_UIGetPointerStateFn)(
 	DMUI_ClientHandle client,
 	DMUI_PointerState* state) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UITableGetSortSpecsFn)(
+	DMUI_ClientHandle client,
+	DMUI_UITableSortSpec* specs,
+	uint32_t capacity,
+	uint32_t* count) DMUI_NOEXCEPT;
+typedef DMUI_Result (DMUI_CALL *DMUI_UITableSetBgColorFn)(
+	DMUI_ClientHandle client,
+	DMUI_UITableBgTarget target,
+	uint32_t rgba,
+	int32_t column) DMUI_NOEXCEPT;
 
 typedef struct DMUI_UIAPI
 {
@@ -922,4 +943,6 @@ typedef struct DMUI_UIAPI
 	DMUI_UIInputTextEditorFn inputTextEditor;
 	DMUI_UIBeginTooltipAtFn beginTooltipAt;
 	DMUI_UIGetPointerStateFn getPointerState;
+	DMUI_UITableGetSortSpecsFn tableGetSortSpecs;
+	DMUI_UITableSetBgColorFn tableSetBgColor;
 } DMUI_UIAPI;

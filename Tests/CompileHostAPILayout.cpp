@@ -26,4 +26,5 @@ static_assert(offsetof(DMUI_HostAPI, queryOverlayFocus) == 480);
 static_assert(offsetof(DMUI_HostAPI, resolveText) == 488);
 static_assert(sizeof(DMUI_OverlayFocusInfo) == 16);
 static_assert(sizeof(DMUI_PointerState) == 44);
+static_assert(sizeof(DMUI_UITableSortSpec) == 8);
 #endif

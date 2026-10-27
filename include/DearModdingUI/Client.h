@@ -294,7 +294,8 @@ namespace dmui
 	struct ChoiceSettingControl
 	{
 		std::vector<ChoiceSettingOption> options;
-		std::string unmatchedLabel{ "Unavailable" };
+		// Empty uses the localized built-in "Unavailable".
+		std::string unmatchedLabel;
 	};
 
 	struct ReadOnlySettingControl
@@ -618,7 +619,8 @@ namespace dmui
 	{
 		bool showSearch{ true };
 		bool showModifiedOnly{ true };
-		std::string searchHint{ "Search settings..." };
+		// Empty uses the localized built-in hint.
+		std::string searchHint;
 	};
 
 	struct SettingGroup
@@ -702,20 +704,6 @@ namespace dmui
 				return true;
 		}
 		return false;
-	}
-
-	[[nodiscard]] inline std::string ResolveSettingDescription(
-		const SettingDescriptor& a_setting)
-	{
-		auto description = a_setting.resolveDescription ?
-			a_setting.resolveDescription() :
-			a_setting.description;
-		if (a_setting.applyTiming != SettingApplyTiming::kImmediate)
-			return description;
-		if (!description.empty())
-			description.push_back('\n');
-		description += "Applies now.";
-		return description;
 	}
 
 	[[nodiscard]] inline bool MatchesSettingFilter(
@@ -953,8 +941,9 @@ namespace dmui
 			}
 
 			hostPresent_ = detail::HostModulePresent();
-			const auto getAPI = FindAPI();
-			if (!getAPI)
+			HostLink host;
+			const auto linked = LinkHost(host);
+			if (linked == DMUI_RESULT_HOST_NOT_INITIALIZED)
 			{
 				api_ = nullptr;
 				lastResult_ = hostPresent_ ?
@@ -963,8 +952,10 @@ namespace dmui
 				return false;
 			}
 
-			api_ = detail::NegotiateAPI(getAPI, abiMinor_);
-			if (!api_ || api_->abiMajor != DMUI_ABI_MAJOR)
+			api_ = host.api;
+			abiMinor_ = host.minor;
+			if (linked != DMUI_RESULT_OK || !api_ ||
+				api_->abiMajor != DMUI_ABI_MAJOR)
 			{
 				api_ = nullptr;
 				uiAPI_ = nullptr;
@@ -1011,15 +1002,14 @@ namespace dmui
 			std::optional<std::string> text;
 			try
 			{
-				uint32_t minor{ 0 };
-				const auto getAPI = FindAPI();
-				const auto* api = getAPI ? detail::NegotiateAPI(getAPI, minor) : nullptr;
-				if (getAPI &&
-					(!api || api->abiMajor != DMUI_ABI_MAJOR ||
-						minor < detail::SlotAbiMinor<&DMUI_HostAPI::resolveText>))
+				HostLink host;
+				result = LinkHost(host);
+				if (result == DMUI_RESULT_OK &&
+					host.minor < detail::SlotAbiMinor<&DMUI_HostAPI::resolveText>)
 					result = DMUI_RESULT_UNSUPPORTED_ABI;
-				else if (api)
+				if (result == DMUI_RESULT_OK)
 				{
+					const auto* api = host.api;
 					const std::string owner{ a_owner };
 					const std::string key{ a_key };
 					std::string buffer(64, '\0');
@@ -2160,6 +2150,38 @@ namespace dmui
 			return detail::ResolveHostSymbol<GetAPIFn>("DMUI_GetAPI");
 		}
 
+		struct HostLink
+		{
+			const DMUI_HostAPI* api{};
+			uint32_t minor{};
+		};
+
+		// Cache success only: probes log mismatches on older hosts.
+		[[nodiscard]] static DMUI_Result LinkHost(HostLink& a_link) noexcept
+		{
+			static std::atomic<const DMUI_HostAPI*> s_api{};
+			static std::atomic<uint32_t> s_minor{};
+			if (const auto* api = s_api.load(std::memory_order_acquire))
+			{
+				a_link = { api, s_minor.load(std::memory_order_relaxed) };
+				return DMUI_RESULT_OK;
+			}
+
+			const auto getAPI = FindAPI();
+			if (!getAPI)
+				return DMUI_RESULT_HOST_NOT_INITIALIZED;
+			uint32_t minor{ 0 };
+			const auto* api = detail::NegotiateAPI(getAPI, minor);
+			if (!api || api->abiMajor != DMUI_ABI_MAJOR)
+				return DMUI_RESULT_UNSUPPORTED_ABI;
+
+			// Racing threads store identical values; api publishes minor.
+			s_minor.store(minor, std::memory_order_relaxed);
+			s_api.store(api, std::memory_order_release);
+			a_link = { api, minor };
+			return DMUI_RESULT_OK;
+		}
+
 		[[nodiscard]] bool CanRegisterPage() noexcept
 		{
 			if (!IsConnected())
@@ -2952,6 +2974,127 @@ namespace dmui
 		return true;
 	}
 
+	// Host translations of the built-in page text; English when unresolved.
+	struct SettingsPageText
+	{
+		std::string resetAll;
+		std::string resetAllTooltip;
+		std::string revert;
+		std::string revertTooltip;
+		std::string apply;
+		std::string applyTooltipOne;
+		std::string applyTooltipOther;
+		std::string modifiedOnly;
+		std::string searchHint;
+		std::string unsupportedControl;
+		std::string appliesNow;
+		std::string unavailable;
+	};
+
+	namespace settings_text_detail
+	{
+		struct Entry
+		{
+			std::string SettingsPageText::* member;
+			const char* key;
+			const char* english;
+		};
+
+		inline constexpr std::array kEntries{
+			Entry{ &SettingsPageText::resetAll,
+				"$DMUI_SettingsPage_ResetAll", "Reset all" },
+			Entry{ &SettingsPageText::resetAllTooltip,
+				"$DMUI_SettingsPage_ResetAllTooltip",
+				"Reset loads every setting's default into the draft. "
+				"Use Apply to save them." },
+			Entry{ &SettingsPageText::revert,
+				"$DMUI_SettingsPage_Revert", "Revert" },
+			Entry{ &SettingsPageText::revertTooltip,
+				"$DMUI_SettingsPage_RevertTooltip",
+				"Revert discards pending edits and restores committed settings." },
+			Entry{ &SettingsPageText::apply,
+				"$DMUI_SettingsPage_Apply", "Apply ({})" },
+			Entry{ &SettingsPageText::applyTooltipOne,
+				"$DMUI_SettingsPage_ApplyTooltipOne",
+				"Apply saves {} pending change." },
+			Entry{ &SettingsPageText::applyTooltipOther,
+				"$DMUI_SettingsPage_ApplyTooltipOther",
+				"Apply saves {} pending changes." },
+			Entry{ &SettingsPageText::modifiedOnly,
+				"$DMUI_SettingsPage_ModifiedOnly", "Modified only" },
+			Entry{ &SettingsPageText::searchHint,
+				"$DMUI_SettingsPage_SearchHint", "Search settings..." },
+			Entry{ &SettingsPageText::unsupportedControl,
+				"$DMUI_SettingsPage_UnsupportedControl",
+				"Unsupported setting control." },
+			Entry{ &SettingsPageText::appliesNow,
+				"$DMUI_SettingsPage_AppliesNow", "Applies now." },
+			Entry{ &SettingsPageText::unavailable,
+				"$DMUI_SettingsPage_Unavailable", "Unavailable" }
+		};
+
+		// Not std::format: a malformed translation must never throw in a draw.
+		[[nodiscard]] inline std::string FillPlaceholder(
+			std::string a_template,
+			std::string_view a_value)
+		{
+			if (const auto at = a_template.find("{}"); at != std::string::npos)
+				a_template.replace(at, 2, a_value);
+			return a_template;
+		}
+	}
+
+	// A false a_final means the host had no language yet; text is provisional.
+	template <class Resolve>
+	[[nodiscard]] SettingsPageText LoadSettingsPageText(
+		Resolve&& a_resolve,
+		bool& a_final)
+	{
+		SettingsPageText text;
+		a_final = true;
+		for (const auto& entry : settings_text_detail::kEntries)
+		{
+			DMUI_Result result{};
+			auto value = a_resolve(entry.key, result);
+			if (result == DMUI_RESULT_HOST_NOT_READY)
+				a_final = false;
+			text.*entry.member = value ?
+				std::move(*value) :
+				std::string{ entry.english };
+		}
+		return text;
+	}
+
+	// Render thread only; each module resolves its own copy.
+	[[nodiscard]] inline const SettingsPageText& GetSettingsPageText()
+	{
+		static SettingsPageText text;
+		static bool resolved{};
+		if (!resolved)
+		{
+			text = LoadSettingsPageText(
+				[](const char* a_key, DMUI_Result& a_result) {
+					return Client::ResolveText("DearModdingUI", a_key, &a_result);
+				},
+				resolved);
+		}
+		return text;
+	}
+
+	[[nodiscard]] inline std::string ResolveSettingDescription(
+		const SettingDescriptor& a_setting)
+	{
+		auto description = a_setting.resolveDescription ?
+			a_setting.resolveDescription() :
+			a_setting.description;
+		if (a_setting.applyTiming != SettingApplyTiming::kImmediate)
+			return description;
+		if (!description.empty())
+			description.push_back('\n');
+		description += GetSettingsPageText().appliesNow;
+		return description;
+	}
+
 	namespace setting_detail
 	{
 		template <NumericSettingValue T>
@@ -3146,7 +3289,9 @@ namespace dmui
 					"Value",
 					value,
 					std::span<const ChoiceSettingOption>{ control.options },
-					control.unmatchedLabel.c_str());
+					control.unmatchedLabel.empty() ?
+						GetSettingsPageText().unavailable.c_str() :
+						control.unmatchedLabel.c_str());
 				if (draw.changed && draw.selected)
 				{
 					edited = *draw.selected;
@@ -3334,7 +3479,8 @@ namespace dmui
 		{
 			{
 				const DisabledScope disabled;
-				ui::TextUnformatted("Unsupported setting control.");
+				ui::TextUnformatted(
+					GetSettingsPageText().unsupportedControl.c_str());
 			}
 			return EndSettingRow(a_setting, a_row).has_value();
 		}
@@ -3548,7 +3694,12 @@ namespace dmui
 				std::string tooltip;
 			};
 
+			const auto& text = GetSettingsPageText();
 			const auto pending = a_page.PendingCount();
+			const auto pendingText = std::to_string(pending);
+			// The widest label reserves the width so Apply never resizes.
+			const auto widestApplyLabel =
+				settings_text_detail::FillPlaceholder(text.apply, "112");
 			const auto dirty = pending != 0;
 			std::array<Action, 3> actions{};
 			size_t actionCount{};
@@ -3557,11 +3708,10 @@ namespace dmui
 				actions[actionCount++] = {
 					DearModdingUI::SettingsAction::kReset,
 					"##dmui.settings.reset",
-					"Reset all",
-					"Reset all",
+					text.resetAll,
+					text.resetAll.c_str(),
 					a_page.actionTooltips.reset.empty() ?
-						"Reset loads every setting's default into the draft. "
-						"Use Apply to save them." :
+						text.resetAllTooltip :
 						a_page.actionTooltips.reset
 				};
 			}
@@ -3570,10 +3720,10 @@ namespace dmui
 				actions[actionCount++] = {
 					DearModdingUI::SettingsAction::kRevert,
 					"##dmui.settings.revert",
-					"Revert",
-					"Revert",
+					text.revert,
+					text.revert.c_str(),
 					a_page.actionTooltips.revert.empty() ?
-						"Revert discards pending edits and restores committed settings." :
+						text.revertTooltip :
 						a_page.actionTooltips.revert
 				};
 			}
@@ -3582,12 +3732,15 @@ namespace dmui
 				actions[actionCount++] = {
 					DearModdingUI::SettingsAction::kApply,
 					"##dmui.settings.apply",
-					"Apply (" + std::to_string(pending) + ")",
-					"Apply (112)",
+					settings_text_detail::FillPlaceholder(text.apply, pendingText),
+					widestApplyLabel.c_str(),
 					a_page.actionTooltips.apply ?
 						a_page.actionTooltips.apply(pending) :
-						"Apply saves " + std::to_string(pending) + " pending " +
-							(pending == 1 ? "change." : "changes.")
+						settings_text_detail::FillPlaceholder(
+							pending == 1 ?
+								text.applyTooltipOne :
+								text.applyTooltipOther,
+							pendingText)
 				};
 			}
 
@@ -3648,7 +3801,7 @@ namespace dmui
 					a_page.filterOptions.showModifiedOnly ?
 					frameHeight +
 						itemInnerSpacingX +
-						ui::CalcTextSize("Modified only").x :
+						ui::CalcTextSize(text.modifiedOnly).x :
 					0.0f;
 				const auto minimumSearchWidth = ui::GetFontSize() * 10.0f;
 				const auto searchWidth = (std::max)(
@@ -3659,7 +3812,9 @@ namespace dmui
 				ui::SetNextItemWidth((std::min)(searchWidth, filterWidth));
 				if (!a_client.DrawSearchInput(
 						"##dmui.settings.search",
-						a_page.filterOptions.searchHint.c_str(),
+						a_page.filterOptions.searchHint.empty() ?
+							text.searchHint.c_str() :
+							a_page.filterOptions.searchHint.c_str(),
 						a_page.filter.search))
 					return false;
 				// The host search frame can be taller than a plain frame.
@@ -3683,8 +3838,10 @@ namespace dmui
 			}
 			if (a_page.filterOptions.showModifiedOnly)
 			{
+				const auto modifiedLabel =
+					text.modifiedOnly + "###dmui.settings.modified";
 				(void)ui::Checkbox(
-					"Modified only###dmui.settings.modified",
+					modifiedLabel.c_str(),
 					&a_page.filter.modifiedOnly);
 			}
 

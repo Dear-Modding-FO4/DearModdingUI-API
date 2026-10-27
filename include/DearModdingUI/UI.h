@@ -1159,6 +1159,48 @@ namespace dmui::ui
 		detail::Record(checked::TableSetupScrollFreeze(a_columns, a_rows));
 	}
 
+	// Primary first; empty when unsorted (ABI 2.2).
+	[[nodiscard]] inline std::vector<DMUI_UITableSortSpec> TableGetSortSpecs() noexcept
+	{
+		std::vector<DMUI_UITableSortSpec> specs;
+		uint32_t count{};
+		// A zero capacity probe reports the size through BUFFER_TOO_SMALL.
+		auto result = checked::TableGetSortSpecs(nullptr, 0u, &count);
+		if (result == DMUI_RESULT_OK || result == DMUI_RESULT_BUFFER_TOO_SMALL)
+		{
+			if (count == 0u)
+				return specs;
+			try
+			{
+				specs.resize(count);
+			}
+			catch (...)
+			{
+				detail::Record(DMUI_RESULT_RESOURCE_EXHAUSTED);
+				return {};
+			}
+			result = checked::TableGetSortSpecs(specs.data(), count, &count);
+			if (result == DMUI_RESULT_OK)
+			{
+				specs.resize(count);
+				return specs;
+			}
+		}
+		detail::Record(result);
+		return {};
+	}
+
+	inline void TableSetBgColor(
+		TableBgTarget a_target,
+		Color32 a_rgba,
+		int32_t a_column = -1) noexcept
+	{
+		detail::Record(checked::TableSetBgColor(
+			static_cast<DMUI_UITableBgTarget>(a_target),
+			a_rgba,
+			a_column));
+	}
+
 	inline void TextUnformatted(
 		std::string_view a_text) noexcept
 	{

@@ -305,6 +305,16 @@
       "values": [["Headers", 1, "ImGuiTableRowFlags_Headers"]]
     },
     {
+      "name": "TableBgTarget",
+      "cName": "DMUI_UITableBgTarget",
+      "kind": "value",
+      "values": [
+        ["RowBg0", 1, "ImGuiTableBgTarget_RowBg0"],
+        ["RowBg1", 2, "ImGuiTableBgTarget_RowBg1"],
+        ["Cell", 3, "ImGuiTableBgTarget_CellBg"]
+      ]
+    },
+    {
       "name": "TreeNodeFlags",
       "cName": "DMUI_UITreeNodeFlags",
       "kind": "flags",
@@ -423,6 +433,16 @@
         ["Completion", 16, null],
         ["Canceled", 32, null]
       ]
+    },
+    {
+      "name": "SortDirection",
+      "cName": "DMUI_UISortDirection",
+      "kind": "value",
+      "hostTranslated": false,
+      "values": [
+        ["Ascending", 1, null],
+        ["Descending", 2, null]
+      ]
     }
   ],
   "signatures": {
@@ -525,7 +545,9 @@
     "DrawListPopClipRect": [["DMUI_ClientHandle", "client"], ["DMUI_DrawTarget", "target"]],
     "InputTextEditor": [["DMUI_ClientHandle", "client"], ["const char*", "label"], ["const char*", "hint"], ["DMUI_TextBuffer*", "buffer"], ["DMUI_UIInputTextFlags", "flags"], ["DMUI_UITextEditFlags", "editFlags"], ["size_t", "cursor"], ["DMUI_TextEditState*", "state"]],
     "BeginTooltipAt": [["DMUI_ClientHandle", "client"], ["DMUI_Vec2", "position"], ["DMUI_Vec2", "pivot"], ["uint32_t*", "visible"]],
-    "GetPointerState": [["DMUI_ClientHandle", "client"], ["DMUI_PointerState*", "state"]]
+    "GetPointerState": [["DMUI_ClientHandle", "client"], ["DMUI_PointerState*", "state"]],
+    "TableGetSortSpecs": [["DMUI_ClientHandle", "client"], ["DMUI_UITableSortSpec*", "specs"], ["uint32_t", "capacity"], ["uint32_t*", "count"]],
+    "TableSetBgColor": [["DMUI_ClientHandle", "client"], ["DMUI_UITableBgTarget", "target"], ["uint32_t", "rgba"], ["int32_t", "column"]]
   },
   "operations": [
     [1, "GetStyleMetrics", "getStyleMetrics", "style_metrics"],
@@ -627,6 +649,8 @@
     [97, "EndPanel", "endPanel", "void"],
     [98, "InputTextEditor", "inputTextEditor", "input_text"],
     [99, "BeginTooltipAt", "beginTooltipAt", "bool"],
-    [100, "GetPointerState", "getPointerState", "custom"]
+    [100, "GetPointerState", "getPointerState", "custom"],
+    [101, "TableGetSortSpecs", "tableGetSortSpecs", "custom"],
+    [102, "TableSetBgColor", "tableSetBgColor", "void"]
   ]
 }

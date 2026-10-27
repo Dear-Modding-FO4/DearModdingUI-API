@@ -757,6 +757,13 @@ typedef struct DMUI_PointerState
 	uint32_t released;
 } DMUI_PointerState;
 
+// column is the setup index, not the display position.
+typedef struct DMUI_UITableSortSpec
+{
+	int32_t column;
+	uint32_t direction; // DMUI_UISortDirection
+} DMUI_UITableSortSpec;
+
 typedef struct DMUI_NotificationDescriptor
 {
 	DMUI_StatusSeverity severity;

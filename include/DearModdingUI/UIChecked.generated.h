@@ -11,6 +11,10 @@ namespace dmui::detail
 	inline constexpr uint32_t SlotAbiMinor<&DMUI_UIAPI::beginTooltipAt>{ 1u };
 	template <>
 	inline constexpr uint32_t SlotAbiMinor<&DMUI_UIAPI::getPointerState>{ 2u };
+	template <>
+	inline constexpr uint32_t SlotAbiMinor<&DMUI_UIAPI::tableGetSortSpecs>{ 2u };
+	template <>
+	inline constexpr uint32_t SlotAbiMinor<&DMUI_UIAPI::tableSetBgColor>{ 2u };
 }
 
 namespace dmui::ui
@@ -488,6 +492,14 @@ namespace dmui::ui
 		return a_left;
 	}
 
+	enum class TableBgTarget : uint32_t
+	{
+		kNone = 0u,
+		kRowBg0 = DMUI_UI_TABLE_BG_TARGET_ROW_BG0,
+		kRowBg1 = DMUI_UI_TABLE_BG_TARGET_ROW_BG1,
+		kCell = DMUI_UI_TABLE_BG_TARGET_CELL
+	};
+
 	enum class TreeNodeFlags : uint32_t
 	{
 		kNone = 0u,
@@ -686,6 +698,13 @@ namespace dmui::ui
 		a_left = a_left | a_right;
 		return a_left;
 	}
+
+	enum class SortDirection : uint32_t
+	{
+		kNone = 0u,
+		kAscending = DMUI_UI_SORT_DIRECTION_ASCENDING,
+		kDescending = DMUI_UI_SORT_DIRECTION_DESCENDING
+	};
 
 	namespace checked
 	{
@@ -1583,6 +1602,24 @@ namespace dmui::ui
 		{
 			return detail::Invoke<&DMUI_UIAPI::getPointerState>(
 				state);
+		}
+
+		[[nodiscard]] inline DMUI_Result TableGetSortSpecs(
+			DMUI_UITableSortSpec* specs,
+		uint32_t capacity,
+		uint32_t* count) noexcept
+		{
+			return detail::Invoke<&DMUI_UIAPI::tableGetSortSpecs>(
+				specs, capacity, count);
+		}
+
+		[[nodiscard]] inline DMUI_Result TableSetBgColor(
+			DMUI_UITableBgTarget target,
+		uint32_t rgba,
+		int32_t column) noexcept
+		{
+			return detail::Invoke<&DMUI_UIAPI::tableSetBgColor>(
+				target, rgba, column);
 		}
 	}
 }

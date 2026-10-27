@@ -914,6 +914,27 @@
       "rejectedMask": 0
     },
     {
+      "name": "TableBgTarget",
+      "cName": "DMUI_UITableBgTarget",
+      "kind": "value",
+      "values": [
+        {
+          "name": "RowBg0",
+          "value": 1
+        },
+        {
+          "name": "RowBg1",
+          "value": 2
+        },
+        {
+          "name": "Cell",
+          "value": 3
+        }
+      ],
+      "aliases": [],
+      "rejectedMask": 0
+    },
+    {
       "name": "TreeNodeFlags",
       "cName": "DMUI_UITreeNodeFlags",
       "kind": "flags",
@@ -1282,6 +1303,23 @@
         {
           "name": "Canceled",
           "value": 32
+        }
+      ],
+      "aliases": [],
+      "rejectedMask": 0
+    },
+    {
+      "name": "SortDirection",
+      "cName": "DMUI_UISortDirection",
+      "kind": "value",
+      "values": [
+        {
+          "name": "Ascending",
+          "value": 1
+        },
+        {
+          "name": "Descending",
+          "value": 2
         }
       ],
       "aliases": [],
@@ -3716,6 +3754,56 @@
           "state"
         ]
       ]
+    },
+    {
+      "id": 101,
+      "name": "TableGetSortSpecs",
+      "field": "tableGetSortSpecs",
+      "kind": "custom",
+      "sinceMinor": 2,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_UITableSortSpec*",
+          "specs"
+        ],
+        [
+          "uint32_t",
+          "capacity"
+        ],
+        [
+          "uint32_t*",
+          "count"
+        ]
+      ]
+    },
+    {
+      "id": 102,
+      "name": "TableSetBgColor",
+      "field": "tableSetBgColor",
+      "kind": "void",
+      "sinceMinor": 2,
+      "signature": [
+        [
+          "DMUI_ClientHandle",
+          "client"
+        ],
+        [
+          "DMUI_UITableBgTarget",
+          "target"
+        ],
+        [
+          "uint32_t",
+          "rgba"
+        ],
+        [
+          "int32_t",
+          "column"
+        ]
+      ]
     }
   ],
   "host": {
@@ -4227,6 +4315,10 @@
         "uint32_t down",
         "uint32_t pressed",
         "uint32_t released"
+      ],
+      "DMUI_UITableSortSpec": [
+        "int32_t column",
+        "uint32_t direction"
       ],
       "DMUI_NotificationDescriptor": [
         "DMUI_StatusSeverity severity",

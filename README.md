@@ -281,6 +281,8 @@ interruption. Poll `QueryOverlayFocus(page)` each frame to learn that focus ende
 See the [focused overlay contract](docs/specification.md#focused-overlays-abi-21) (ABI 2.1).
 `ui::GetPointerState()` reports world clicks and wheel input that no DMUI window took, for picking
 (see [pointer state](docs/specification.md#pointer-state-abi-22), ABI 2.2).
+`ui::TableGetSortSpecs()` and `ui::TableSetBgColor()` read a table's sort state and color rows or cells
+(see [table sort state and backgrounds](docs/specification.md#table-sort-state-and-backgrounds-abi-22), ABI 2.2).
 
 ## Localization
 
@@ -288,7 +290,9 @@ Pass translation keys such as `"$MyMod_General"` as registration display names, 
 and action labels, and ship `Interface\Translations\<client id>_<language>.txt`, with
 `<client id>_en.txt` as the fallback; the host translates them when registration closes.
 Translate drawn text with `Client::Localize(clientId, key, fallback)`, ideally once in
-`onHostReady`. See the [localization contract](docs/specification.md#localization-abi-22) (ABI 2.2).
+`onHostReady`. The built-in `SettingsPage` text (buttons, search hint, tooltips) follows the game language
+through the host's own translations; an explicit `searchHint` or `unmatchedLabel` overrides it.
+See the [localization contract](docs/specification.md#localization-abi-22) (ABI 2.2).
 
 ## Verification
 
