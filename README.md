@@ -205,7 +205,7 @@ update its `LastResult()`.
 | `<DearModdingUI/API.h>` | Pure C ABI declarations for host interaction. |
 | `<DearModdingUI/CUIAPI.h>` | Low-level C function table for drawing primitives. |
 | `<DearModdingUI/Localization.h>` | `LocalizeString` values refreshed from the owner's translation files through the host. |
-| `<DearModdingUI/IconGlyphs.h>` | Phosphor glyph constants and offline catalog snapshot utilities. Prefer the host query for automatic client drawing. |
+| `<DearModdingUI/IconGlyphs.h>` | Phosphor glyph constants. The host owns the icon vocabulary; ask it with `Client::ResolveIconGlyph`. |
 
 ---
 
@@ -302,13 +302,6 @@ Build the test suites and example plugin:
 xmake
 xmake build api-header-checks
 xmake build example-plugin
-```
-
-The checked-in Phosphor vocabulary is regenerated offline from pinned source
-snapshots:
-
-```powershell
-python Tools/GeneratePhosphorGlyphs.py --check
 ```
 
 ---
