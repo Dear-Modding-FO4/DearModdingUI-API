@@ -286,8 +286,9 @@ Available roles:
 - `DMUI_FONT_ROLE_SUBTEXT`
 - `DMUI_FONT_ROLE_MONOSPACE`
 
-The monospace role is always the host's built-in default-vector font, provisioned
-through `AddFontDefaultVector`. It does not fall back to a proportional family.
+The monospace role is the bundled JetBrains Mono. The host's built-in vector font
+(`AddFontDefaultVector`) is the fallback when that face is missing; the role does
+not fall back to a proportional family.
 
 ## Notifications and Status
 

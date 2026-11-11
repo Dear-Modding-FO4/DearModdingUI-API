@@ -159,9 +159,9 @@ to the available pane width. Clipped labels expose their full literal text,
 including `##`, in a hover tooltip. A projection supplies each label and byte
 offset; the helper introduces no separate anchor model.
 
-`DMUI_FONT_ROLE_MONOSPACE` is provisioned through the host's
-`AddFontDefaultVector` path. It never falls back to a configured proportional
-font family.
+`DMUI_FONT_ROLE_MONOSPACE` uses the bundled JetBrains Mono. The host's built-in
+vector font (`AddFontDefaultVector`) is the fallback when that face is missing.
+The role never falls back to a configured proportional font family.
 
 ## Presentation Helpers
 

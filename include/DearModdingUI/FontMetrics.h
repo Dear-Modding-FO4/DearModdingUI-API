@@ -48,8 +48,8 @@ namespace DearModdingUI::Theme
 			FontRoleDefaults{ "heading", "Jost", "Regular", "Jost\\Jost-Regular.ttf", 1.0f },
 			FontRoleDefaults{ "subheading", "Jost", "Regular", "Jost\\Jost-Regular.ttf", 1.0f },
 			FontRoleDefaults{ "subtext", "Jost", "Regular", "Jost\\Jost-Regular.ttf", 0.9f },
-			// The empty file selects the host's AddFontDefaultVector path.
-			FontRoleDefaults{ "monospace", "ImGui", "Regular", "", 0.9f }
+			// A missing monospace face falls back to the host's built-in vector font.
+			FontRoleDefaults{ "monospace", "JetBrains Mono", "Regular", "JetBrains Mono\\JetBrainsMono-Regular.ttf", 0.9f }
 		};
 
 	[[nodiscard]] inline float ResolveFontSize(uint32_t a_backBufferHeight) noexcept
